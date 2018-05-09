@@ -222,6 +222,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     //LEDBlink(LEDPIN, socketNumber); // blink socketNumber times
 }
 
+//0-15, 0,1
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     //this is a blocking routine so need to keep checking messages and
