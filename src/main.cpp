@@ -1,8 +1,3 @@
-//work only using wifiesp lib as connection to net
-
-//set in software serial.h
-//#define _SS_MAX_RX_BUFF 256 // RX buffer size
-
 //#include <SPI.h>
 //#include <WiFiEsp.h>
 #include <WiFi.h>
@@ -26,24 +21,21 @@ void reconnectPSClient();
 void reconnectWiFiEsp();
 void operateSocket(uint8_t socketID, uint8_t state);
 
+void printD(const char *message);
+void printDWithVal(const char *message, int value);
+void printD2Str(const char *str1, const char *str2);
+
 char ssid[] = "notwork";                              // your network SSID (name)
 char pass[] = "a new router can solve many problems"; // your network password
 //int keyIndex = 0;                                     // your network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
 
-//#include "SoftwareSerial.h"
-//SoftwareSerial ESPSerial(7, 6); // RX, TX
-
-//WiFiEspServer server(80);
-
 IPAddress mqttserver(192, 168, 0, 200);
 
-//WiFiEspClient client = server.available();
-//EthernetClient ethClient;
-
+#define TX433PIN 32
 //282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, 4); // tx address, pin for tx
+NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
 byte socket = 3;
 bool state = false;
 
@@ -51,14 +43,14 @@ uint8_t socketNumber = 0;
 
 #define LEDPIN 2 //esp32 on board blue LED
 
-#define ESP_BAUD 9600
+//#define ESP_BAUD 9600
 #define CR Serial.println()
 
 #define subscribeTopic "433Bridge/cmnd/#"
 
 WiFiClient WiFiEClient;
 PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
-#define SW_VERSION "V0.1"
+#define SW_VERSION "V0.2"
 
 ////////////////////ntp ///////////////////////////////////
 
@@ -75,9 +67,7 @@ WiFiUDP Udp;
 // NTP Servers:
 static const char ntpServerName[] = "us.pool.ntp.org";
 
-
 const int timeZone = 1; // Central European Time
-
 
 unsigned int localPort = 8888; // local port to listen for UDP packets
 
@@ -98,30 +88,20 @@ unsigned long interval = 60000;
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
     Serial.begin(115200);
-    //Serial.begin(9600);
-
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
 
     u8g2.begin();
-
     u8g2.clearBuffer();
-
     u8g2.setFont(u8g2_font_8x13_tf);
-
-    // 17 chars by 3 lines at this font size
     u8g2.drawStr(30, 10, "MQTT ESP32");
     u8g2.drawStr(15, 21, "433Mhz Bridge");
     u8g2.drawStr(45, 32, SW_VERSION);
-
     u8g2.sendBuffer();
-
     delay(4000);
 
     // initialize ESP module
     WiFi.begin();
-
-    printWifiStatus();
-
+    //    printWifiStatus();
     // attempt to connect to Wifi network:
     while (status != WL_CONNECTED)
     {
@@ -129,108 +109,14 @@ void setup()
         Serial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
         status = WiFi.begin(ssid, pass);
-
-        // wait 10 seconds for connection:
-        delay(5000);
+        // wait 5 seconds for connection:
+        delay(10000);
     }
     //server.begin();
     // you're connected now, so print out the status:
     printWifiStatus();
     CR;
-    //delay(5000);
     reconnectPSClient();
-
-    //Udp.begin(localPort);
-    //Serial.println("prepre");
-    //doNtp();
-}
-
-// send an NTP request to the time server at the given address
-void sendNTPpacket(char *ntpSrv)
-{
-    // set all bytes in the buffer to 0
-    memset(packetBuffer, 0, NTP_PACKET_SIZE);
-    // Initialize values needed to form NTP request
-    // (see URL above for details on the packets)
-
-    packetBuffer[0] = 0b11100011; // LI, Version, Mode
-    packetBuffer[1] = 0;          // Stratum, or type of clock
-    packetBuffer[2] = 6;          // Polling Interval
-    packetBuffer[3] = 0xEC;       // Peer Clock Precision
-    // 8 bytes of zero for Root Delay & Root Dispersion
-    packetBuffer[12] = 49;
-    packetBuffer[13] = 0x4E;
-    packetBuffer[14] = 49;
-    packetBuffer[15] = 52;
-
-    // all NTP fields have been given values, now
-    // you can send a packet requesting a timestamp:
-    Udp.beginPacket(ntpSrv, 123); //NTP requests are to port 123
-
-    Udp.write(packetBuffer, NTP_PACKET_SIZE);
-
-    Udp.endPacket();
-}
-
-void doNtp()
-{
-    Serial.println("pre");
-
-    sendNTPpacket(timeServer); // send an NTP packet to a time server
-    Serial.println("post");
-    // wait for a reply for UDP_TIMEOUT miliseconds
-    unsigned long startMs = millis();
-    while (!Udp.available() && (millis() - startMs) < UDP_TIMEOUT)
-    {
-    }
-
-    Serial.println(Udp.parsePacket());
-    if (Udp.parsePacket())
-    {
-        Serial.println("packet received");
-        // We've received a packet, read the data from it into the buffer
-        Udp.read(packetBuffer, NTP_PACKET_SIZE);
-
-        // the timestamp starts at byte 40 of the received packet and is four bytes,
-        // or two words, long. First, esxtract the two words:
-
-        unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
-        unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
-        // combine the four bytes (two words) into a long integer
-        // this is NTP time (seconds since Jan 1 1900):
-        unsigned long secsSince1900 = highWord << 16 | lowWord;
-        Serial.print("Seconds since Jan 1 1900 = ");
-        Serial.println(secsSince1900);
-
-        // now convert NTP time into everyday time:
-        Serial.print("Unix time = ");
-        // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
-        const unsigned long seventyYears = 2208988800UL;
-        // subtract seventy years:
-        unsigned long epoch = secsSince1900 - seventyYears;
-        // print Unix time:
-        Serial.println(epoch);
-
-        // print the hour, minute and second:
-        Serial.print("The UTC time is ");      // UTC is the time at Greenwich Meridian (GMT)
-        Serial.print((epoch % 86400L) / 3600); // print the hour (86400 equals secs per day)
-        Serial.print(':');
-        if (((epoch % 3600) / 60) < 10)
-        {
-            // In the first 10 minutes of each hour, we'll want a leading '0'
-            Serial.print('0');
-        }
-        Serial.print((epoch % 3600) / 60); // print the minute (3600 equals secs per minute)
-        Serial.print(':');
-        if ((epoch % 60) < 10)
-        {
-            // In the first 10 seconds of each minute, we'll want a leading '0'
-            Serial.print('0');
-        }
-        Serial.println(epoch % 60); // print the second
-    }
-    // wait ten seconds before asking for the time again
-    delay(10000);
 }
 
 void loop()
@@ -254,22 +140,21 @@ void loop()
             Serial.println(millis());
         }
 
-        // Serial.println("Checking if psclient needs reconnect"); // save the last time looped
-        // if (!psclient.connected())
-        // {
-        //     Serial.println("Needs reconnect");
-        //     reconnectPSClient();
-        // }
-        // else
-        // {
-        //     Serial.println("OK - still connected");
-        //     Serial.println(millis());
-        // }
+        Serial.println("Checking if psclient needs reconnect"); // save the last time looped
+        if (!psclient.connected())
+        {
+            Serial.println("Needs reconnect");
+            reconnectPSClient();
+        }
+        else
+        {
+            Serial.println("OK - ps client still connected");
+            Serial.println(millis());
+        }
 
         previousMillis = currentMillis;
     }
 }
-
 
 //psclient call back if mqtt messsage rxed
 void callback(char *topic, byte *payload, unsigned int length)
@@ -326,25 +211,42 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     //maybe call a few times
     Serial.println(F("txing to socket"));
+    //u8g2.clearBuffer();
 
-    transmitter.sendUnit(socketNumber, newState); // default 4 tx to socket
-    //operateSocket(socketNumber, newState);
-    //LEDBlink(LEDPIN, socketNumber); // blink socketNumber times
+    Serial.println("txing state to socket");
+
 
     digitalWrite(LEDPIN, newState);
+    //transmitter.sendUnit(socketNumber, newState); // default 4 tx to socket
+    operateSocket(socketNumber, newState);
+    //LEDBlink(LEDPIN, socketNumber); // blink socketNumber times
 }
 
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     //this is a blocking routine so need to keep checking messages and
     //updating vars etc
-    // but do NOT do manage restarts as could be recursive and call this routine again.
 
-    //if (transmitEnable == 1)
-    //{
-    Serial.println(F("txing to socket"));
-    //badLED();
-    //beep(1, 2, 1);
+    u8g2.clearBuffer();
+    u8g2.setCursor(20, 20);
+    //delay(10);
+    printDWithVal("Socket : ", socketNumber + 1); //physical socket number
+
+    u8g2.setCursor(55, 40);
+    if (state == 0)
+    {
+        u8g2.print("OFF");
+    }
+    else
+    {
+        u8g2.print("ON");
+    }
+
+    //delay(10);
+    //printDWithVal("Socket : ", socketNumber + 1); //physical socket number
+    delay(10);
+    u8g2.sendBuffer();
+
     for (int i = 0; i < 2; i++)
     { // turn socket off
         //	processMessage();
@@ -353,18 +255,7 @@ void operateSocket(uint8_t socketID, uint8_t state)
     }
 
     Serial.println(F("socket state updated"));
-    //printD2Str("Power on :", devices[deviceID].name);
 
-    // for (int i = 0; i < 3; i++)
-    // { // turn socket back on
-    // //	processMessage();
-    // //	updateDisplay();
-    // 	transmitter.sendUnit(socketID, true);
-    // }
-    // processMessage();
-    // updateDisplay();
-    // LEDsOff();
-    // //beep(1, 2, 1);
     Serial.println(F("OK"));
     // }
     // else
@@ -386,7 +277,7 @@ void reconnectWiFiEsp()
         status = WiFi.begin(ssid, pass);
 
         // wait 10 seconds for connection:
-        delay(5000);
+        delay(10000);
     }
 }
 
@@ -429,7 +320,6 @@ void LEDBlink(int LPin, int repeatNum)
     }
 }
 
-
 void printWifiStatus()
 {
     // print the SSID of the network you're attached to:
@@ -447,5 +337,19 @@ void printWifiStatus()
     Serial.print(rssi);
     Serial.println(" dBm");
 }
+void printD(const char *message)
+{
+    u8g2.print(message);
+}
 
+void printDWithVal(const char *message, int value)
+{
+    u8g2.print(message);
+    u8g2.print(value);
+}
 
+void printD2Str(const char *str1, const char *str2)
+{
+    u8g2.print(str1);
+    u8g2.print(str2);
+}
