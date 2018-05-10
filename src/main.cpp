@@ -1,3 +1,4 @@
+#include <Arduino.h>
 //#include <SPI.h>
 //#include <WiFiEsp.h>
 #include <WiFi.h>
