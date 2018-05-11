@@ -11,6 +11,30 @@
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
 
+////////DHT22 stuff////////////////////////////
+#include "DHT.h"
+
+#define DHTPIN 23 // what digital pin we're connected to
+
+// Uncomment whatever type you're using!
+//#define DHTTYPE DHT11   // DHT 11
+#define DHTTYPE DHT22 // DHT 22  (AM2302), AM2321
+//#define DHTTYPE DHT21   // DHT 21 (AM2301)
+
+// Connect pin 1 (on the left) of the sensor to +5V
+// NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
+// to 3.3V instead of 5V!
+// Connect pin 2 of the sensor to whatever your DHTPIN is
+// Connect pin 4 (on the right) of the sensor to GROUND
+// Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
+
+// Initialize DHT sensor.
+// Note that older versions of this library took an optional third parameter to
+// tweak the timings for faster processors.  This parameter is no longer needed
+// as the current DHT reading algorithm adjusts itself to work on faster procs.
+DHT dht(DHTPIN, DHTTYPE, 15);
+/////////////////////////////////////////////////
+
 //forward decs
 void printWifiStatus();
 boolean processRequest(String &getLine);
@@ -51,9 +75,11 @@ uint8_t socketNumber = 0;
 
 WiFiClient WiFiEClient;
 PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
-#define SW_VERSION "V0.2"
+#define SW_VERSION "V0.3"
 
 ////////////////////ntp ///////////////////////////////////
+
+#include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
 char timeServer[] = "time.nist.gov"; // NTP server
 //unsigned int localPort = 2390;        // local port to listen for UDP packets
@@ -84,7 +110,7 @@ void doNtp();
 
 unsigned long currentMillis = 0;
 unsigned long previousMillis = 0;
-unsigned long interval = 60000;
+unsigned long intervalMillis = 30000;
 
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
@@ -118,6 +144,8 @@ void setup()
     printWifiStatus();
     CR;
     reconnectPSClient();
+
+    dht.begin();
 }
 
 void loop()
@@ -127,7 +155,7 @@ void loop()
     //maybe check every n secs to see if client is connected and reconnect if reqd
 
     currentMillis = millis();
-    if (currentMillis - previousMillis > interval)
+    if (currentMillis - previousMillis > intervalMillis)
     {
         Serial.println("Checking if WiFi needs reconnect"); // save the last time looped
         if (status != WL_CONNECTED)
@@ -154,6 +182,38 @@ void loop()
         }
 
         previousMillis = currentMillis;
+
+        // Read temperature as Celsius (the default)
+        float t = dht.readTemperature();
+        char tempStr[9]; //="12345678";buffer
+        // Check if any reads failed and exit early (to try again).
+        if (isnan(t))
+        {
+            Serial.println("Failed to read from DHT sensor!");
+            //return;
+        }
+
+        if (!isnan(t))
+        {
+            dtostrf(t, 6, 2, tempStr);
+            strcat(tempStr,"*C");
+        }
+        else
+        {
+            strcpy(tempStr, "-=NaN=-");
+        }
+
+        u8g2.clearBuffer();
+        u8g2.setCursor(20, 40);
+        //delay(10);
+        printD2Str("Temp: ", tempStr); 
+        //u8g2.print("*C");
+        delay(10);
+        u8g2.sendBuffer();
+
+        Serial.print("Temperature: ");
+        Serial.print(t);
+        Serial.println(" *C ");
     }
 }
 
@@ -215,7 +275,6 @@ void callback(char *topic, byte *payload, unsigned int length)
     //u8g2.clearBuffer();
 
     Serial.println("txing state to socket");
-
 
     digitalWrite(LEDPIN, newState);
     //transmitter.sendUnit(socketNumber, newState); // default 4 tx to socket
