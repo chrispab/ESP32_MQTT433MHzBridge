@@ -1,23 +1,10 @@
 #include <Arduino.h>
-//#include <SPI.h>
-//#include <WiFiEsp.h>
 #include <WiFi.h>
 #include <NewRemoteTransmitter.h>
-//#include "WiFiEspUdp.h"
-//#include <TimeLib.h>
-
 #include <PubSubClient.h>
 #include <U8g2lib.h>
-
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
-
-////////DHT22 stuff////////////////////////////
 #include "DHT.h"
-
-#define DHTPIN 23 // what digital pin we're connected to
-
-DHT dht;
-/////////////////////////////////////////////////
+#include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
 //forward decs
 void printWifiStatus();
@@ -29,72 +16,46 @@ void callback(char *topic, byte *payload, unsigned int length);
 void reconnectPSClient();
 void reconnectWiFiEsp();
 void operateSocket(uint8_t socketID, uint8_t state);
-
 void printD(const char *message);
 void printDWithVal(const char *message, int value);
 void printD2Str(const char *str1, const char *str2);
 
+//OLED display stuff
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
+
+//DHT22 stuff
+#define DHTPIN 23 // what digital pin we're connected to
+DHT dht;
+
+//WiFi settings
 char ssid[] = "notwork";                              // your network SSID (name)
 char pass[] = "a new router can solve many problems"; // your network password
-//int keyIndex = 0;                                     // your network key Index number (needed only for WEP)
-
 int status = WL_IDLE_STATUS;
 
+//MQTT stuff
 IPAddress mqttserver(192, 168, 0, 200);
+#define subscribeTopic "433Bridge/cmnd/#"
+WiFiClient WiFiEClient;
+PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
 
+//433Mhz settings
 #define TX433PIN 32
 //282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
 byte socket = 3;
 bool state = false;
-
 uint8_t socketNumber = 0;
 
+//misc stuff
 #define LEDPIN 2 //esp32 on board blue LED
-
-//#define ESP_BAUD 9600
 #define CR Serial.println()
-
-#define subscribeTopic "433Bridge/cmnd/#"
-
-WiFiClient WiFiEClient;
-PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
 #define SW_VERSION "V0.5"
 
-////////////////////ntp ///////////////////////////////////
-
-#include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
-
-char timeServer[] = "time.nist.gov"; // NTP server
-//unsigned int localPort = 2390;        // local port to listen for UDP packets
-
-const int NTP_PACKET_SIZE = 48; // NTP timestamp is in the first 48 bytes of the message
-const int UDP_TIMEOUT = 2000;   // timeout in miliseconds to wait for an UDP packet to arrive
-
-byte packetBuffer[NTP_PACKET_SIZE]; // buffer to hold incoming and outgoing packets
-
-// A UDP instance to let us send and receive packets over UDP
-WiFiUDP Udp;
-// NTP Servers:
-static const char ntpServerName[] = "us.pool.ntp.org";
-
-const int timeZone = 1; // Central European Time
-
-unsigned int localPort = 8888; // local port to listen for UDP packets
-
-time_t getNtpTime();
-void digitalClockDisplay();
-void printDigits(int digits);
-void sendNTPpacket(IPAddress &address);
-
-///////////////////////////////////////////////
-
-void sendNTPpacket(char *ntpSrv);
-void doNtp();
-
+//Global vars
 unsigned long currentMillis = 0;
 unsigned long previousMillis = 0;
 unsigned long intervalMillis = 30000;
+
 
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
