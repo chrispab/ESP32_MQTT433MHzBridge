@@ -35,9 +35,7 @@ void printFreeRam(void);
 void displayWipe(void);
 void manageRestarts(int deviceID);
 void powerCycle(int deviceID);
-
-
-
+void resetDevice(int deviceID);
 
 
 //OLED display stuff
@@ -203,124 +201,130 @@ void loop()
     updateTempDisplay();  //get and display temp
     processZoneMessage(); //process any zone messages
     manageRestarts(0);
+    resetDevice(1);
     manageRestarts(2);
     updateZoneDisplayLines();
     displayRefresh();
 }
-
+void resetDevice(int deviceID)
+{
+	devices[deviceID].lastGoodAckMillis = millis();
+	devices[deviceID].isRebooting = 0;
+	devices[deviceID].rebootMillisLeft = 0;
+}
 void powerCycle(int deviceID)
 {
-	//this is a blocking routine so need to keep checking messages and
-	//updating vars etc
-	// but do NOT do manage restarts as could be recursive and call this routine again.
-int transmitEnable = 1;
-	if (transmitEnable == 1)
-	{
-		Serial.println(F("sending off"));
-		//badLED();
-		//beep(1, 2, 1);
-		for (int i = 0; i < 3; i++)
-		{ // turn socket off
-			processZoneMessage();
-			displayRefresh();
-			transmitter.sendUnit(devices[deviceID].socketID, false);
-		}
-		processZoneMessage();
-		displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		displayRefresh();
-		// Switch Rxunit on
-		Serial.println(F("sending on"));
-		//printD2Str("Power on :", devices[deviceID].name);
+    //this is a blocking routine so need to keep checking messages and
+    //updating vars etc
+    // but do NOT do manage restarts as could be recursive and call this routine again.
+    int transmitEnable = 1;
+    if (transmitEnable == 1)
+    {
+        Serial.println(F("sending off"));
+        //badLED();
+        //beep(1, 2, 1);
+        for (int i = 0; i < 3; i++)
+        { // turn socket off
+            processZoneMessage();
+            displayRefresh();
+            transmitter.sendUnit(devices[deviceID].socketID, false);
+        }
+        processZoneMessage();
+        displayRefresh();
+        delay(1000);
+        processZoneMessage();
+        displayRefresh();
+        delay(1000);
+        processZoneMessage();
+        displayRefresh();
+        delay(1000);
+        processZoneMessage();
+        displayRefresh();
+        // Switch Rxunit on
+        Serial.println(F("sending on"));
+        //printD2Str("Power on :", devices[deviceID].name);
 
-		for (int i = 0; i < 3; i++)
-		{ // turn socket back on
-			processZoneMessage();
-			displayRefresh();
-			transmitter.sendUnit(devices[deviceID].socketID, true);
-		}
-		processZoneMessage();
-		displayRefresh();
-		//LEDsOff();
-		//beep(1, 2, 1);
-		Serial.println(F("complete"));
-	}
-	else
-	{
-		Serial.println(F("not transmitting"));
-	}
+        for (int i = 0; i < 3; i++)
+        { // turn socket back on
+            processZoneMessage();
+            displayRefresh();
+            transmitter.sendUnit(devices[deviceID].socketID, true);
+        }
+        processZoneMessage();
+        displayRefresh();
+        //LEDsOff();
+        //beep(1, 2, 1);
+        Serial.println(F("complete"));
+    }
+    else
+    {
+        Serial.println(F("not transmitting"));
+    }
 }
 //check a unit and see if restart reqd
 void manageRestarts(int deviceID)
 {
-	// now check if need to reboot a device
-	if ((millis() - devices[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
-	{ // over time limit so reboot first time in then just upadte time each other time
+    // now check if need to reboot a device
+    if ((millis() - devices[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
+    { // over time limit so reboot first time in then just upadte time each other time
 
-		//printFreeRam();
-		if (devices[deviceID].isRebooting == 0)
-		{ // all this done first time triggered
-			//printD("Reboot : ");
+        //printFreeRam();
+        if (devices[deviceID].isRebooting == 0)
+        { // all this done first time triggered
+            //printD("Reboot : ");
 
-			devices[deviceID].isRebooting = 1; //signal device is rebooting
+            devices[deviceID].isRebooting = 1; //signal device is rebooting
 
-			devices[deviceID].isPowerCycling = 1; // signal in power cycle
+            devices[deviceID].isPowerCycling = 1; // signal in power cycle
 
-			powerCycle(deviceID);
+            powerCycle(deviceID);
 
-			devices[deviceID].isPowerCycling = 0; // signal in power cycle
-			devices[deviceID].powerCyclesSincePowerOn++;
-			devices[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
-			devices[deviceID].lastRebootMillisLeftUpdate = millis();
+            devices[deviceID].isPowerCycling = 0; // signal in power cycle
+            devices[deviceID].powerCyclesSincePowerOn++;
+            devices[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
+            devices[deviceID].lastRebootMillisLeftUpdate = millis();
 
-			Serial.println("triggered reboot in manage reboots");
+            Serial.println("triggered reboot in manage reboots");
 
-			Serial.println(devices[deviceID].rebootMillisLeft);
-			//delay(1000);
-		}
-		else
-		{ // this executes till end of reboot timer
-			//device is rebooting now - do some stuff to update countdown timers
-			//wait for pi to come back up - do nothing
-			//millis since last update
-			unsigned long millisLapsed = millis() - devices[deviceID].lastRebootMillisLeftUpdate;
+            Serial.println(devices[deviceID].rebootMillisLeft);
+            //delay(1000);
+        }
+        else
+        { // this executes till end of reboot timer
+            //device is rebooting now - do some stuff to update countdown timers
+            //wait for pi to come back up - do nothing
+            //millis since last update
+            unsigned long millisLapsed = millis() - devices[deviceID].lastRebootMillisLeftUpdate;
 
-			// next subtraction will take us to/over limit
-			if (millisLapsed >= devices[deviceID].rebootMillisLeft)
-			{
-				//zero or neg reached
-				devices[deviceID].rebootMillisLeft = 0;
-				//timerDone = 1;
-			}
-			else
-			{ // ok to do timer subtraction
+            // next subtraction will take us to/over limit
+            if (millisLapsed >= devices[deviceID].rebootMillisLeft)
+            {
+                //zero or neg reached
+                devices[deviceID].rebootMillisLeft = 0;
+                //timerDone = 1;
+            }
+            else
+            { // ok to do timer subtraction
 
-				devices[deviceID].rebootMillisLeft =
-					devices[deviceID].rebootMillisLeft - millisLapsed;
-			}
-			devices[deviceID].lastRebootMillisLeftUpdate = millis();
+                devices[deviceID].rebootMillisLeft =
+                    devices[deviceID].rebootMillisLeft - millisLapsed;
+            }
+            devices[deviceID].lastRebootMillisLeftUpdate = millis();
 
-			// calc if next time subtraction takes it below zero
-			//cant get a neg number from unsigned numbers used
-			if (devices[deviceID].rebootMillisLeft == 0)
-			{ // reboot stuff completed here
-				//if (timerDone == 1) { // reboot stuff completed here
-				devices[deviceID].lastGoodAckMillis = millis();
-				Serial.print(F("Assume Pi back up:"));
-				Serial.println(deviceID);
-				//printD("Assume pi back up");
-				//printD2Str("Assume up:", devices[deviceID].name);
-				devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
-			}
-		}
-	}
+            // calc if next time subtraction takes it below zero
+            //cant get a neg number from unsigned numbers used
+            if (devices[deviceID].rebootMillisLeft == 0)
+            { // reboot stuff completed here
+                //if (timerDone == 1) { // reboot stuff completed here
+                devices[deviceID].lastGoodAckMillis = millis();
+                Serial.print(F("Assume Pi back up:"));
+                Serial.println(deviceID);
+                //printD("Assume pi back up");
+                //printD2Str("Assume up:", devices[deviceID].name);
+                devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
+            }
+        }
+    }
 }
 void checkConnections()
 {
