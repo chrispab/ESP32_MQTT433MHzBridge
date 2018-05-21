@@ -2,10 +2,14 @@
 #include <WiFi.h>
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
-#include <U8g2lib.h>
+//#include <U8g2lib.h>
 #include "DHT.h"
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 #include <RF24.h>
+
+//classes code changes
+#include <Display.h>
+
 
 //forward decs
 void printWifiStatus();
@@ -41,12 +45,12 @@ void powerCycle(int deviceID);
 
 
 //OLED display stuff
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
-#define LINE_HIEGHT 10
-#define XPIX 128
-#define YPIX 64
-#define DISPLAY_LINES 6
-char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
+//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
+// #define LINE_HIEGHT 10
+// #define XPIX 128
+// #define YPIX 64
+// #define DISPLAY_LINES 6
+//char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
 int dispUpdateFreq = 1.5; // how many updates per sec
 
 //DHT22 stuff
@@ -126,17 +130,20 @@ unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 20000;
 char tempStr[17]; // buffer for 16 chars and eos
 
+Display myDisplay;    //create the display object
+
+
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
     Serial.begin(115200);
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
 
-    u8g2.begin();
+    myDisplay.begin();
 
-    displayWriteLine(1, TITLE_LINE1);
-    displayWriteLine(2, TITLE_LINE2);
-    displayWriteLine(3, SW_VERSION);
-    displayRefresh();
+    myDisplay.displayWriteLine(1, TITLE_LINE1);
+    myDisplay.displayWriteLine(2, TITLE_LINE2);
+    myDisplay.displayWriteLine(3, SW_VERSION);
+    myDisplay.displayRefresh();
 
     delay(5000);
 
@@ -193,7 +200,7 @@ void setup()
 
     psclient.loop(); //process any MQTT stuff
     checkConnections();
-    displayWipe();
+    myDisplay.displayWipe();
 }
 
 void loop()
@@ -205,7 +212,7 @@ void loop()
     manageRestarts(0);
     manageRestarts(2);
     updateZoneDisplayLines();
-    displayRefresh();
+    myDisplay.displayRefresh();
 }
 
 void powerCycle(int deviceID)
@@ -222,20 +229,20 @@ int transmitEnable = 1;
 		for (int i = 0; i < 3; i++)
 		{ // turn socket off
 			processZoneMessage();
-			displayRefresh();
+			myDisplay.displayRefresh();
 			transmitter.sendUnit(devices[deviceID].socketID, false);
 		}
 		processZoneMessage();
-		displayRefresh();
+		myDisplay.displayRefresh();
 		delay(1000);
 		processZoneMessage();
-		displayRefresh();
+		myDisplay.displayRefresh();
 		delay(1000);
 		processZoneMessage();
-		displayRefresh();
+		myDisplay.displayRefresh();
 		delay(1000);
 		processZoneMessage();
-		displayRefresh();
+		myDisplay.displayRefresh();
 		// Switch Rxunit on
 		Serial.println(F("sending on"));
 		//printD2Str("Power on :", devices[deviceID].name);
@@ -243,11 +250,11 @@ int transmitEnable = 1;
 		for (int i = 0; i < 3; i++)
 		{ // turn socket back on
 			processZoneMessage();
-			displayRefresh();
+			myDisplay.displayRefresh();
 			transmitter.sendUnit(devices[deviceID].socketID, true);
 		}
 		processZoneMessage();
-		displayRefresh();
+		myDisplay.displayRefresh();
 		//LEDsOff();
 		//beep(1, 2, 1);
 		Serial.println(F("complete"));
@@ -355,38 +362,38 @@ void checkConnections()
 }
 
 //redraw the display with contents of displayLine array
-void displayRefresh(void)
-{
-    // u8g2.begin();
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_8x13_tf);
-    for (int i = 0; i < DISPLAY_LINES; i++)
-    {
-        u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
-    }
-    delay(10);
-    u8g2.sendBuffer();
-}
+// void displayRefresh(void)
+// {
+//     // u8g2.begin();
+//     u8g2.clearBuffer();
+//     u8g2.setFont(u8g2_font_8x13_tf);
+//     for (int i = 0; i < DISPLAY_LINES; i++)
+//     {
+//         u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
+//     }
+//     delay(10);
+//     u8g2.sendBuffer();
+// }
 //redraw the display with contents of displayLine array
-void displayWipe(void)
-{
-    // u8g2.begin();
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_8x13_tf);
-    for (int i = 0; i < DISPLAY_LINES; i++)
-    {
-        strcpy(displayLine[i], " ");
-        u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
-    }
-    delay(10);
-    u8g2.sendBuffer();
-}
+// void displayWipe(void)
+// {
+//     // u8g2.begin();
+//     u8g2.clearBuffer();
+//     u8g2.setFont(u8g2_font_8x13_tf);
+//     for (int i = 0; i < DISPLAY_LINES; i++)
+//     {
+//         strcpy(displayLine[i], " ");
+//         u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
+//     }
+//     delay(10);
+//     u8g2.sendBuffer();
+// }
 //add-update a line of text in the display text buffer
-void displayWriteLine(int lineNumber, const char *lineText)
-{
-    //update a line in the diaplay text buffer
-    strcpy(displayLine[lineNumber - 1], lineText);
-}
+// void displayWriteLine(int lineNumber, const char *lineText)
+// {
+//     //update a line in the diaplay text buffer
+//     strcpy(displayLine[lineNumber - 1], lineText);
+// }
 
 void updateTempDisplay()
 {
@@ -412,7 +419,7 @@ void updateTempDisplay()
         }
         //printO(20, 40, strcat(msgStr, tempStr));
 
-        displayWriteLine(1, strcat(msgStr, tempStr));
+        myDisplay.displayWriteLine(1, strcat(msgStr, tempStr));
 
         Serial.print(F("Temperature: "));
         Serial.println(tempStr);
@@ -501,8 +508,8 @@ void operateSocket(uint8_t socketID, uint8_t state)
         //displayWriteLine(3, "ON");
         strcat(msg, " ON");
     }
-    displayWriteLine(2, msg);
-    displayRefresh();
+    myDisplay.displayWriteLine(2, msg);
+    myDisplay.displayRefresh();
     //delay(10);
     //u8g2.sendBuffer();
 
@@ -522,8 +529,8 @@ void reconnectWiFi()
     //check is psclient is connected first
     // attempt to connect to Wifi network:
     //printO(1, 20, "Connect WiFi..");
-    displayWriteLine(5, "Connect WiFi..");
-    displayRefresh();
+    myDisplay.displayWriteLine(5, "Connect WiFi..");
+    myDisplay.displayRefresh();
 
     while (status != WL_CONNECTED)
     {
@@ -535,8 +542,8 @@ void reconnectWiFi()
         // wait 10 seconds for connection:
         delay(10000);
     }
-    displayWriteLine(5, "Connected WiFi!");
-    displayRefresh();
+    myDisplay.displayWriteLine(5, "Connected WiFi!");
+    myDisplay.displayRefresh();
 }
 
 void reconnectPSClient()
@@ -546,8 +553,8 @@ void reconnectPSClient()
     while (!psclient.connected())
     {
         //printO(1, 20, "Connect MQTT..");
-        displayWriteLine(6, "Connect MQTT..");
-        displayRefresh();
+        myDisplay.displayWriteLine(6, "Connect MQTT..");
+        myDisplay.displayRefresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
         //        if (psclient.connect("ESP32Client","",""))
@@ -559,8 +566,8 @@ void reconnectPSClient()
             // ... and resubscribe
             //psclient.subscribe("inTopic");
             psclient.subscribe(subscribeTopic);
-            displayWriteLine(6, "Connected MQTT!");
-            displayRefresh();
+            myDisplay.displayWriteLine(6, "Connected MQTT!");
+            myDisplay.displayRefresh();
         }
         else
         {
@@ -602,32 +609,32 @@ void printWifiStatus()
     Serial.println(F(" dBm"));
 }
 
-void printO(int x, int y, const char *text)
-{
-    u8g2.begin();
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_8x13_tf);
-    u8g2.drawStr(x, y, text);
-    u8g2.sendBuffer();
-    delay(10);
-}
+// void printO(int x, int y, const char *text)
+// {
+//     u8g2.begin();
+//     u8g2.clearBuffer();
+//     u8g2.setFont(u8g2_font_8x13_tf);
+//     u8g2.drawStr(x, y, text);
+//     u8g2.sendBuffer();
+//     delay(10);
+// }
 
-void printO(const char *message)
-{
-    u8g2.print(message);
-}
+// void printO(const char *message)
+// {
+//     u8g2.print(message);
+// }
 
-void printOWithVal(const char *message, int value)
-{
-    u8g2.print(message);
-    u8g2.print(value);
-}
+// void printOWithVal(const char *message, int value)
+// {
+//     u8g2.print(message);
+//     u8g2.print(value);
+// }
 
-void printO2Str(const char *str1, const char *str2)
-{
-    u8g2.print(str1);
-    u8g2.print(str2);
-}
+// void printO2Str(const char *str1, const char *str2)
+// {
+//     u8g2.print(str1);
+//     u8g2.print(str2);
+// }
 
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
 {
@@ -766,7 +773,7 @@ void updateZoneDisplayLines(void)
                 {
                     strcat(str_output, powerCycleMsg);
                     //printD(str_output);
-                    displayWriteLine(stateCounter + 4, str_output);
+                    myDisplay.displayWriteLine(stateCounter + 4, str_output);
                     //secsLeft = '';
                 }
                 else
@@ -776,7 +783,7 @@ void updateZoneDisplayLines(void)
                     sprintf(buf, "%d", secsLeft);
                     strcat(str_output, buf);
 
-                    displayWriteLine(stateCounter + 4, str_output);
+                    myDisplay.displayWriteLine(stateCounter + 4, str_output);
                 }
             }
             else if ((secsSinceAck > goodSecsMax))
@@ -790,7 +797,7 @@ void updateZoneDisplayLines(void)
 
                 sprintf(buf, "%d", secsSinceAck);
                 strcat(str_output, buf);
-                displayWriteLine(stateCounter + 4, str_output);
+                myDisplay.displayWriteLine(stateCounter + 4, str_output);
                 //badLED();
                 //LEDsOff();
             }
@@ -809,7 +816,7 @@ void updateZoneDisplayLines(void)
                 strcat(str_output, buf);
                 strcat(str_output, ")");
                 //printD(str_output);
-                displayWriteLine(stateCounter + 4, str_output);
+                myDisplay.displayWriteLine(stateCounter + 4, str_output);
                 //goodLED();
             }
         }

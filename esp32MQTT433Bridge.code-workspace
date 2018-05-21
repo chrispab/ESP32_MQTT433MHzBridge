@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"terminal.integrated.env.linux": {
+			"PATH": "/home/chris/.platformio/penv/bin:/home/chris/.platformio/penv:/home/chris/bin:/home/chris/.local/bin:/home/chris/bin:/home/chris/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+			"PLATFORMIO_CALLER": "vscode"
+		}
+	}
+}
