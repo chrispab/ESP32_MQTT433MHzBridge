@@ -110,9 +110,9 @@ struct controller devices[3]; //create an array of 3 controller structures
 //misc stuff
 #define LEDPIN 2 //esp32 devkit on board blue LED
 #define CR Serial.println()
-#define TITLE_LINE1 "MQTT ESP32"
+#define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V1.3"
+#define SW_VERSION "V1.4rf24"
 
 //Global vars
 unsigned long currentMillis = 0;
