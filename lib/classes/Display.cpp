@@ -8,36 +8,10 @@
 #include <RF24.h>
 
 //forward decs
-void printWifiStatus();
-boolean processRequest(String &getLine);
-void sendResponse(WiFiClient client);
-void listenForClients(void);
-void LEDBlink(int LEDPin, int repeatNum);
-void callback(char *topic, byte *payload, unsigned int length);
-void reconnectPSClient();
-void reconnectWiFi();
-void operateSocket(uint8_t socketID, uint8_t state);
-void printO(const char *message);
-void printOWithVal(const char *message, int value);
-void printO2Str(const char *str1, const char *str2);
-void checkConnections(void);
-void updateTempDisplay(void);
-void printO(int x, int y, const char *text);
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
-void processZoneMessage(void);
-int equalID(char *receive_payload, const char *targetID);
-void displayRefresh(void);
-void displayWriteLine(int lineNumber, const char *lineText);
-void resetZoneDevice(int deviceID);
-void updateZoneDisplayLines(void);
-int freeRam(void);
-void printFreeRam(void);
-void displayWipe(void);
-void manageRestarts(int deviceID);
-void powerCycle(int deviceID);
+
 
 //OLED display stuff
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
+//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
 #define LINE_HIEGHT 10
 #define XPIX 128
 #define YPIX 64
@@ -51,8 +25,6 @@ char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
 //DHT dht;
 
 //WiFi settings
-const char ssid[] PROGMEM = "notwork";                              // your network SSID (name)
-const char pass[] PROGMEM = "a new router can solve many problems"; // your network password
 ////int status = WL_IDLE_STATUS;
 
 //MQTT stuff
@@ -62,7 +34,7 @@ const char pass[] PROGMEM = "a new router can solve many problems"; // your netw
 // PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
 
 //433Mhz settings
-#define TX433PIN 32
+//#define TX433PIN 32
 //282830 addr of 16ch remote
 //NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
 //byte socket = 3;
@@ -126,6 +98,9 @@ const char pass[] PROGMEM = "a new router can solve many problems"; // your netw
 
 Display::Display(void)
 {
+    //U8G2_SSD1306_128X64_NONAME_F_HW_I2C 
+    //: U8G2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
+
     //NOP;
     // _address = address;
     // _pin = pin;
@@ -188,27 +163,27 @@ void Display::displayWriteLine(int lineNumber, const char *lineText)
 
 void printO(int x, int y, const char *text)
 {
-    u8g2.begin();
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_8x13_tf);
-    u8g2.drawStr(x, y, text);
-    u8g2.sendBuffer();
+    begin();
+    clearBuffer();
+    setFont(u8g2_font_8x13_tf);
+    drawStr(x, y, text);
+    sendBuffer();
     delay(10);
 }
 
 void printO(const char *message)
 {
-    u8g2.print(message);
+    print(message);
 }
 
 void printOWithVal(const char *message, int value)
 {
-    u8g2.print(message);
-    u8g2.print(value);
+    print(message);
+    print(value);
 }
 
 void printO2Str(const char *str1, const char *str2)
 {
-    u8g2.print(str1);
-    u8g2.print(str2);
+    print(str1);
+    print(str2);
 }
