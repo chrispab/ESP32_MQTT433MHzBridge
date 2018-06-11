@@ -23,8 +23,8 @@ void printO2Str(const char *str1, const char *str2);
 void checkConnections(void);
 void updateTempDisplay(void);
 void printO(int x, int y, const char *text);
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
-void processZoneMessage(void);
+void rf24setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
+void rf24processZoneMessage(void);
 int equalID(char *receive_payload, const char *targetID);
 void displayRefresh(void);
 void displayWriteLine(int lineNumber, const char *lineText);
@@ -36,6 +36,15 @@ void displayWipe(void);
 void manageRestarts(int deviceID);
 void powerCycle(int deviceID);
 void resetDevice(int deviceID);
+
+
+//misc stuff
+#define LEDPIN 2 //esp32 devkit on board blue LED
+#define CR Serial.println()
+#define TITLE_LINE1 "ESP32 MQTT"
+#define TITLE_LINE2 "433Mhz Bridge"
+#define SW_VERSION "V1.8 rf24"
+
 
 
 //OLED display stuff
@@ -60,7 +69,7 @@ int status = WL_IDLE_STATUS;
 //MQTT stuff
 IPAddress mqttserver(192, 168, 0, 200);
 const char subscribeTopic[] PROGMEM = "433Bridge/cmnd/#";
-WiFiClient WiFiEClient;
+WiFiClient WiFiEClient; //wifi client for pubsub MQTT 
 PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
 
 //433Mhz settings
@@ -71,10 +80,10 @@ byte socket = 3;
 bool state = false;
 uint8_t socketNumber = 0;
 
-//// Set up nRF24L01 radio on SPI bus plus pins 7 & 8
+//// Set up nRF24L01 rf24radio on SPI bus plus pins 7 & 8
 #define ce_pin 5
 #define cs_pin 4
-RF24 radio(ce_pin, cs_pin);
+RF24 rf24radio(ce_pin, cs_pin);
 uint8_t writePipeLocS[] PROGMEM = "NodeS";
 uint8_t readPipeLocS[] PROGMEM = "Node0";
 uint8_t writePipeLocC[] PROGMEM = "NodeC";
@@ -105,14 +114,7 @@ struct controller
     unsigned long lastRebootMillisLeftUpdate;
     uint8_t powerCyclesSincePowerOn;
 };
-struct controller devices[3]; //create an array of 3 controller structures
-
-//misc stuff
-#define LEDPIN 2 //esp32 devkit on board blue LED
-#define CR Serial.println()
-#define TITLE_LINE1 "ESP32 MQTT"
-#define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V1.4rf24"
+struct controller devices[3]; //create an array of 3 controller structures. 0,1,2
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -132,8 +134,8 @@ void setup()
     u8g2.begin();
 
     displayWriteLine(1, TITLE_LINE1);
-    displayWriteLine(2, TITLE_LINE2);
-    displayWriteLine(3, SW_VERSION);
+    displayWriteLine(3, TITLE_LINE2);
+    displayWriteLine(5, SW_VERSION);
     displayRefresh();
 
     delay(5000);
@@ -148,19 +150,19 @@ void setup()
     dht.setup(DHTPIN);
 
     //rf24 stuff
-    radio.begin();
+    rf24radio.begin();
     // enable dynamic payloads
-    radio.enableDynamicPayloads();
+    rf24radio.enableDynamicPayloads();
     // optionally, increase the delay between retries & # of retries
-    //radio.setRetries(15, 15);
-    radio.setPALevel(RF24_PA_MAX);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(124);
-    radio.startListening();
-    radio.printDetails();
+    //rf24radio.setRetries(15, 15);
+    rf24radio.setPALevel(RF24_PA_MAX);
+    rf24radio.setDataRate(RF24_250KBPS);
+    rf24radio.setChannel(124);
+    rf24radio.startListening();
+    rf24radio.printDetails();
     // autoACK enabled by default
-    setPipes(writePipeLocC, readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-    radio.startListening();
+    rf24setPipes(writePipeLocC, readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
+    rf24radio.startListening();
 
     //populate the array of controller structs
     for (int i = 0; i < 3; i++)
@@ -199,13 +201,15 @@ void loop()
     psclient.loop();      //process any MQTT stuff
     checkConnections();   // reconnect if reqd
     updateTempDisplay();  //get and display temp
-    processZoneMessage(); //process any zone messages
+    rf24processZoneMessage(); //process any zone messages
     manageRestarts(0);
+    //manageRestarts(1);
     resetDevice(1);
     manageRestarts(2);
     updateZoneDisplayLines();
     displayRefresh();
 }
+
 void resetDevice(int deviceID)
 {
 	devices[deviceID].lastGoodAckMillis = millis();
@@ -223,34 +227,34 @@ void powerCycle(int deviceID)
         Serial.println(F("sending off"));
         //badLED();
         //beep(1, 2, 1);
-        for (int i = 0; i < 3; i++)
+        //for (int i = 0; i < 3; i++)
         { // turn socket off
-            processZoneMessage();
+            rf24processZoneMessage();
             displayRefresh();
             transmitter.sendUnit(devices[deviceID].socketID, false);
         }
-        processZoneMessage();
+        //process any incoming messages while waiting socket to power off
+        rf24processZoneMessage();
         displayRefresh();
         delay(1000);
-        processZoneMessage();
+        rf24processZoneMessage();
         displayRefresh();
         delay(1000);
-        processZoneMessage();
+        rf24processZoneMessage();
         displayRefresh();
         delay(1000);
-        processZoneMessage();
+        rf24processZoneMessage();
         displayRefresh();
         // Switch Rxunit on
         Serial.println(F("sending on"));
         //printD2Str("Power on :", devices[deviceID].name);
-
-        for (int i = 0; i < 3; i++)
+        //for (int i = 0; i < 3; i++)
         { // turn socket back on
-            processZoneMessage();
+            rf24processZoneMessage();
             displayRefresh();
             transmitter.sendUnit(devices[deviceID].socketID, true);
         }
-        processZoneMessage();
+        rf24processZoneMessage();
         displayRefresh();
         //LEDsOff();
         //beep(1, 2, 1);
@@ -317,9 +321,10 @@ void manageRestarts(int deviceID)
             { // reboot stuff completed here
                 //if (timerDone == 1) { // reboot stuff completed here
                 devices[deviceID].lastGoodAckMillis = millis();
-                Serial.print(F("Assume Pi back up:"));
+                Serial.print(F("Assume Zone back up:"));
                 Serial.println(deviceID);
                 //printD("Assume pi back up");
+                //displayWriteLine(7,"Assume Zone back up:")
                 //printD2Str("Assume up:", devices[deviceID].name);
                 devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
             }
@@ -386,6 +391,7 @@ void displayWipe(void)
     u8g2.sendBuffer();
 }
 //add-update a line of text in the display text buffer
+//line 1 is 1st line etc
 void displayWriteLine(int lineNumber, const char *lineText)
 {
     //update a line in the diaplay text buffer
@@ -512,7 +518,7 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
     for (int i = 0; i < 2; i++)
     { // turn socket off
-        //	processZoneMessage();
+        //	rf24processZoneMessage();
         //	displayRefresh();
         transmitter.sendUnit(socketID, state);
     }
@@ -633,22 +639,22 @@ void printO2Str(const char *str1, const char *str2)
     u8g2.print(str2);
 }
 
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
+void rf24setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
 {
-    //config radio to comm with a node
-    radio.stopListening();
-    radio.openWritingPipe(writingPipe);
-    radio.openReadingPipe(1, readingPipe);
+    //config rf24radio to comm with a node
+    rf24radio.stopListening();
+    rf24radio.openWritingPipe(writingPipe);
+    rf24radio.openReadingPipe(1, readingPipe);
 }
 
-void processZoneMessage(void)
+void rf24processZoneMessage(void)
 {
     char messageText[17];
-    while (radio.available())
+    while (rf24radio.available())
     { // Read all available payloads
 
         // Grab the message and process
-        uint8_t len = radio.getDynamicPayloadSize();
+        uint8_t len = rf24radio.getDynamicPayloadSize();
 
         // If a corrupt dynamic payload is received, it will be flushed
         if (!len)
@@ -656,7 +662,7 @@ void processZoneMessage(void)
             return;
         }
 
-        radio.read(receive_payload, len);
+        rf24radio.read(receive_payload, len);
 
         // Put a zero at the end for easy printing
         receive_payload[len] = 0;
@@ -720,7 +726,7 @@ void updateZoneDisplayLines(void)
     //all three lines can be displayed at once
     const char rebootMsg[] PROGMEM = {"Reboot: "};
     const char powerCycleMsg[] PROGMEM = {"Power Cycle"};
-    int stateCounter; // only initialised once at start
+    int deviceID; // only initialised once at start
     static unsigned long lastDispUpdateTimeMillis = 0;
 
     static unsigned long dispUpdateInterval = 1000 / dispUpdateFreq;
@@ -731,7 +737,7 @@ void updateZoneDisplayLines(void)
     char str_output[20] = {0};
     unsigned int secsLeft;
     char buf[17];
-    //Serial.println(stateCounter);
+    //Serial.println(deviceID);
     // this loop
     //create info string for each zone then display it
     //setup disp
@@ -742,20 +748,21 @@ void updateZoneDisplayLines(void)
     if ((millis() - lastDispUpdateTimeMillis) >= dispUpdateInterval)
     { //ready to update?
         //printFreeRam();
-        for (stateCounter = 0; stateCounter < 3; stateCounter++)
+        for (deviceID = 0; deviceID < 3; deviceID++)
         {
-            //Serial.println(stateCounter);
-            secsSinceAck = (millis() - devices[stateCounter].lastGoodAckMillis) / 1000;
+            //Serial.println(deviceID);
+            secsSinceAck = (millis() - devices[deviceID].lastGoodAckMillis) / 1000;
 
-            //u8g2.setCursor(0, ((stateCounter + 1) * 10) + (1 * stateCounter));
-            // make sure check for restarting device
+            //u8g2.setCursor(0, ((deviceID + 1) * 10) + (1 * deviceID));
+
+            // check for restarting zone
             //if so display current secs in wait for reboot cycle
-            if (devices[stateCounter].isRebooting)
+            if (devices[deviceID].isRebooting)
             {
-                secsLeft = (devices[stateCounter].rebootMillisLeft) / 1000UL;
+                secsLeft = (devices[deviceID].rebootMillisLeft) / 1000UL;
 
                 Serial.print(F("--rebootMillisLeft: "));
-                Serial.println((devices[stateCounter].rebootMillisLeft));
+                Serial.println((devices[deviceID].rebootMillisLeft));
 
                 Serial.print(F("--secsLeft var: "));
                 Serial.println(secsLeft);
@@ -763,14 +770,14 @@ void updateZoneDisplayLines(void)
                 //build string to show if cycling or coming back up
                 //char str_output[20] = { 0 }; //, str_two[]="two";
                 //start with device name
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, devices[deviceID].name);
                 strcat(str_output, ": ");
                 //char message[] = " Reboot: ";
-                if (devices[stateCounter].isPowerCycling)
+                if (devices[deviceID].isPowerCycling)
                 {
                     strcat(str_output, powerCycleMsg);
                     //printD(str_output);
-                    displayWriteLine(stateCounter + 4, str_output);
+                    displayWriteLine(deviceID + 4, str_output);
                     //secsLeft = '';
                 }
                 else
@@ -780,44 +787,45 @@ void updateZoneDisplayLines(void)
                     sprintf(buf, "%d", secsLeft);
                     strcat(str_output, buf);
 
-                    displayWriteLine(stateCounter + 4, str_output);
+                    displayWriteLine(deviceID + 4, str_output);
                 }
             }
             else if ((secsSinceAck > goodSecsMax))
             {
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, devices[deviceID].name);
                 strcat(str_output, ": ");
-                strcat(str_output, devices[stateCounter].badStatusMess);
+                strcat(str_output, devices[deviceID].badStatusMess);
                 strcat(str_output, ": ");
 
                 //printDWithVal(str_output, secsSinceAck);
 
                 sprintf(buf, "%d", secsSinceAck);
                 strcat(str_output, buf);
-                displayWriteLine(stateCounter + 4, str_output);
+                displayWriteLine(deviceID + 4, str_output);
                 //badLED();
                 //LEDsOff();
             }
             else
             {
                 //u8g2.print("u");
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, devices[deviceID].name);
                 strcat(str_output, ": ");
-                strcat(str_output, devices[stateCounter].goodStatusMess);
+                strcat(str_output, devices[deviceID].goodStatusMess);
                 //add restarts soince power on
                 strcat(str_output, " (");
 
                 sprintf(buf, "%i",
-                        devices[stateCounter].powerCyclesSincePowerOn);
+                        devices[deviceID].powerCyclesSincePowerOn);
 
                 strcat(str_output, buf);
                 strcat(str_output, ")");
                 //printD(str_output);
-                displayWriteLine(stateCounter + 4, str_output);
+                displayWriteLine(deviceID + 4, str_output);
                 //goodLED();
             }
         }
         lastDispUpdateTimeMillis = millis();
+        displayRefresh();
         //u8g2.sendBuffer();
     }
 }
