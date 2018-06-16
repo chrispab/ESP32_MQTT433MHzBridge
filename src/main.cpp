@@ -10,7 +10,6 @@
 //classes code changes
 #include <Display.h>
 
-
 //forward decs
 void printWifiStatus();
 boolean processRequest(String &getLine);
@@ -21,28 +20,24 @@ void callback(char *topic, byte *payload, unsigned int length);
 void reconnectPSClient();
 void reconnectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
-void printO(const char *message);
-void printOWithVal(const char *message, int value);
-void printO2Str(const char *str1, const char *str2);
+//void printO(const char *message);
+//void printOWithVal(const char *message, int value);
+//void printO2Str(const char *str1, const char *str2);
 void checkConnections(void);
 void updateTempDisplay(void);
-void printO(int x, int y, const char *text);
+//void printO(int x, int y, const char *text);
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 void processZoneMessage(void);
 int equalID(char *receive_payload, const char *targetID);
-void displayRefresh(void);
-void displayWriteLine(int lineNumber, const char *lineText);
+//void refresh(void);
+//void writeLine(int lineNumber, const char *lineText);
 void resetZoneDevice(int deviceID);
 void updateZoneDisplayLines(void);
 int freeRam(void);
 void printFreeRam(void);
-void displayWipe(void);
+//void displayWipe(void);
 void manageRestarts(int deviceID);
 void powerCycle(int deviceID);
-
-
-
-
 
 //OLED display stuff
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
@@ -118,7 +113,7 @@ struct controller devices[3]; //create an array of 3 controller structures
 #define CR Serial.println()
 #define TITLE_LINE1 "MQTT ESP32"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V1.3"
+#define SW_VERSION "V1-oo"
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -130,8 +125,7 @@ unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 20000;
 char tempStr[17]; // buffer for 16 chars and eos
 
-Display myDisplay;    //create the display object
-
+Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); //create the display object
 
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
@@ -140,10 +134,10 @@ void setup()
 
     myDisplay.begin();
 
-    myDisplay.displayWriteLine(1, TITLE_LINE1);
-    myDisplay.displayWriteLine(2, TITLE_LINE2);
-    myDisplay.displayWriteLine(3, SW_VERSION);
-    myDisplay.displayRefresh();
+    myDisplay.writeLine(1, TITLE_LINE1);
+    myDisplay.writeLine(2, TITLE_LINE2);
+    myDisplay.writeLine(3, SW_VERSION);
+    myDisplay.refresh();
 
     delay(5000);
 
@@ -200,7 +194,7 @@ void setup()
 
     psclient.loop(); //process any MQTT stuff
     checkConnections();
-    myDisplay.displayWipe();
+    myDisplay.wipe();
 }
 
 void loop()
@@ -210,124 +204,126 @@ void loop()
     updateTempDisplay();  //get and display temp
     processZoneMessage(); //process any zone messages
     manageRestarts(0);
+    //manageRestarts(1);
+    resetZoneDevice(1);
     manageRestarts(2);
     updateZoneDisplayLines();
-    myDisplay.displayRefresh();
+    myDisplay.refresh();
 }
 
 void powerCycle(int deviceID)
 {
-	//this is a blocking routine so need to keep checking messages and
-	//updating vars etc
-	// but do NOT do manage restarts as could be recursive and call this routine again.
-int transmitEnable = 1;
-	if (transmitEnable == 1)
-	{
-		Serial.println(F("sending off"));
-		//badLED();
-		//beep(1, 2, 1);
-		for (int i = 0; i < 3; i++)
-		{ // turn socket off
-			processZoneMessage();
-			myDisplay.displayRefresh();
-			transmitter.sendUnit(devices[deviceID].socketID, false);
-		}
-		processZoneMessage();
-		myDisplay.displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		myDisplay.displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		myDisplay.displayRefresh();
-		delay(1000);
-		processZoneMessage();
-		myDisplay.displayRefresh();
-		// Switch Rxunit on
-		Serial.println(F("sending on"));
-		//printD2Str("Power on :", devices[deviceID].name);
+    //this is a blocking routine so need to keep checking messages and
+    //updating vars etc
+    // but do NOT do manage restarts as could be recursive and call this routine again.
+    int transmitEnable = 1;
+    if (transmitEnable == 1)
+    {
+        Serial.println(F("sending off"));
+        //badLED();
+        //beep(1, 2, 1);
+        for (int i = 0; i < 3; i++)
+        { // turn socket off
+            processZoneMessage();
+            myDisplay.refresh();
+            transmitter.sendUnit(devices[deviceID].socketID, false);
+        }
+        processZoneMessage();
+        myDisplay.refresh();
+        delay(1000);
+        processZoneMessage();
+        myDisplay.refresh();
+        delay(1000);
+        processZoneMessage();
+        myDisplay.refresh();
+        delay(1000);
+        processZoneMessage();
+        myDisplay.refresh();
+        // Switch Rxunit on
+        Serial.println(F("sending on"));
+        //printD2Str("Power on :", devices[deviceID].name);
 
-		for (int i = 0; i < 3; i++)
-		{ // turn socket back on
-			processZoneMessage();
-			myDisplay.displayRefresh();
-			transmitter.sendUnit(devices[deviceID].socketID, true);
-		}
-		processZoneMessage();
-		myDisplay.displayRefresh();
-		//LEDsOff();
-		//beep(1, 2, 1);
-		Serial.println(F("complete"));
-	}
-	else
-	{
-		Serial.println(F("not transmitting"));
-	}
+        for (int i = 0; i < 3; i++)
+        { // turn socket back on
+            processZoneMessage();
+            myDisplay.refresh();
+            transmitter.sendUnit(devices[deviceID].socketID, true);
+        }
+        processZoneMessage();
+        myDisplay.refresh();
+        //LEDsOff();
+        //beep(1, 2, 1);
+        Serial.println(F("complete"));
+    }
+    else
+    {
+        Serial.println(F("not transmitting"));
+    }
 }
 //check a unit and see if restart reqd
 void manageRestarts(int deviceID)
 {
-	// now check if need to reboot a device
-	if ((millis() - devices[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
-	{ // over time limit so reboot first time in then just upadte time each other time
+    // now check if need to reboot a device
+    if ((millis() - devices[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
+    { // over time limit so reboot first time in then just upadte time each other time
 
-		//printFreeRam();
-		if (devices[deviceID].isRebooting == 0)
-		{ // all this done first time triggered
-			//printD("Reboot : ");
+        //printFreeRam();
+        if (devices[deviceID].isRebooting == 0)
+        { // all this done first time triggered
+            //printD("Reboot : ");
 
-			devices[deviceID].isRebooting = 1; //signal device is rebooting
+            devices[deviceID].isRebooting = 1; //signal device is rebooting
 
-			devices[deviceID].isPowerCycling = 1; // signal in power cycle
+            devices[deviceID].isPowerCycling = 1; // signal in power cycle
 
-			powerCycle(deviceID);
+            powerCycle(deviceID);
 
-			devices[deviceID].isPowerCycling = 0; // signal in power cycle
-			devices[deviceID].powerCyclesSincePowerOn++;
-			devices[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
-			devices[deviceID].lastRebootMillisLeftUpdate = millis();
+            devices[deviceID].isPowerCycling = 0; // signal in power cycle
+            devices[deviceID].powerCyclesSincePowerOn++;
+            devices[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
+            devices[deviceID].lastRebootMillisLeftUpdate = millis();
 
-			Serial.println("triggered reboot in manage reboots");
+            Serial.println("triggered reboot in manage reboots");
 
-			Serial.println(devices[deviceID].rebootMillisLeft);
-			//delay(1000);
-		}
-		else
-		{ // this executes till end of reboot timer
-			//device is rebooting now - do some stuff to update countdown timers
-			//wait for pi to come back up - do nothing
-			//millis since last update
-			unsigned long millisLapsed = millis() - devices[deviceID].lastRebootMillisLeftUpdate;
+            Serial.println(devices[deviceID].rebootMillisLeft);
+            //delay(1000);
+        }
+        else
+        { // this executes till end of reboot timer
+            //device is rebooting now - do some stuff to update countdown timers
+            //wait for pi to come back up - do nothing
+            //millis since last update
+            unsigned long millisLapsed = millis() - devices[deviceID].lastRebootMillisLeftUpdate;
 
-			// next subtraction will take us to/over limit
-			if (millisLapsed >= devices[deviceID].rebootMillisLeft)
-			{
-				//zero or neg reached
-				devices[deviceID].rebootMillisLeft = 0;
-				//timerDone = 1;
-			}
-			else
-			{ // ok to do timer subtraction
+            // next subtraction will take us to/over limit
+            if (millisLapsed >= devices[deviceID].rebootMillisLeft)
+            {
+                //zero or neg reached
+                devices[deviceID].rebootMillisLeft = 0;
+                //timerDone = 1;
+            }
+            else
+            { // ok to do timer subtraction
 
-				devices[deviceID].rebootMillisLeft =
-					devices[deviceID].rebootMillisLeft - millisLapsed;
-			}
-			devices[deviceID].lastRebootMillisLeftUpdate = millis();
+                devices[deviceID].rebootMillisLeft =
+                    devices[deviceID].rebootMillisLeft - millisLapsed;
+            }
+            devices[deviceID].lastRebootMillisLeftUpdate = millis();
 
-			// calc if next time subtraction takes it below zero
-			//cant get a neg number from unsigned numbers used
-			if (devices[deviceID].rebootMillisLeft == 0)
-			{ // reboot stuff completed here
-				//if (timerDone == 1) { // reboot stuff completed here
-				devices[deviceID].lastGoodAckMillis = millis();
-				Serial.print(F("Assume Pi back up:"));
-				Serial.println(deviceID);
-				//printD("Assume pi back up");
-				//printD2Str("Assume up:", devices[deviceID].name);
-				devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
-			}
-		}
-	}
+            // calc if next time subtraction takes it below zero
+            //cant get a neg number from unsigned numbers used
+            if (devices[deviceID].rebootMillisLeft == 0)
+            { // reboot stuff completed here
+                //if (timerDone == 1) { // reboot stuff completed here
+                devices[deviceID].lastGoodAckMillis = millis();
+                Serial.print(F("Assume Pi back up:"));
+                Serial.println(deviceID);
+                //printD("Assume pi back up");
+                //printD2Str("Assume up:", devices[deviceID].name);
+                devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
+            }
+        }
+    }
 }
 void checkConnections()
 {
@@ -362,7 +358,7 @@ void checkConnections()
 }
 
 //redraw the display with contents of displayLine array
-// void displayRefresh(void)
+// void refresh(void)
 // {
 //     // u8g2.begin();
 //     u8g2.clearBuffer();
@@ -389,7 +385,7 @@ void checkConnections()
 //     u8g2.sendBuffer();
 // }
 //add-update a line of text in the display text buffer
-// void displayWriteLine(int lineNumber, const char *lineText)
+// void writeLine(int lineNumber, const char *lineText)
 // {
 //     //update a line in the diaplay text buffer
 //     strcpy(displayLine[lineNumber - 1], lineText);
@@ -419,7 +415,7 @@ void updateTempDisplay()
         }
         //printO(20, 40, strcat(msgStr, tempStr));
 
-        myDisplay.displayWriteLine(1, strcat(msgStr, tempStr));
+        myDisplay.writeLine(1, strcat(msgStr, tempStr));
 
         Serial.print(F("Temperature: "));
         Serial.println(tempStr);
@@ -499,24 +495,24 @@ void operateSocket(uint8_t socketID, uint8_t state)
     if (state == 0)
     {
         //u8g2.print("OFF");
-        //displayWriteLine(3, "OFF");
+        //writeLine(3, "OFF");
         strcat(msg, " OFF");
     }
     else
     {
         //u8g2.print("ON");
-        //displayWriteLine(3, "ON");
+        //writeLine(3, "ON");
         strcat(msg, " ON");
     }
-    myDisplay.displayWriteLine(2, msg);
-    myDisplay.displayRefresh();
+    myDisplay.writeLine(2, msg);
+    myDisplay.refresh();
     //delay(10);
     //u8g2.sendBuffer();
 
     for (int i = 0; i < 2; i++)
     { // turn socket off
         //	processZoneMessage();
-        //	displayRefresh();
+        //	refresh();
         transmitter.sendUnit(socketID, state);
     }
 
@@ -529,8 +525,8 @@ void reconnectWiFi()
     //check is psclient is connected first
     // attempt to connect to Wifi network:
     //printO(1, 20, "Connect WiFi..");
-    myDisplay.displayWriteLine(5, "Connect WiFi..");
-    myDisplay.displayRefresh();
+    myDisplay.writeLine(5, "Connect WiFi..");
+    myDisplay.refresh();
 
     while (status != WL_CONNECTED)
     {
@@ -542,8 +538,8 @@ void reconnectWiFi()
         // wait 10 seconds for connection:
         delay(10000);
     }
-    myDisplay.displayWriteLine(5, "Connected WiFi!");
-    myDisplay.displayRefresh();
+    myDisplay.writeLine(5, "Connected WiFi!");
+    myDisplay.refresh();
 }
 
 void reconnectPSClient()
@@ -553,8 +549,8 @@ void reconnectPSClient()
     while (!psclient.connected())
     {
         //printO(1, 20, "Connect MQTT..");
-        myDisplay.displayWriteLine(6, "Connect MQTT..");
-        myDisplay.displayRefresh();
+        myDisplay.writeLine(6, "Connect MQTT..");
+        myDisplay.refresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
         //        if (psclient.connect("ESP32Client","",""))
@@ -566,8 +562,8 @@ void reconnectPSClient()
             // ... and resubscribe
             //psclient.subscribe("inTopic");
             psclient.subscribe(subscribeTopic);
-            myDisplay.displayWriteLine(6, "Connected MQTT!");
-            myDisplay.displayRefresh();
+            myDisplay.writeLine(6, "Connected MQTT!");
+            myDisplay.refresh();
         }
         else
         {
@@ -694,7 +690,7 @@ void processZoneMessage(void)
             //LEDsOff();
             strcpy(messageText, "NO MATCH");
         }
-        //displayWriteLine(6, messageText);
+        //writeLine(6, messageText);
     }
 }
 
@@ -773,7 +769,7 @@ void updateZoneDisplayLines(void)
                 {
                     strcat(str_output, powerCycleMsg);
                     //printD(str_output);
-                    myDisplay.displayWriteLine(stateCounter + 4, str_output);
+                    myDisplay.writeLine(stateCounter + 4, str_output);
                     //secsLeft = '';
                 }
                 else
@@ -783,7 +779,7 @@ void updateZoneDisplayLines(void)
                     sprintf(buf, "%d", secsLeft);
                     strcat(str_output, buf);
 
-                    myDisplay.displayWriteLine(stateCounter + 4, str_output);
+                    myDisplay.writeLine(stateCounter + 4, str_output);
                 }
             }
             else if ((secsSinceAck > goodSecsMax))
@@ -797,7 +793,7 @@ void updateZoneDisplayLines(void)
 
                 sprintf(buf, "%d", secsSinceAck);
                 strcat(str_output, buf);
-                myDisplay.displayWriteLine(stateCounter + 4, str_output);
+                myDisplay.writeLine(stateCounter + 4, str_output);
                 //badLED();
                 //LEDsOff();
             }
@@ -816,7 +812,7 @@ void updateZoneDisplayLines(void)
                 strcat(str_output, buf);
                 strcat(str_output, ")");
                 //printD(str_output);
-                myDisplay.displayWriteLine(stateCounter + 4, str_output);
+                myDisplay.writeLine(stateCounter + 4, str_output);
                 //goodLED();
             }
         }

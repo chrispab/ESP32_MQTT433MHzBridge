@@ -9,14 +9,13 @@
 
 //forward decs
 
-
 //OLED display stuff
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
 #define LINE_HIEGHT 10
 #define XPIX 128
 #define YPIX 64
 #define DISPLAY_LINES 6
-char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
+char displayLine[6][17]; //6 lines of 16 chars +eol for dispaly store
 //int dispUpdateFreq = 1.5; // how many updates per sec
 
 //DHT22 stuff
@@ -78,11 +77,11 @@ char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
 // struct controller devices[3]; //create an array of 3 controller structures
 
 //misc stuff
-#define LEDPIN 2 //esp32 devkit on board blue LED
-#define CR Serial.println()
+// #define LEDPIN 2 //esp32 devkit on board blue LED
+// #define CR Serial.println()
 #define TITLE_LINE1 "MQTT ESP32"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V1.3"
+#define SW_VERSION "V1-oo"
 
 //Global vars
 // unsigned long currentMillis = 0;
@@ -96,18 +95,21 @@ char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
 
 #include "Display.h"
 
-Display::Display(void)
+// Display::Display(void)
+// {
+//     //U8G2_SSD1306_128X64_NONAME_F_HW_I2C
+//     //: U8G2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
+
+//     // pinMode(_pin, OUTPUT);
+// }
+//Display::Display(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE, uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE)
+//: U8G2(){}
+
+Display::Display(const u8g2_cb_t *rotation, uint8_t reset, uint8_t clock, uint8_t data )
+    : U8G2()
 {
-    //U8G2_SSD1306_128X64_NONAME_F_HW_I2C 
-    //: U8G2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
-
-    //NOP;
-    // _address = address;
-    // _pin = pin;
-    // _periodusec = periodusec;
-    // _repeats = (1 << repeats) - 1; // I.e. _repeats = 2^repeats - 1
-
-    // pinMode(_pin, OUTPUT);
+    u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);
+    u8x8_SetPin_HW_I2C(getU8x8(), reset, clock, data);
 }
 
 void Display::setup()
@@ -115,20 +117,20 @@ void Display::setup()
 
     begin();
 
-    displayWriteLine(1, TITLE_LINE1);
-    displayWriteLine(2, TITLE_LINE2);
-    displayWriteLine(3, SW_VERSION);
-    displayRefresh();
+    this->writeLine(1, TITLE_LINE1);
+    this->writeLine(2, TITLE_LINE2);
+    this->writeLine(3, SW_VERSION);
+    refresh();
 
     delay(5000);
 
     //psclient.loop(); //process any MQTT stuff
     //checkConnections();
-    displayWipe();
+    wipe();
 }
 
 //redraw the display with contents of displayLine array
-void Display::displayRefresh(void)
+void Display::refresh(void)
 {
     // u8g2.begin();
     clearBuffer();
@@ -141,7 +143,7 @@ void Display::displayRefresh(void)
     sendBuffer();
 }
 //redraw the display with contents of displayLine array
-void Display::displayWipe(void)
+void Display::wipe(void)
 {
     // u8g2.begin();
     clearBuffer();
@@ -155,13 +157,13 @@ void Display::displayWipe(void)
     sendBuffer();
 }
 //add-update a line of text in the display text buffer
-void Display::displayWriteLine(int lineNumber, const char *lineText)
+void Display::writeLine(int lineNumber, const char *lineText)
 {
     //update a line in the diaplay text buffer
     strcpy(displayLine[lineNumber - 1], lineText);
 }
 
-void printO(int x, int y, const char *text)
+void Display::printO(int x, int y, const char *text)
 {
     begin();
     clearBuffer();
@@ -171,19 +173,19 @@ void printO(int x, int y, const char *text)
     delay(10);
 }
 
-void printO(const char *message)
+void Display::printO(const char *message)
 {
-    print(message);
+    this->print(message);
 }
 
-void printOWithVal(const char *message, int value)
+void Display::printOWithVal(const char *message, int value)
 {
-    print(message);
-    print(value);
+    this->print(message);
+    this->print(value);
 }
 
-void printO2Str(const char *str1, const char *str2)
+void Display::printO2Str(const char *str1, const char *str2)
 {
-    print(str1);
-    print(str2);
+    this->print(str1);
+    this->print(str2);
 }
