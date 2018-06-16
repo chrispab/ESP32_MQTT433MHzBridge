@@ -40,12 +40,7 @@ void manageRestarts(int deviceID);
 void powerCycle(int deviceID);
 
 //OLED display stuff
-//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); // ESP32 Thing, HW I2C with pin remapping
-// #define LINE_HIEGHT 10
-// #define XPIX 128
-// #define YPIX 64
-// #define DISPLAY_LINES 6
-//char displayLine[6][17];  //6 lines of 16 chars +eol for dispaly store
+
 int dispUpdateFreq = 1.5; // how many updates per sec
 
 //DHT22 stuff
@@ -113,7 +108,7 @@ struct controller devices[3]; //create an array of 3 controller structures
 #define CR Serial.println()
 #define TITLE_LINE1 "MQTT ESP32"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V1-oo"
+#define SW_VERSION "V2.0-oo"
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -135,8 +130,8 @@ void setup()
     myDisplay.begin();
 
     myDisplay.writeLine(1, TITLE_LINE1);
-    myDisplay.writeLine(2, TITLE_LINE2);
-    myDisplay.writeLine(3, SW_VERSION);
+    myDisplay.writeLine(3, TITLE_LINE2);
+    myDisplay.writeLine(5, SW_VERSION);
     myDisplay.refresh();
 
     delay(5000);
