@@ -9,6 +9,7 @@
 
 //classes code changes
 #include <Display.h>
+#include "ZoneController.h"
 
 //forward decs
 void printWifiStatus();
@@ -27,21 +28,21 @@ void checkConnections(void);
 void updateTempDisplay(void);
 //void printO(int x, int y, const char *text);
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
-void processZoneMessage(void);
+void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
 //void refresh(void);
 //void writeLine(int lineNumber, const char *lineText);
-void resetZoneDevice(int deviceID);
+//void resetZoneDevice(int deviceID);
 void updateZoneDisplayLines(void);
 int freeRam(void);
 void printFreeRam(void);
 //void displayWipe(void);
-void manageRestarts(int deviceID);
-void powerCycle(int deviceID);
+//void manageRestarts(int deviceID);
+//void powerCycle(int deviceID);
 
 //OLED display stuff
 
-int dispUpdateFreq = 1.5; // how many updates per sec
+static const int dispUpdateFreq = 1.5; // how many updates per sec
 
 //DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -63,14 +64,16 @@ PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
 #define TX433PIN 32
 //282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
+
+
 byte socket = 3;
 bool state = false;
 uint8_t socketNumber = 0;
 
-//// Set up nRF24L01 radio on SPI bus plus pins 7 & 8
+//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 #define ce_pin 5
 #define cs_pin 4
-RF24 radio(ce_pin, cs_pin);
+RF24 rf24Radio(ce_pin, cs_pin);
 uint8_t writePipeLocS[] PROGMEM = "NodeS";
 uint8_t readPipeLocS[] PROGMEM = "Node0";
 uint8_t writePipeLocC[] PROGMEM = "NodeC";
@@ -85,30 +88,31 @@ static unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max millisce
 static unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 
 // define a struct for each controller instance with related vars
-struct controller
-{
-    uint8_t id_number;
-    uint8_t zone;
-    uint8_t socketID;
-    unsigned long lastGoodAckMillis;
-    char name[4];
-    char heartBeatText[4];   // allow enough space for text plus 1 extra for null terminator
-    char badStatusMess[10];  // enough for 1 line on display
-    char goodStatusMess[10]; // enough for 1 line on display
-    bool isRebooting;        //indicate if booting up
-    bool isPowerCycling;     //indicate if power cycling
-    unsigned long rebootMillisLeft;
-    unsigned long lastRebootMillisLeftUpdate;
-    uint8_t powerCyclesSincePowerOn;
-};
-struct controller devices[3]; //create an array of 3 controller structures
+// struct controller
+// {
+//     uint8_t id_number;
+//     uint8_t zone;
+//     uint8_t socketID;
+//     unsigned long lastGoodAckMillis;
+//     char name[4];
+//     char heartBeatText[4];   // allow enough space for text plus 1 extra for null terminator
+//     char badStatusMess[10];  // enough for 1 line on display
+//     char goodStatusMess[10]; // enough for 1 line on display
+//     bool isRebooting;        //indicate if booting up
+//     bool isPowerCycling;     //indicate if power cycling
+//     unsigned long rebootMillisLeft;
+//     unsigned long lastRebootMillisLeftUpdate;
+//     uint8_t powerCyclesSincePowerOn;
+// };
+//struct controller ZCs[3]; //create an array of 3 controller structures
 
 //misc stuff
 #define LEDPIN 2 //esp32 devkit on board blue LED
 #define CR Serial.println()
-#define TITLE_LINE1 "MQTT ESP32"
+#define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define SW_VERSION "V2.0-oo"
+#define TITLE_LINE3 "Wireless Zone Dog"
+#define SW_VERSION "V2.1-oo"
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -120,20 +124,28 @@ unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 20000;
 char tempStr[17]; // buffer for 16 chars and eos
 
+//create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); //create the display object
+ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"), ZoneController(1, 4, "CNV", "CCC"), ZoneController(2, 15, "SHD", "SSS")} ;
+
+// ZoneController zone0(0, 14, "GRG", "GGG");
+// ZCs[0] = zone0;
+// ZCs[1] = ZoneController zone1(1, 4, "CNV", "CCC");
+// ZCs[2] = ZoneController zone2(2, 15, "SHD", "SSS");
 
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
     Serial.begin(115200);
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
 
+    //setup OLED display
     myDisplay.begin();
-
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(3, TITLE_LINE2);
+    myDisplay.writeLine(4, TITLE_LINE3);
+    
     myDisplay.writeLine(5, SW_VERSION);
     myDisplay.refresh();
-
     delay(5000);
 
     //WiFi.begin();
@@ -146,46 +158,50 @@ void setup()
     dht.setup(DHTPIN);
 
     //rf24 stuff
-    radio.begin();
+    rf24Radio.begin();
     // enable dynamic payloads
-    radio.enableDynamicPayloads();
+    rf24Radio.enableDynamicPayloads();
     // optionally, increase the delay between retries & # of retries
-    //radio.setRetries(15, 15);
-    radio.setPALevel(RF24_PA_MAX);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setChannel(124);
-    radio.startListening();
-    radio.printDetails();
+    //rf24Radio.setRetries(15, 15);
+    rf24Radio.setPALevel(RF24_PA_MAX);
+    rf24Radio.setDataRate(RF24_250KBPS);
+    rf24Radio.setChannel(124);
+    rf24Radio.startListening();
+    rf24Radio.printDetails();
     // autoACK enabled by default
     setPipes(writePipeLocC, readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-    radio.startListening();
+    rf24Radio.startListening();
 
-    //populate the array of controller structs
-    for (int i = 0; i < 3; i++)
-    {
-        devices[i].id_number = i; //0 to 2
-        devices[i].zone = i + 1;  //1 to 3
-        devices[i].lastGoodAckMillis = millis();
-        devices[i].isRebooting = 0;
-        devices[i].isPowerCycling = 0;
-        devices[i].rebootMillisLeft = 0;
-        devices[i].lastRebootMillisLeftUpdate = millis();
-        devices[i].powerCyclesSincePowerOn = 0;
-        strcpy(devices[i].badStatusMess, "Away");
-        strcpy(devices[i].goodStatusMess, "OK");
-    }
-    // individual stuff
-    devices[0].socketID = 14;
-    strcpy(devices[0].name, "GRG");
-    strcpy(devices[0].heartBeatText, "GGG");
+    // //create zone controller objects
+    // //populate the array of controller structs
+    // for (int i = 0; i < 3; i++)
+    // {
 
-    devices[1].socketID = 4;
-    strcpy(devices[1].name, "CNV");
-    strcpy(devices[1].heartBeatText, "CCC");
+    //     ZCs[i].id_number = i; //0 to 2
+    //     ZCs[i].zone = i + 1;  //1 to 3
+    //     ZCs[i].lastGoodAckMillis = millis();
+    //     ZCs[i].isRebooting = 0;
+    //     ZCs[i].isPowerCycling = 0;
+    //     ZCs[i].rebootMillisLeft = 0;
+    //     ZCs[i].lastRebootMillisLeftUpdate = millis();
+    //     ZCs[i].powerCyclesSincePowerOn = 0;
+    //     strcpy(ZCs[i].badStatusMess, "Away");
+    //     strcpy(ZCs[i].goodStatusMess, "OK");
+    // }
+    // // individual stuff
+    // ZCs[0].socketID = 14;
+    // strcpy(ZCs[0].name, "GRG");
+    // strcpy(ZCs[0].heartBeatText, "GGG");
 
-    devices[2].socketID = 15;
-    strcpy(devices[2].name, "SHD");
-    strcpy(devices[2].heartBeatText, "SSS");
+    // ZCs[1].socketID = 4;
+    // strcpy(ZCs[1].name, "CNV");
+    // strcpy(ZCs[1].heartBeatText, "CCC");
+
+    // ZCs[2].socketID = 15;
+    // strcpy(ZCs[2].name, "SHD");
+    // strcpy(ZCs[2].heartBeatText, "SSS");
+
+    //setup zone controller objects
 
     psclient.loop(); //process any MQTT stuff
     checkConnections();
@@ -194,132 +210,135 @@ void setup()
 
 void loop()
 {
-    psclient.loop();      //process any MQTT stuff
-    checkConnections();   // reconnect if reqd
-    updateTempDisplay();  //get and display temp
-    processZoneMessage(); //process any zone messages
-    manageRestarts(0);
+    psclient.loop();          //process any MQTT stuff
+    checkConnections();       // reconnect if reqd
+    updateTempDisplay();      //get and display temp
+    processZoneRF24Message(); //process any zone messages
+    ZCs[0].manageRestarts(transmitter);
     //manageRestarts(1);
-    resetZoneDevice(1);
-    manageRestarts(2);
+    ZCs[1].resetZoneDevice();
+    //manageRestarts(2);
+    ZCs[2].manageRestarts(transmitter);
+
     updateZoneDisplayLines();
     myDisplay.refresh();
 }
 
-void powerCycle(int deviceID)
-{
-    //this is a blocking routine so need to keep checking messages and
-    //updating vars etc
-    // but do NOT do manage restarts as could be recursive and call this routine again.
-    int transmitEnable = 1;
-    if (transmitEnable == 1)
-    {
-        Serial.println(F("sending off"));
-        //badLED();
-        //beep(1, 2, 1);
-        for (int i = 0; i < 3; i++)
-        { // turn socket off
-            processZoneMessage();
-            myDisplay.refresh();
-            transmitter.sendUnit(devices[deviceID].socketID, false);
-        }
-        processZoneMessage();
-        myDisplay.refresh();
-        delay(1000);
-        processZoneMessage();
-        myDisplay.refresh();
-        delay(1000);
-        processZoneMessage();
-        myDisplay.refresh();
-        delay(1000);
-        processZoneMessage();
-        myDisplay.refresh();
-        // Switch Rxunit on
-        Serial.println(F("sending on"));
-        //printD2Str("Power on :", devices[deviceID].name);
+// void powerCycle(int deviceID)
+// {
+//     //this is a blocking routine so need to keep checking messages and
+//     //updating vars etc
+//     // but do NOT do manage restarts as could be recursive and call this routine again.
+//     int transmitEnable = 1;
+//     if (transmitEnable == 1)
+//     {
+//         Serial.println(F("sending off"));
+//         //badLED();
+//         //beep(1, 2, 1);
+//         for (int i = 0; i < 3; i++)
+//         { // turn socket off
+//             processZoneRF24Message();
+//             myDisplay.refresh();
+//             transmitter.sendUnit(ZCs[deviceID].socketID, false);
+//         }
+//         processZoneRF24Message();
+//         myDisplay.refresh();
+//         delay(1000);
+//         processZoneRF24Message();
+//         myDisplay.refresh();
+//         delay(1000);
+//         processZoneRF24Message();
+//         myDisplay.refresh();
+//         delay(1000);
+//         processZoneRF24Message();
+//         myDisplay.refresh();
+//         // Switch Rxunit on
+//         Serial.println(F("sending on"));
+//         //printD2Str("Power on :", ZCs[deviceID].name);
 
-        for (int i = 0; i < 3; i++)
-        { // turn socket back on
-            processZoneMessage();
-            myDisplay.refresh();
-            transmitter.sendUnit(devices[deviceID].socketID, true);
-        }
-        processZoneMessage();
-        myDisplay.refresh();
-        //LEDsOff();
-        //beep(1, 2, 1);
-        Serial.println(F("complete"));
-    }
-    else
-    {
-        Serial.println(F("not transmitting"));
-    }
-}
-//check a unit and see if restart reqd
-void manageRestarts(int deviceID)
-{
-    // now check if need to reboot a device
-    if ((millis() - devices[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
-    { // over time limit so reboot first time in then just upadte time each other time
+//         for (int i = 0; i < 3; i++)
+//         { // turn socket back on
+//             processZoneRF24Message();
+//             myDisplay.refresh();
+//             transmitter.sendUnit(ZCs[deviceID].socketID, true);
+//         }
+//         processZoneRF24Message();
+//         myDisplay.refresh();
+//         //LEDsOff();
+//         //beep(1, 2, 1);
+//         Serial.println(F("complete"));
+//     }
+//     else
+//     {
+//         Serial.println(F("not transmitting"));
+//     }
+// }
+// //check a unit and see if restart reqd
+// void manageRestarts(int deviceID)
+// {
+//     // now check if need to reboot a device
+//     if ((millis() - ZCs[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
+//     { // over time limit so reboot first time in then just upadte time each other time
 
-        //printFreeRam();
-        if (devices[deviceID].isRebooting == 0)
-        { // all this done first time triggered
-            //printD("Reboot : ");
+//         //printFreeRam();
+//         if (ZCs[deviceID].isRebooting == 0)
+//         { // all this done first time triggered
+//             //printD("Reboot : ");
 
-            devices[deviceID].isRebooting = 1; //signal device is rebooting
+//             ZCs[deviceID].isRebooting = 1; //signal device is rebooting
 
-            devices[deviceID].isPowerCycling = 1; // signal in power cycle
+//             ZCs[deviceID].isPowerCycling = 1; // signal in power cycle
 
-            powerCycle(deviceID);
+//             powerCycle(deviceID);
 
-            devices[deviceID].isPowerCycling = 0; // signal in power cycle
-            devices[deviceID].powerCyclesSincePowerOn++;
-            devices[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
-            devices[deviceID].lastRebootMillisLeftUpdate = millis();
+//             ZCs[deviceID].isPowerCycling = 0; // signal in power cycle
+//             ZCs[deviceID].powerCyclesSincePowerOn++;
+//             ZCs[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
+//             ZCs[deviceID].lastRebootMillisLeftUpdate = millis();
 
-            Serial.println("triggered reboot in manage reboots");
+//             Serial.println("triggered reboot in manage reboots");
 
-            Serial.println(devices[deviceID].rebootMillisLeft);
-            //delay(1000);
-        }
-        else
-        { // this executes till end of reboot timer
-            //device is rebooting now - do some stuff to update countdown timers
-            //wait for pi to come back up - do nothing
-            //millis since last update
-            unsigned long millisLapsed = millis() - devices[deviceID].lastRebootMillisLeftUpdate;
+//             Serial.println(ZCs[deviceID].rebootMillisLeft);
+//             //delay(1000);
+//         }
+//         else
+//         { // this executes till end of reboot timer
+//             //device is rebooting now - do some stuff to update countdown timers
+//             //wait for pi to come back up - do nothing
+//             //millis since last update
+//             unsigned long millisLapsed = millis() - ZCs[deviceID].lastRebootMillisLeftUpdate;
 
-            // next subtraction will take us to/over limit
-            if (millisLapsed >= devices[deviceID].rebootMillisLeft)
-            {
-                //zero or neg reached
-                devices[deviceID].rebootMillisLeft = 0;
-                //timerDone = 1;
-            }
-            else
-            { // ok to do timer subtraction
+//             // next subtraction will take us to/over limit
+//             if (millisLapsed >= ZCs[deviceID].rebootMillisLeft)
+//             {
+//                 //zero or neg reached
+//                 ZCs[deviceID].rebootMillisLeft = 0;
+//                 //timerDone = 1;
+//             }
+//             else
+//             { // ok to do timer subtraction
 
-                devices[deviceID].rebootMillisLeft =
-                    devices[deviceID].rebootMillisLeft - millisLapsed;
-            }
-            devices[deviceID].lastRebootMillisLeftUpdate = millis();
+//                 ZCs[deviceID].rebootMillisLeft =
+//                     ZCs[deviceID].rebootMillisLeft - millisLapsed;
+//             }
+//             ZCs[deviceID].lastRebootMillisLeftUpdate = millis();
 
-            // calc if next time subtraction takes it below zero
-            //cant get a neg number from unsigned numbers used
-            if (devices[deviceID].rebootMillisLeft == 0)
-            { // reboot stuff completed here
-                //if (timerDone == 1) { // reboot stuff completed here
-                devices[deviceID].lastGoodAckMillis = millis();
-                Serial.print(F("Assume Pi back up:"));
-                Serial.println(deviceID);
-                //printD("Assume pi back up");
-                //printD2Str("Assume up:", devices[deviceID].name);
-                devices[deviceID].isRebooting = 0; //signal device has stopped rebooting
-            }
-        }
-    }
-}
+//             // calc if next time subtraction takes it below zero
+//             //cant get a neg number from unsigned numbers used
+//             if (ZCs[deviceID].rebootMillisLeft == 0)
+//             { // reboot stuff completed here
+//                 //if (timerDone == 1) { // reboot stuff completed here
+//                 ZCs[deviceID].lastGoodAckMillis = millis();
+//                 Serial.print(F("Assume Pi back up:"));
+//                 Serial.println(deviceID);
+//                 //printD("Assume pi back up");
+//                 //printD2Str("Assume up:", ZCs[deviceID].name);
+//                 ZCs[deviceID].isRebooting = 0; //signal device has stopped rebooting
+//             }
+//         }
+//     }
+// }
+
 void checkConnections()
 {
     currentMillis = millis();
@@ -351,40 +370,6 @@ void checkConnections()
         previousConnCheckMillis = currentMillis;
     }
 }
-
-//redraw the display with contents of displayLine array
-// void refresh(void)
-// {
-//     // u8g2.begin();
-//     u8g2.clearBuffer();
-//     u8g2.setFont(u8g2_font_8x13_tf);
-//     for (int i = 0; i < DISPLAY_LINES; i++)
-//     {
-//         u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
-//     }
-//     delay(10);
-//     u8g2.sendBuffer();
-// }
-//redraw the display with contents of displayLine array
-// void displayWipe(void)
-// {
-//     // u8g2.begin();
-//     u8g2.clearBuffer();
-//     u8g2.setFont(u8g2_font_8x13_tf);
-//     for (int i = 0; i < DISPLAY_LINES; i++)
-//     {
-//         strcpy(displayLine[i], " ");
-//         u8g2.drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
-//     }
-//     delay(10);
-//     u8g2.sendBuffer();
-// }
-//add-update a line of text in the display text buffer
-// void writeLine(int lineNumber, const char *lineText)
-// {
-//     //update a line in the diaplay text buffer
-//     strcpy(displayLine[lineNumber - 1], lineText);
-// }
 
 void updateTempDisplay()
 {
@@ -506,7 +491,7 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
     for (int i = 0; i < 2; i++)
     { // turn socket off
-        //	processZoneMessage();
+        //	processZoneRF24Message();
         //	refresh();
         transmitter.sendUnit(socketID, state);
     }
@@ -600,49 +585,22 @@ void printWifiStatus()
     Serial.println(F(" dBm"));
 }
 
-// void printO(int x, int y, const char *text)
-// {
-//     u8g2.begin();
-//     u8g2.clearBuffer();
-//     u8g2.setFont(u8g2_font_8x13_tf);
-//     u8g2.drawStr(x, y, text);
-//     u8g2.sendBuffer();
-//     delay(10);
-// }
-
-// void printO(const char *message)
-// {
-//     u8g2.print(message);
-// }
-
-// void printOWithVal(const char *message, int value)
-// {
-//     u8g2.print(message);
-//     u8g2.print(value);
-// }
-
-// void printO2Str(const char *str1, const char *str2)
-// {
-//     u8g2.print(str1);
-//     u8g2.print(str2);
-// }
-
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
 {
-    //config radio to comm with a node
-    radio.stopListening();
-    radio.openWritingPipe(writingPipe);
-    radio.openReadingPipe(1, readingPipe);
+    //config rf24Radio to comm with a node
+    rf24Radio.stopListening();
+    rf24Radio.openWritingPipe(writingPipe);
+    rf24Radio.openReadingPipe(1, readingPipe);
 }
 
-void processZoneMessage(void)
+void processZoneRF24Message(void)
 {
     char messageText[17];
-    while (radio.available())
+    while (rf24Radio.available())
     { // Read all available payloads
 
         // Grab the message and process
-        uint8_t len = radio.getDynamicPayloadSize();
+        uint8_t len = rf24Radio.getDynamicPayloadSize();
 
         // If a corrupt dynamic payload is received, it will be flushed
         if (!len)
@@ -650,7 +608,7 @@ void processZoneMessage(void)
             return;
         }
 
-        radio.read(receive_payload, len);
+        rf24Radio.read(receive_payload, len);
 
         // Put a zero at the end for easy printing
         receive_payload[len] = 0;
@@ -658,25 +616,25 @@ void processZoneMessage(void)
         //who was it from?
         //reset that timer
 
-        if (equalID(receive_payload, devices[0].heartBeatText))
+        if (equalID(receive_payload, ZCs[0].heartBeatText))
         {
-            resetZoneDevice(0);
+            ZCs[0].resetZoneDevice();
             Serial.println(F("RESET GGG"));
-            strcpy(messageText, devices[0].heartBeatText);
+            strcpy(messageText, ZCs[0].heartBeatText);
         }
-        else if (equalID(receive_payload, devices[1].heartBeatText))
+        else if (equalID(receive_payload, ZCs[1].heartBeatText))
         {
-            resetZoneDevice(1);
-            //devices[1].lastGoodAckMillis = millis();
+            ZCs[1].resetZoneDevice();
+            //ZCs[1].lastGoodAckMillis = millis();
             Serial.println(F("RESET CCC"));
-            strcpy(messageText, devices[1].heartBeatText);
+            strcpy(messageText, ZCs[1].heartBeatText);
         }
-        else if (equalID(receive_payload, devices[2].heartBeatText))
+        else if (equalID(receive_payload, ZCs[2].heartBeatText))
         {
-            resetZoneDevice(2);
-            //devices[2].lastGoodAckMillis = millis();
+            ZCs[2].resetZoneDevice();
+            //ZCs[2].lastGoodAckMillis = millis();
             Serial.println(F("RESET SSS"));
-            strcpy(messageText, devices[2].heartBeatText);
+            strcpy(messageText, ZCs[2].heartBeatText);
         }
         else
         {
@@ -689,23 +647,23 @@ void processZoneMessage(void)
     }
 }
 
-void resetZoneDevice(int deviceID)
-{
-    devices[deviceID].lastGoodAckMillis = millis();
-    devices[deviceID].isRebooting = 0;
-    devices[deviceID].rebootMillisLeft = 0;
-}
+// void resetZoneDevice(int deviceID)
+// {
+//     ZCs[deviceID].lastGoodAckMillis = millis();
+//     ZCs[deviceID].isRebooting = 0;
+//     ZCs[deviceID].rebootMillisLeft = 0;
+// }
 
 int equalID(char *receive_payload, const char *targetID)
 {
     //check if same 1st 3 chars
     if ((receive_payload[0] == targetID[0]) && (receive_payload[1] == targetID[1]) && (receive_payload[2] == targetID[2]))
     {
-        return 1;
+        return true;
     }
     else
     {
-        return 0;
+        return false;
     }
 }
 
@@ -739,17 +697,17 @@ void updateZoneDisplayLines(void)
         for (stateCounter = 0; stateCounter < 3; stateCounter++)
         {
             //Serial.println(stateCounter);
-            secsSinceAck = (millis() - devices[stateCounter].lastGoodAckMillis) / 1000;
+            secsSinceAck = (millis() - ZCs[stateCounter].lastGoodAckMillis) / 1000;
 
             //u8g2.setCursor(0, ((stateCounter + 1) * 10) + (1 * stateCounter));
             // make sure check for restarting device
             //if so display current secs in wait for reboot cycle
-            if (devices[stateCounter].isRebooting)
+            if (ZCs[stateCounter].isRebooting)
             {
-                secsLeft = (devices[stateCounter].rebootMillisLeft) / 1000UL;
+                secsLeft = (ZCs[stateCounter].rebootMillisLeft) / 1000UL;
 
                 Serial.print(F("--rebootMillisLeft: "));
-                Serial.println((devices[stateCounter].rebootMillisLeft));
+                Serial.println((ZCs[stateCounter].rebootMillisLeft));
 
                 Serial.print(F("--secsLeft var: "));
                 Serial.println(secsLeft);
@@ -757,10 +715,10 @@ void updateZoneDisplayLines(void)
                 //build string to show if cycling or coming back up
                 //char str_output[20] = { 0 }; //, str_two[]="two";
                 //start with device name
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, ZCs[stateCounter].name);
                 strcat(str_output, ": ");
                 //char message[] = " Reboot: ";
-                if (devices[stateCounter].isPowerCycling)
+                if (ZCs[stateCounter].isPowerCycling)
                 {
                     strcat(str_output, powerCycleMsg);
                     //printD(str_output);
@@ -779,9 +737,9 @@ void updateZoneDisplayLines(void)
             }
             else if ((secsSinceAck > goodSecsMax))
             {
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, ZCs[stateCounter].name);
                 strcat(str_output, ": ");
-                strcat(str_output, devices[stateCounter].badStatusMess);
+                strcat(str_output, ZCs[stateCounter].badStatusMess);
                 strcat(str_output, ": ");
 
                 //printDWithVal(str_output, secsSinceAck);
@@ -795,14 +753,14 @@ void updateZoneDisplayLines(void)
             else
             {
                 //u8g2.print("u");
-                strcpy(str_output, devices[stateCounter].name);
+                strcpy(str_output, ZCs[stateCounter].name);
                 strcat(str_output, ": ");
-                strcat(str_output, devices[stateCounter].goodStatusMess);
+                strcat(str_output, ZCs[stateCounter].goodStatusMess);
                 //add restarts soince power on
                 strcat(str_output, " (");
 
                 sprintf(buf, "%i",
-                        devices[stateCounter].powerCyclesSincePowerOn);
+                        ZCs[stateCounter].powerCyclesSincePowerOn);
 
                 strcat(str_output, buf);
                 strcat(str_output, ")");
