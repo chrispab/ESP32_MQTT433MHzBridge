@@ -49,7 +49,7 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter)
             Serial.println(rebootMillisLeft);
             //delay(1000);
         }
-        else
+        else//is rebooting
         { // this executes till end of reboot timer
             //device is rebooting now - do some stuff to update countdown timers
             //wait for pi to come back up - do nothing
@@ -90,9 +90,9 @@ void ZoneController::powerCycle(NewRemoteTransmitter transmitter)
     //this is a blocking routine so need to keep checking messages and
     //updating vars etc
     // but do NOT do manage restarts as could be recursive and call this routine again.
-    int transmitEnable = 1;
-    if (transmitEnable == 1)
-    {
+    // int transmitEnable = 1;
+    // if (transmitEnable == 1)
+    // {
         Serial.println(F("sending off"));
         //badLED();
         //beep(1, 2, 1);
@@ -128,11 +128,11 @@ void ZoneController::powerCycle(NewRemoteTransmitter transmitter)
         //LEDsOff();
         //beep(1, 2, 1);
         Serial.println(F("complete"));
-    }
-    else
-    {
-        Serial.println(F("not transmitting"));
-    }
+    // }
+    // else
+    // {
+    //     Serial.println(F("not transmitting"));
+    // }
 }
 
 void ZoneController::resetZoneDevice(void)

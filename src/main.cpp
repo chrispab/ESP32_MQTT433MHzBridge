@@ -3,7 +3,7 @@
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
 //#include <U8g2lib.h>
-#include "DHT.h"
+#include <DHT.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 #include <RF24.h>
 
@@ -17,32 +17,23 @@ boolean processRequest(String &getLine);
 void sendResponse(WiFiClient client);
 void listenForClients(void);
 void LEDBlink(int LEDPin, int repeatNum);
-void callback(char *topic, byte *payload, unsigned int length);
-void reconnectPSClient();
+void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
+void reconnectMQTTClient();
 void reconnectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
-//void printO(const char *message);
-//void printOWithVal(const char *message, int value);
-//void printO2Str(const char *str1, const char *str2);
 void checkConnections(void);
 void updateTempDisplay(void);
-//void printO(int x, int y, const char *text);
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
-//void refresh(void);
-//void writeLine(int lineNumber, const char *lineText);
-//void resetZoneDevice(int deviceID);
+
 void updateZoneDisplayLines(void);
 int freeRam(void);
 void printFreeRam(void);
-//void displayWipe(void);
-//void manageRestarts(int deviceID);
-//void powerCycle(int deviceID);
 
 //OLED display stuff
 
-static const int dispUpdateFreq = 1.5; // how many updates per sec
+//static const int dispUpdateFreq = 1.5; // how many updates per sec
 
 //DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -56,15 +47,17 @@ int status = WL_IDLE_STATUS;
 
 //MQTT stuff
 IPAddress mqttserver(192, 168, 0, 200);
-const char subscribeTopic[] PROGMEM = "433Bridge/cmnd/#";
+const char subscribeTopic[] = "433Bridge/cmnd/#";
+const char publishTempTopic[] = "433Bridge/Temperature";
+const char publishHumiTopic[] = "433Bridge/Humidity";
+
 WiFiClient WiFiEClient;
-PubSubClient psclient(mqttserver, 1883, callback, WiFiEClient);
+PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 //433Mhz settings
 #define TX433PIN 32
 //282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
-
 
 byte socket = 3;
 bool state = false;
@@ -87,32 +80,13 @@ static unsigned int goodSecsMax = 15;                         //20
 static unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max millisces to wait if no ack from pi before power cycling pi
 static unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 
-// define a struct for each controller instance with related vars
-// struct controller
-// {
-//     uint8_t id_number;
-//     uint8_t zone;
-//     uint8_t socketID;
-//     unsigned long lastGoodAckMillis;
-//     char name[4];
-//     char heartBeatText[4];   // allow enough space for text plus 1 extra for null terminator
-//     char badStatusMess[10];  // enough for 1 line on display
-//     char goodStatusMess[10]; // enough for 1 line on display
-//     bool isRebooting;        //indicate if booting up
-//     bool isPowerCycling;     //indicate if power cycling
-//     unsigned long rebootMillisLeft;
-//     unsigned long lastRebootMillisLeftUpdate;
-//     uint8_t powerCyclesSincePowerOn;
-// };
-//struct controller ZCs[3]; //create an array of 3 controller structures
-
 //misc stuff
 #define LEDPIN 2 //esp32 devkit on board blue LED
 #define CR Serial.println()
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
-#define TITLE_LINE3 "Wireless Zone Dog"
-#define SW_VERSION "V2.1-oo"
+#define TITLE_LINE3 "Wireless Dog"
+#define SW_VERSION "V2.2-oo"
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -121,17 +95,12 @@ unsigned long previousConnCheckMillis = 0;
 unsigned long intervalConCheckMillis = 30000;
 //unsigned long currentMillis = 0;
 unsigned long previousTempDisplayMillis = 0;
-unsigned long intervalTempDisplayMillis = 20000;
-char tempStr[17]; // buffer for 16 chars and eos
-
+unsigned long intervalTempDisplayMillis = 30000;
+char tempStr[17];                               // buffer for 16 chars and eos
+static unsigned long dispUpdateInterval = 1000; //1000ms
 //create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); //create the display object
-ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"), ZoneController(1, 4, "CNV", "CCC"), ZoneController(2, 15, "SHD", "SSS")} ;
-
-// ZoneController zone0(0, 14, "GRG", "GGG");
-// ZCs[0] = zone0;
-// ZCs[1] = ZoneController zone1(1, 4, "CNV", "CCC");
-// ZCs[2] = ZoneController zone2(2, 15, "SHD", "SSS");
+ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"), ZoneController(1, 4, "CNV", "CCC"), ZoneController(2, 15, "SHD", "SSS")};
 
 void setup()
 { //Initialize serial monitor port to PC and wait for port to open:
@@ -143,7 +112,7 @@ void setup()
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(3, TITLE_LINE2);
     myDisplay.writeLine(4, TITLE_LINE3);
-    
+
     myDisplay.writeLine(5, SW_VERSION);
     myDisplay.refresh();
     delay(5000);
@@ -154,8 +123,8 @@ void setup()
     // you're connected now, so print out the status:
     printWifiStatus();
     CR;
-    reconnectPSClient();
-    dht.setup(DHTPIN);
+    reconnectMQTTClient();
+    dht.setup(DHTPIN, dht.AM2302);
 
     //rf24 stuff
     rf24Radio.begin();
@@ -172,50 +141,20 @@ void setup()
     setPipes(writePipeLocC, readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
     rf24Radio.startListening();
 
-    // //create zone controller objects
-    // //populate the array of controller structs
-    // for (int i = 0; i < 3; i++)
-    // {
-
-    //     ZCs[i].id_number = i; //0 to 2
-    //     ZCs[i].zone = i + 1;  //1 to 3
-    //     ZCs[i].lastGoodAckMillis = millis();
-    //     ZCs[i].isRebooting = 0;
-    //     ZCs[i].isPowerCycling = 0;
-    //     ZCs[i].rebootMillisLeft = 0;
-    //     ZCs[i].lastRebootMillisLeftUpdate = millis();
-    //     ZCs[i].powerCyclesSincePowerOn = 0;
-    //     strcpy(ZCs[i].badStatusMess, "Away");
-    //     strcpy(ZCs[i].goodStatusMess, "OK");
-    // }
-    // // individual stuff
-    // ZCs[0].socketID = 14;
-    // strcpy(ZCs[0].name, "GRG");
-    // strcpy(ZCs[0].heartBeatText, "GGG");
-
-    // ZCs[1].socketID = 4;
-    // strcpy(ZCs[1].name, "CNV");
-    // strcpy(ZCs[1].heartBeatText, "CCC");
-
-    // ZCs[2].socketID = 15;
-    // strcpy(ZCs[2].name, "SHD");
-    // strcpy(ZCs[2].heartBeatText, "SSS");
-
-    //setup zone controller objects
-
-    psclient.loop(); //process any MQTT stuff
+    MQTTclient.loop(); //process any MQTT stuff
     checkConnections();
     myDisplay.wipe();
 }
 
 void loop()
 {
-    psclient.loop();          //process any MQTT stuff
+    MQTTclient.loop();        //process any MQTT stuff returned in callback
     checkConnections();       // reconnect if reqd
     updateTempDisplay();      //get and display temp
     processZoneRF24Message(); //process any zone messages
     ZCs[0].manageRestarts(transmitter);
     //manageRestarts(1);
+    //ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
     //manageRestarts(2);
     ZCs[2].manageRestarts(transmitter);
@@ -224,128 +163,13 @@ void loop()
     myDisplay.refresh();
 }
 
-// void powerCycle(int deviceID)
-// {
-//     //this is a blocking routine so need to keep checking messages and
-//     //updating vars etc
-//     // but do NOT do manage restarts as could be recursive and call this routine again.
-//     int transmitEnable = 1;
-//     if (transmitEnable == 1)
-//     {
-//         Serial.println(F("sending off"));
-//         //badLED();
-//         //beep(1, 2, 1);
-//         for (int i = 0; i < 3; i++)
-//         { // turn socket off
-//             processZoneRF24Message();
-//             myDisplay.refresh();
-//             transmitter.sendUnit(ZCs[deviceID].socketID, false);
-//         }
-//         processZoneRF24Message();
-//         myDisplay.refresh();
-//         delay(1000);
-//         processZoneRF24Message();
-//         myDisplay.refresh();
-//         delay(1000);
-//         processZoneRF24Message();
-//         myDisplay.refresh();
-//         delay(1000);
-//         processZoneRF24Message();
-//         myDisplay.refresh();
-//         // Switch Rxunit on
-//         Serial.println(F("sending on"));
-//         //printD2Str("Power on :", ZCs[deviceID].name);
-
-//         for (int i = 0; i < 3; i++)
-//         { // turn socket back on
-//             processZoneRF24Message();
-//             myDisplay.refresh();
-//             transmitter.sendUnit(ZCs[deviceID].socketID, true);
-//         }
-//         processZoneRF24Message();
-//         myDisplay.refresh();
-//         //LEDsOff();
-//         //beep(1, 2, 1);
-//         Serial.println(F("complete"));
-//     }
-//     else
-//     {
-//         Serial.println(F("not transmitting"));
-//     }
-// }
-// //check a unit and see if restart reqd
-// void manageRestarts(int deviceID)
-// {
-//     // now check if need to reboot a device
-//     if ((millis() - ZCs[deviceID].lastGoodAckMillis) > maxMillisNoAckFromPi)
-//     { // over time limit so reboot first time in then just upadte time each other time
-
-//         //printFreeRam();
-//         if (ZCs[deviceID].isRebooting == 0)
-//         { // all this done first time triggered
-//             //printD("Reboot : ");
-
-//             ZCs[deviceID].isRebooting = 1; //signal device is rebooting
-
-//             ZCs[deviceID].isPowerCycling = 1; // signal in power cycle
-
-//             powerCycle(deviceID);
-
-//             ZCs[deviceID].isPowerCycling = 0; // signal in power cycle
-//             ZCs[deviceID].powerCyclesSincePowerOn++;
-//             ZCs[deviceID].rebootMillisLeft = waitForPiPowerUpMillis;
-//             ZCs[deviceID].lastRebootMillisLeftUpdate = millis();
-
-//             Serial.println("triggered reboot in manage reboots");
-
-//             Serial.println(ZCs[deviceID].rebootMillisLeft);
-//             //delay(1000);
-//         }
-//         else
-//         { // this executes till end of reboot timer
-//             //device is rebooting now - do some stuff to update countdown timers
-//             //wait for pi to come back up - do nothing
-//             //millis since last update
-//             unsigned long millisLapsed = millis() - ZCs[deviceID].lastRebootMillisLeftUpdate;
-
-//             // next subtraction will take us to/over limit
-//             if (millisLapsed >= ZCs[deviceID].rebootMillisLeft)
-//             {
-//                 //zero or neg reached
-//                 ZCs[deviceID].rebootMillisLeft = 0;
-//                 //timerDone = 1;
-//             }
-//             else
-//             { // ok to do timer subtraction
-
-//                 ZCs[deviceID].rebootMillisLeft =
-//                     ZCs[deviceID].rebootMillisLeft - millisLapsed;
-//             }
-//             ZCs[deviceID].lastRebootMillisLeftUpdate = millis();
-
-//             // calc if next time subtraction takes it below zero
-//             //cant get a neg number from unsigned numbers used
-//             if (ZCs[deviceID].rebootMillisLeft == 0)
-//             { // reboot stuff completed here
-//                 //if (timerDone == 1) { // reboot stuff completed here
-//                 ZCs[deviceID].lastGoodAckMillis = millis();
-//                 Serial.print(F("Assume Pi back up:"));
-//                 Serial.println(deviceID);
-//                 //printD("Assume pi back up");
-//                 //printD2Str("Assume up:", ZCs[deviceID].name);
-//                 ZCs[deviceID].isRebooting = 0; //signal device has stopped rebooting
-//             }
-//         }
-//     }
-// }
-
 void checkConnections()
 {
     currentMillis = millis();
     if (currentMillis - previousConnCheckMillis > intervalConCheckMillis)
     {
-        Serial.println(F("Checking if WiFi or MQTT PSClient needs reconnecting")); // save the last time looped
-        if (status != WL_CONNECTED)
+        Serial.println(F("Checking if WiFi or MQTT MQTTClient needs reconnecting")); // save the last time looped
+        if (!WiFiEClient.connected())                                                //!= WL_CONNECTED)
         {
             Serial.println(F("Wifi Needs reconnecting"));
             reconnectWiFi();
@@ -356,11 +180,11 @@ void checkConnections()
             //Serial.println(millis());
         }
 
-        //Serial.println("Checking if psclient needs reconnect"); // save the last time looped
-        if (!psclient.connected())
+        //Serial.println("Checking if MQTTclient needs reconnect"); // save the last time looped
+        if (!MQTTclient.connected())
         {
-            Serial.println(F("PSClient Needs reconnecting"));
-            reconnectPSClient();
+            Serial.println(F("MQTTClient Needs reconnecting"));
+            reconnectMQTTClient();
         }
         else
         {
@@ -379,6 +203,8 @@ void updateTempDisplay()
 
         // Read temperature as Celsius (the default)
         float t = dht.getTemperature();
+        float h = dht.getHumidity();
+        char humiStr[] = "string to hold humidity";
         //char tempStr[9]; //="12345678";buffer
         // Check if any reads failed and exit early (to try again).
         char msgStr[] = "Message String long enough?";
@@ -391,6 +217,10 @@ void updateTempDisplay()
         else // is a number
         {
             dtostrf(t, 4, 1, tempStr);
+            MQTTclient.publish(publishTempTopic, tempStr);
+            dtostrf(h, 4, 1, humiStr);
+            MQTTclient.publish(publishHumiTopic, humiStr);
+
             strcat(tempStr, "*C");
         }
         //printO(20, 40, strcat(msgStr, tempStr));
@@ -405,8 +235,8 @@ void updateTempDisplay()
     }
 }
 
-//psclient call back if mqtt messsage rxed
-void callback(char *topic, byte *payload, unsigned int length)
+//MQTTclient call back if mqtt messsage rxed
+void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 {
     // Power<x> 		Show current power state of relay<x> as On or Off
     // Power<x> 	0 / off 	Turn relay<x> power Off
@@ -461,6 +291,8 @@ void callback(char *topic, byte *payload, unsigned int length)
 }
 
 //0-15, 0,1
+//mqtt funct to operate a remote power socket
+//only used by mqtt function
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     //this is a blocking routine so need to keep checking messages and
@@ -489,12 +321,12 @@ void operateSocket(uint8_t socketID, uint8_t state)
     //delay(10);
     //u8g2.sendBuffer();
 
-    for (int i = 0; i < 2; i++)
-    { // turn socket off
-        //	processZoneRF24Message();
-        //	refresh();
-        transmitter.sendUnit(socketID, state);
-    }
+    // for (int i = 0; i < 2; i++)
+    // { // turn socket off
+    //	processZoneRF24Message();
+    //	refresh();
+    transmitter.sendUnit(socketID, state);
+    // }
 
     Serial.println(F("OK - TX socket state updated"));
 }
@@ -502,7 +334,7 @@ void operateSocket(uint8_t socketID, uint8_t state)
 void reconnectWiFi()
 {
     // Loop until we're reconnected
-    //check is psclient is connected first
+    //check is MQTTclient is connected first
     // attempt to connect to Wifi network:
     //printO(1, 20, "Connect WiFi..");
     myDisplay.writeLine(5, "Connect WiFi..");
@@ -522,33 +354,33 @@ void reconnectWiFi()
     myDisplay.refresh();
 }
 
-void reconnectPSClient()
+void reconnectMQTTClient()
 {
     // Loop until we're reconnected
-    //check is psclient is connected first
-    while (!psclient.connected())
+    //check is MQTTclient is connected first
+    while (!MQTTclient.connected())
     {
         //printO(1, 20, "Connect MQTT..");
         myDisplay.writeLine(6, "Connect MQTT..");
         myDisplay.refresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
-        //        if (psclient.connect("ESP32Client","",""))
-        if (psclient.connect("ESP32Client"))
+        //        if (MQTTclient.connect("ESP32Client","",""))
+        if (MQTTclient.connect("ESP32Client"))
         {
             Serial.println(F("connected to MQTT server"));
             // Once connected, publish an announcement...
-            psclient.publish("outTopic", "hello world");
+            MQTTclient.publish("outTopic", "hello world");
             // ... and resubscribe
-            //psclient.subscribe("inTopic");
-            psclient.subscribe(subscribeTopic);
+            //MQTTclient.subscribe("inTopic");
+            MQTTclient.subscribe(subscribeTopic);
             myDisplay.writeLine(6, "Connected MQTT!");
             myDisplay.refresh();
         }
         else
         {
             Serial.print(F("failed, rc="));
-            Serial.print(psclient.state());
+            Serial.print(MQTTclient.state());
             Serial.println(F(" try again in 5 secs"));
             // Wait 5 seconds before retrying
             delay(5000);
@@ -610,7 +442,7 @@ void processZoneRF24Message(void)
 
         rf24Radio.read(receive_payload, len);
 
-        // Put a zero at the end for easy printing
+        // Put a zero at the end for easy printing etc
         receive_payload[len] = 0;
 
         //who was it from?
@@ -647,13 +479,6 @@ void processZoneRF24Message(void)
     }
 }
 
-// void resetZoneDevice(int deviceID)
-// {
-//     ZCs[deviceID].lastGoodAckMillis = millis();
-//     ZCs[deviceID].isRebooting = 0;
-//     ZCs[deviceID].rebootMillisLeft = 0;
-// }
-
 int equalID(char *receive_payload, const char *targetID)
 {
     //check if same 1st 3 chars
@@ -672,10 +497,10 @@ void updateZoneDisplayLines(void)
     //all three lines can be displayed at once
     const char rebootMsg[] PROGMEM = {"Reboot: "};
     const char powerCycleMsg[] PROGMEM = {"Power Cycle"};
-    int stateCounter; // only initialised once at start
+    int zoneID; // only initialised once at start
     static unsigned long lastDispUpdateTimeMillis = 0;
 
-    static unsigned long dispUpdateInterval = 1000 / dispUpdateFreq;
+    //static unsigned long dispUpdateInterval = 1000 / dispUpdateFreq;
 
     unsigned int secsSinceAck = 0;
     // max secs out considered good
@@ -683,7 +508,7 @@ void updateZoneDisplayLines(void)
     char str_output[20] = {0};
     unsigned int secsLeft;
     char buf[17];
-    //Serial.println(stateCounter);
+    //Serial.println(zoneID);
     // this loop
     //create info string for each zone then display it
     //setup disp
@@ -694,20 +519,20 @@ void updateZoneDisplayLines(void)
     if ((millis() - lastDispUpdateTimeMillis) >= dispUpdateInterval)
     { //ready to update?
         //printFreeRam();
-        for (stateCounter = 0; stateCounter < 3; stateCounter++)
+        for (zoneID = 0; zoneID < 3; zoneID++)
         {
-            //Serial.println(stateCounter);
-            secsSinceAck = (millis() - ZCs[stateCounter].lastGoodAckMillis) / 1000;
+            //Serial.println(zoneID);
+            secsSinceAck = (millis() - ZCs[zoneID].lastGoodAckMillis) / 1000;
 
-            //u8g2.setCursor(0, ((stateCounter + 1) * 10) + (1 * stateCounter));
+            //u8g2.setCursor(0, ((zoneID + 1) * 10) + (1 * zoneID));
             // make sure check for restarting device
             //if so display current secs in wait for reboot cycle
-            if (ZCs[stateCounter].isRebooting)
+            if (ZCs[zoneID].isRebooting)
             {
-                secsLeft = (ZCs[stateCounter].rebootMillisLeft) / 1000UL;
+                secsLeft = (ZCs[zoneID].rebootMillisLeft) / 1000UL;
 
                 Serial.print(F("--rebootMillisLeft: "));
-                Serial.println((ZCs[stateCounter].rebootMillisLeft));
+                Serial.println((ZCs[zoneID].rebootMillisLeft));
 
                 Serial.print(F("--secsLeft var: "));
                 Serial.println(secsLeft);
@@ -715,14 +540,14 @@ void updateZoneDisplayLines(void)
                 //build string to show if cycling or coming back up
                 //char str_output[20] = { 0 }; //, str_two[]="two";
                 //start with device name
-                strcpy(str_output, ZCs[stateCounter].name);
+                strcpy(str_output, ZCs[zoneID].name);
                 strcat(str_output, ": ");
                 //char message[] = " Reboot: ";
-                if (ZCs[stateCounter].isPowerCycling)
+                if (ZCs[zoneID].isPowerCycling)
                 {
                     strcat(str_output, powerCycleMsg);
                     //printD(str_output);
-                    myDisplay.writeLine(stateCounter + 4, str_output);
+                    myDisplay.writeLine(zoneID + 4, str_output);
                     //secsLeft = '';
                 }
                 else
@@ -732,40 +557,40 @@ void updateZoneDisplayLines(void)
                     sprintf(buf, "%d", secsLeft);
                     strcat(str_output, buf);
 
-                    myDisplay.writeLine(stateCounter + 4, str_output);
+                    myDisplay.writeLine(zoneID + 4, str_output);
                 }
             }
             else if ((secsSinceAck > goodSecsMax))
             {
-                strcpy(str_output, ZCs[stateCounter].name);
+                strcpy(str_output, ZCs[zoneID].name);
                 strcat(str_output, ": ");
-                strcat(str_output, ZCs[stateCounter].badStatusMess);
+                strcat(str_output, ZCs[zoneID].badStatusMess);
                 strcat(str_output, ": ");
 
                 //printDWithVal(str_output, secsSinceAck);
 
                 sprintf(buf, "%d", secsSinceAck);
                 strcat(str_output, buf);
-                myDisplay.writeLine(stateCounter + 4, str_output);
+                myDisplay.writeLine(zoneID + 4, str_output);
                 //badLED();
                 //LEDsOff();
             }
             else
             {
                 //u8g2.print("u");
-                strcpy(str_output, ZCs[stateCounter].name);
+                strcpy(str_output, ZCs[zoneID].name);
                 strcat(str_output, ": ");
-                strcat(str_output, ZCs[stateCounter].goodStatusMess);
+                strcat(str_output, ZCs[zoneID].goodStatusMess);
                 //add restarts soince power on
                 strcat(str_output, " (");
 
                 sprintf(buf, "%i",
-                        ZCs[stateCounter].powerCyclesSincePowerOn);
+                        ZCs[zoneID].powerCyclesSincePowerOn);
 
                 strcat(str_output, buf);
                 strcat(str_output, ")");
                 //printD(str_output);
-                myDisplay.writeLine(stateCounter + 4, str_output);
+                myDisplay.writeLine(zoneID + 4, str_output);
                 //goodLED();
             }
         }
@@ -774,16 +599,16 @@ void updateZoneDisplayLines(void)
     }
 }
 
-// int freeRam()
-// {
-// 	extern int __heap_start, *__brkval;
-// 	int v;
+int freeRam()
+{
+    extern int __heap_start, *__brkval;
+    int v;
 
-// 	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
-// }
+    return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
+}
 
-// void printFreeRam(void)
-// {
-// 	Serial.print(F("FR: "));
-// 	Serial.println(freeRam());
-// }
+void printFreeRam(void)
+{
+    Serial.print(F("FR: "));
+    Serial.println(freeRam());
+}
