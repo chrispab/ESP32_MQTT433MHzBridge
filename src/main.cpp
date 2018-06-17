@@ -339,7 +339,8 @@ void reconnectWiFi()
     //printO(1, 20, "Connect WiFi..");
     myDisplay.writeLine(5, "Connect WiFi..");
     myDisplay.refresh();
-
+    // IMPLEMNT TIME OUT TO ALLOW RF"$ WIRLESS DOG FUNC TO CONTINUE
+    //while (!WiFiEClient.connected())
     while (status != WL_CONNECTED)
     {
         Serial.print(F("Attempting to connect to SSID: "));
@@ -348,7 +349,7 @@ void reconnectWiFi()
         status = WiFi.begin(ssid, pass);
 
         // wait 10 seconds for connection:
-        delay(10000);
+        delay(5000);
     }
     myDisplay.writeLine(5, "Connected WiFi!");
     myDisplay.refresh();
@@ -370,7 +371,7 @@ void reconnectMQTTClient()
         {
             Serial.println(F("connected to MQTT server"));
             // Once connected, publish an announcement...
-            MQTTclient.publish("outTopic", "hello world");
+            //MQTTclient.publish("outTopic", "hello world");
             // ... and resubscribe
             //MQTTclient.subscribe("inTopic");
             MQTTclient.subscribe(subscribeTopic);
