@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
-//#include <U8g2lib.h>
 #include <DHT.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 #include <RF24.h>
@@ -75,10 +74,10 @@ uint8_t writePipeLocG[] PROGMEM = "NodeG";
 uint8_t readPipeLocG[] PROGMEM = "Node0";
 // Payload
 const int max_payload_size = 32;
-char receive_payload[max_payload_size + 1];                   // +1 to allow room for a terminating NULL char
-static unsigned int goodSecsMax = 15;                         //20
-static unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max millisces to wait if no ack from pi before power cycling pi
-static unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
+char receive_payload[max_payload_size + 1]; // +1 to allow room for a terminating NULL char
+static unsigned int goodSecsMax = 15;       //20
+//static unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max millisces to wait if no ack from pi before power cycling pi
+//static unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 
 //misc stuff
 #define LEDPIN 2 //esp32 devkit on board blue LED
@@ -86,7 +85,7 @@ static unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.2-oo"
+#define SW_VERSION "V2.3-oo"
 
 //Global vars
 unsigned long currentMillis = 0;
@@ -98,6 +97,7 @@ unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 30000;
 char tempStr[17];                               // buffer for 16 chars and eos
 static unsigned long dispUpdateInterval = 1000; //1000ms
+
 //create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21); //create the display object
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"), ZoneController(1, 4, "CNV", "CCC"), ZoneController(2, 15, "SHD", "SSS")};
@@ -148,8 +148,9 @@ void setup()
 
 void loop()
 {
+    checkConnections(); // reconnect if reqd
+
     MQTTclient.loop();        //process any MQTT stuff returned in callback
-    checkConnections();       // reconnect if reqd
     updateTempDisplay();      //get and display temp
     processZoneRF24Message(); //process any zone messages
     ZCs[0].manageRestarts(transmitter);
@@ -168,8 +169,8 @@ void checkConnections()
     currentMillis = millis();
     if (currentMillis - previousConnCheckMillis > intervalConCheckMillis)
     {
-        Serial.println(F("Checking if WiFi or MQTT MQTTClient needs reconnecting")); // save the last time looped
-        if (!WiFiEClient.connected())                                                //!= WL_CONNECTED)
+        Serial.println(F("Check WiFi and MQTT connections")); // save the last time looped
+        if (!WiFiEClient.connected())                         //!= WL_CONNECTED)
         {
             Serial.println(F("Wifi Needs reconnecting"));
             reconnectWiFi();
@@ -188,7 +189,7 @@ void checkConnections()
         }
         else
         {
-            Serial.println(F("OK - MQTT PS client still connected"));
+            Serial.println(F("OK - MQTT still connected"));
             //Serial.println(millis());
         }
         previousConnCheckMillis = currentMillis;
@@ -333,33 +334,51 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
 void reconnectWiFi()
 {
+    bool wifiConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 30000;
+
     // Loop until we're reconnected
     //check is MQTTclient is connected first
     // attempt to connect to Wifi network:
     //printO(1, 20, "Connect WiFi..");
     myDisplay.writeLine(5, "Connect WiFi..");
     myDisplay.refresh();
-    // IMPLEMNT TIME OUT TO ALLOW RF"$ WIRLESS DOG FUNC TO CONTINUE
+    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
     //while (!WiFiEClient.connected())
-    while (status != WL_CONNECTED)
+    //while (status != WL_CONNECTED)
+    wifiConnectTimeout = false;
+
+    startMillis = millis();
+    while (!WiFi.isConnected() && !wifiConnectTimeout)
     {
-        Serial.print(F("Attempting to connect to SSID: "));
+        Serial.print("Attempting to connect to SSID: ");
         Serial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-        status = WiFi.begin(ssid, pass);
+        WiFi.begin(ssid, pass);
 
         // wait 10 seconds for connection:
         delay(5000);
+        //jump out if connection attempt ha timed out
+        wifiConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
+    (wifiConnectTimeout) ? Serial.println("WiFi Connection attept Time Out!") : Serial.println("Wifi Connection made!");
+
     myDisplay.writeLine(5, "Connected WiFi!");
     myDisplay.refresh();
 }
 
 void reconnectMQTTClient()
 {
+    bool MQTTConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 30000;
     // Loop until we're reconnected
     //check is MQTTclient is connected first
-    while (!MQTTclient.connected())
+    MQTTConnectTimeout = false;
+
+    startMillis = millis();
+    while (!MQTTclient.connected() && !MQTTConnectTimeout)
     {
         //printO(1, 20, "Connect MQTT..");
         myDisplay.writeLine(6, "Connect MQTT..");
@@ -386,7 +405,9 @@ void reconnectMQTTClient()
             // Wait 5 seconds before retrying
             delay(5000);
         }
+        MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
+    (MQTTConnectTimeout) ? Serial.println("MQTT Connection attempt Time Out!") : Serial.println("MQTT Connection made!");
 }
 
 void LEDBlink(int LPin, int repeatNum)
