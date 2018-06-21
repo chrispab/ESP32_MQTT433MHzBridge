@@ -17,7 +17,7 @@ void sendResponse(WiFiClient client);
 void listenForClients(void);
 void LEDBlink(int LEDPin, int repeatNum);
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
-void reconnectMQTTClient();
+void reconnectMQTT();
 void reconnectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
 void checkConnections(void);
@@ -85,16 +85,16 @@ static unsigned int goodSecsMax = 15;       //20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.3-oo"
+#define SW_VERSION "V2.8 B:\"OO\""
 
 //Global vars
 unsigned long currentMillis = 0;
 //conection check timer
 unsigned long previousConnCheckMillis = 0;
-unsigned long intervalConCheckMillis = 30000;
+unsigned long intervalConnCheckMillis = 63000;
 //unsigned long currentMillis = 0;
 unsigned long previousTempDisplayMillis = 0;
-unsigned long intervalTempDisplayMillis = 30000;
+unsigned long intervalTempDisplayMillis = 60000;
 char tempStr[17];                               // buffer for 16 chars and eos
 static unsigned long dispUpdateInterval = 1000; //1000ms
 
@@ -113,17 +113,11 @@ void setup()
     myDisplay.writeLine(3, TITLE_LINE2);
     myDisplay.writeLine(4, TITLE_LINE3);
 
-    myDisplay.writeLine(5, SW_VERSION);
+    myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
     delay(5000);
 
-    //WiFi.begin();
-    // attempt to connect to Wifi network:
-    reconnectWiFi();
-    // you're connected now, so print out the status:
-    printWifiStatus();
-    CR;
-    reconnectMQTTClient();
+
     dht.setup(DHTPIN, dht.AM2302);
 
     //rf24 stuff
@@ -140,6 +134,14 @@ void setup()
     // autoACK enabled by default
     setPipes(writePipeLocC, readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
     rf24Radio.startListening();
+
+    //WiFi.begin();
+    // attempt to connect to Wifi network:
+    reconnectWiFi();
+    // you're connected now, so print out the status:
+    printWifiStatus();
+    CR;
+    reconnectMQTT();
 
     MQTTclient.loop(); //process any MQTT stuff
     checkConnections();
@@ -167,10 +169,10 @@ void loop()
 void checkConnections()
 {
     currentMillis = millis();
-    if (currentMillis - previousConnCheckMillis > intervalConCheckMillis)
+    if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis)
     {
         Serial.println(F("Check WiFi and MQTT connections")); // save the last time looped
-        if (!WiFiEClient.connected())                         //!= WL_CONNECTED)
+        if (!WiFi.isConnected())                         //!= WL_CONNECTED)
         {
             Serial.println(F("Wifi Needs reconnecting"));
             reconnectWiFi();
@@ -185,7 +187,7 @@ void checkConnections()
         if (!MQTTclient.connected())
         {
             Serial.println(F("MQTTClient Needs reconnecting"));
-            reconnectMQTTClient();
+            reconnectMQTT();
         }
         else
         {
@@ -196,6 +198,83 @@ void checkConnections()
     }
 }
 
+void reconnectWiFi()
+{
+    bool wifiConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 20000;
+
+    // Loop until we're reconnected
+    //check is MQTTclient is connected first
+    // attempt to connect to Wifi network:
+    //printO(1, 20, "Connect WiFi..");
+    myDisplay.writeLine(5, "Connect WiFi..");
+    myDisplay.refresh();
+    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
+    //while (!WiFiEClient.connected())
+    //while (status != WL_CONNECTED)
+    wifiConnectTimeout = false;
+
+    startMillis = millis();
+    while (!WiFi.isConnected() && !wifiConnectTimeout)
+    {
+        Serial.print("Attempting to connect to SSID: ");
+        Serial.println(ssid);
+        // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+        WiFi.begin(ssid, pass);
+
+        // wait 10 seconds for connection:
+        delay(5000);
+        //jump out if connection attempt ha timed out
+        wifiConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
+    }
+    (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!") : Serial.println("Wifi Connection made!");
+
+    myDisplay.writeLine(5, "Connected WiFi!");
+    myDisplay.refresh();
+}
+
+void reconnectMQTT()
+{
+    bool MQTTConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 20000;
+    // Loop until we're reconnected
+    //check is MQTTclient is connected first
+    MQTTConnectTimeout = false;
+
+    startMillis = millis();
+    while (!MQTTclient.connected() && !MQTTConnectTimeout)
+    {
+        //printO(1, 20, "Connect MQTT..");
+        myDisplay.writeLine(6, "Connect MQTT..");
+        myDisplay.refresh();
+        Serial.println(F("Attempting MQTT connection..."));
+        // Attempt to connect
+        //        if (MQTTclient.connect("ESP32Client","",""))
+        if (MQTTclient.connect("ESP32Client"))
+        {
+            Serial.println(F("connected to MQTT server"));
+            // Once connected, publish an announcement...
+            //MQTTclient.publish("outTopic", "hello world");
+            // ... and resubscribe
+            //MQTTclient.subscribe("inTopic");
+            MQTTclient.subscribe(subscribeTopic);
+            myDisplay.writeLine(6, "Connected MQTT!");
+            myDisplay.refresh();
+        }
+        else
+        {
+            Serial.print("failed, rc=");
+            Serial.print(MQTTclient.state());
+            Serial.println(" try again ..");
+            // Wait 5 seconds before retrying
+            //delay(5000);
+        }
+        MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
+    }
+    (!MQTTConnectTimeout) ?  Serial.println("MQTT Connection made!") : Serial.println("MQTT Connection attempt Time Out!") ;
+}
 void updateTempDisplay()
 {
     currentMillis = millis();
@@ -253,7 +332,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // Serial.print(s);
     // Serial.println("--EOP");
 
-    CR;
+    //CR;
     Serial.print(F("Message arrived ["));
     Serial.print(topic);
     Serial.print(F("] : "));
@@ -262,7 +341,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
         Serial.print((char)payload[i]);
     }
     CR;
-    Serial.println();
+    //Serial.println();
     //e.g topic = "433Bridge/cmnd/Power1", and payload = 1 or 0
     // either match whole topic string or trim off last 1or 2 chars and convert to a number
     //convert last 1-2 chars to socket number
@@ -296,7 +375,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 //only used by mqtt function
 void operateSocket(uint8_t socketID, uint8_t state)
 {
-    //this is a blocking routine so need to keep checking messages and
+    //this is a blocking routine !!!!!!!
     char msg[17] = "Socket : ";
     char buff[10];
 
@@ -307,20 +386,14 @@ void operateSocket(uint8_t socketID, uint8_t state)
     //u8g2.setCursor(55, 40);
     if (state == 0)
     {
-        //u8g2.print("OFF");
-        //writeLine(3, "OFF");
         strcat(msg, " OFF");
     }
     else
     {
-        //u8g2.print("ON");
-        //writeLine(3, "ON");
         strcat(msg, " ON");
     }
     myDisplay.writeLine(2, msg);
     myDisplay.refresh();
-    //delay(10);
-    //u8g2.sendBuffer();
 
     // for (int i = 0; i < 2; i++)
     // { // turn socket off
@@ -328,87 +401,11 @@ void operateSocket(uint8_t socketID, uint8_t state)
     //	refresh();
     transmitter.sendUnit(socketID, state);
     // }
+    Serial.println(msg);
 
-    Serial.println(F("OK - TX socket state updated"));
+    //Serial.println("OK - TX socket state updated");
 }
 
-void reconnectWiFi()
-{
-    bool wifiConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 30000;
-
-    // Loop until we're reconnected
-    //check is MQTTclient is connected first
-    // attempt to connect to Wifi network:
-    //printO(1, 20, "Connect WiFi..");
-    myDisplay.writeLine(5, "Connect WiFi..");
-    myDisplay.refresh();
-    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
-    //while (!WiFiEClient.connected())
-    //while (status != WL_CONNECTED)
-    wifiConnectTimeout = false;
-
-    startMillis = millis();
-    while (!WiFi.isConnected() && !wifiConnectTimeout)
-    {
-        Serial.print("Attempting to connect to SSID: ");
-        Serial.println(ssid);
-        // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-        WiFi.begin(ssid, pass);
-
-        // wait 10 seconds for connection:
-        delay(5000);
-        //jump out if connection attempt ha timed out
-        wifiConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (wifiConnectTimeout) ? Serial.println("WiFi Connection attept Time Out!") : Serial.println("Wifi Connection made!");
-
-    myDisplay.writeLine(5, "Connected WiFi!");
-    myDisplay.refresh();
-}
-
-void reconnectMQTTClient()
-{
-    bool MQTTConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 30000;
-    // Loop until we're reconnected
-    //check is MQTTclient is connected first
-    MQTTConnectTimeout = false;
-
-    startMillis = millis();
-    while (!MQTTclient.connected() && !MQTTConnectTimeout)
-    {
-        //printO(1, 20, "Connect MQTT..");
-        myDisplay.writeLine(6, "Connect MQTT..");
-        myDisplay.refresh();
-        Serial.println(F("Attempting MQTT connection..."));
-        // Attempt to connect
-        //        if (MQTTclient.connect("ESP32Client","",""))
-        if (MQTTclient.connect("ESP32Client"))
-        {
-            Serial.println(F("connected to MQTT server"));
-            // Once connected, publish an announcement...
-            //MQTTclient.publish("outTopic", "hello world");
-            // ... and resubscribe
-            //MQTTclient.subscribe("inTopic");
-            MQTTclient.subscribe(subscribeTopic);
-            myDisplay.writeLine(6, "Connected MQTT!");
-            myDisplay.refresh();
-        }
-        else
-        {
-            Serial.print(F("failed, rc="));
-            Serial.print(MQTTclient.state());
-            Serial.println(F(" try again in 5 secs"));
-            // Wait 5 seconds before retrying
-            delay(5000);
-        }
-        MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (MQTTConnectTimeout) ? Serial.println("MQTT Connection attempt Time Out!") : Serial.println("MQTT Connection made!");
-}
 
 void LEDBlink(int LPin, int repeatNum)
 {
