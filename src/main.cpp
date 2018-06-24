@@ -7,8 +7,8 @@
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
 // classes code changes
+#include "Display.h"
 #include "ZoneController.h"
-#include <Display.h>
 
 // forward decs
 void printWifiStatus();
@@ -29,10 +29,6 @@ int equalID(char *receive_payload, const char *targetID);
 void updateZoneDisplayLines(void);
 int freeRam(void);
 void printFreeRam(void);
-
-// OLED display stuff
-
-// static const int dispUpdateFreq = 1.5; // how many updates per sec
 
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -78,9 +74,6 @@ const int max_payload_size = 32;
 char receive_payload[max_payload_size +
                      1]; // +1 to allow room for a terminating NULL char
 static unsigned int goodSecsMax = 15; // 20
-// static unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max
-// millisces to wait if no ack from pi before power cycling pi static unsigned
-// long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 
 // misc stuff
 #define LEDPIN 2 // esp32 devkit on board blue LED
@@ -88,14 +81,12 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.91 B:\"OO\""
+#define SW_VERSION "V2.94 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
-// conection check timer
 unsigned long previousConnCheckMillis = 0;
 unsigned long intervalConnCheckMillis = 63000;
-// unsigned long currentMillis = 0;
 unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 60000;
 char tempStr[17];                               // buffer for 16 chars and eos
@@ -115,13 +106,15 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 
     // setup OLED display
     myDisplay.begin();
+    myDisplay.setFont(u8g2_font_8x13_tf);
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(3, TITLE_LINE2);
     myDisplay.writeLine(4, TITLE_LINE3);
+    // myDisplay.writeLine(5, "________________");
 
     myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
-    delay(5000);
+    delay(3000);
 
     dht.setup(DHTPIN, dht.AM2302);
 
@@ -151,14 +144,17 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 
     // MQTTclient.loop(); //process any MQTT stuff
     // checkConnections();
-    // myDisplay.wipe();
+    myDisplay.wipe();
 }
 
 void loop() {
-    checkConnections(); // reconnect if reqd
+    //checkConnections(); // reconnect if reqd
+    myDisplay.refresh();
 
-    MQTTclient.loop();        // process any MQTT stuff returned in callback
-    updateTempDisplay();      // get and display temp
+    MQTTclient.loop();   // process any MQTT stuff returned in callback
+    updateTempDisplay(); // get and display temp
+    myDisplay.refresh();
+
     processZoneRF24Message(); // process any zone messages
     ZCs[0].manageRestarts(transmitter);
     // manageRestarts(1);
@@ -169,6 +165,7 @@ void loop() {
 
     updateZoneDisplayLines();
     myDisplay.refresh();
+    checkConnections(); // reconnect if reqd
 }
 
 void checkConnections() {
@@ -220,15 +217,15 @@ void connectWiFi() {
 
         // wait 10 seconds for connection:
         delay(5000);
-        // jump out if connection attempt ha timed out
+        // enable jump out if connection attempt has timed out
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
     (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
                          : Serial.println("Wifi Connection made!");
 
-    myDisplay.writeLine(5, "Connected WiFi!");
-    myDisplay.refresh();
+    // myDisplay.writeLine(5, "Connected WiFi!");
+    // myDisplay.refresh();
 }
 
 void connectMQTT() {
@@ -278,8 +275,6 @@ void updateTempDisplay() {
         float t = dht.getTemperature();
         float h = dht.getHumidity();
         char humiStr[] = "string to hold humidity";
-        // char tempStr[9]; //="12345678";buffer
-        // Check if any reads failed and exit early (to try again).
         char msgStr[] = "Message String long enough?";
         strcpy(msgStr, "Temp: ");
         if (isnan(t)) {
@@ -292,14 +287,13 @@ void updateTempDisplay() {
             MQTTclient.publish(publishHumiTopic, humiStr);
 
             strcat(tempStr, "*C");
+            Serial.print("MQTT publish Temp: ");
+            Serial.println(tempStr);
         }
-        // printO(20, 40, strcat(msgStr, tempStr));
-
         myDisplay.writeLine(1, strcat(msgStr, tempStr));
 
-        Serial.print(F("Temperature: "));
+        Serial.print("Temp reading: ");
         Serial.println(tempStr);
-        // Serial.println(" *C ");
 
         previousTempDisplayMillis = currentMillis;
     }
@@ -329,12 +323,9 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
         Serial.print((char)payload[i]);
     }
     CR;
-    // Serial.println();
-    // e.g topic = "433Bridge/cmnd/Power1", and payload = 1 or 0
+    // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
     // either match whole topic string or trim off last 1or 2 chars and
-    // convert to a number
-    // convert last 1-2 chars to socket number
-    // get last char
+    // convert to a number, convert last 1-2 chars to socket number
     char lastChar =
         topic[strlen(topic) - 1]; // lst char will always be a digit char
     // see if last but 1 is also a digit char - ie number has two digits -
@@ -349,14 +340,15 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
         socketNumber = (lastChar - '0');
     }
 
-    socketNumber--;       // convert from 1-16 range to 0-15 range sendUnit uses
+    int socketID =
+        socketNumber - 1; // convert from 1-16 range to 0-15 range sendUnit uses
     uint8_t newState = 0; // default to off
     if ((payload[0] - '1') == 0) {
         newState = 1;
     }
 
     digitalWrite(LEDPIN, newState);
-    operateSocket(socketNumber, newState);
+    operateSocket(socketID, newState);
 }
 
 // 0-15, 0,1

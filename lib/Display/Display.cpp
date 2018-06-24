@@ -51,7 +51,7 @@ void Display::refresh(void)
 {
     // u8g2.begin();
     clearBuffer();
-    setFont(u8g2_font_8x13_tf);
+    //setFont(u8g2_font_8x13_tf);
     for (int i = 0; i < DISPLAY_LINES; i++)
     {
         drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
@@ -64,7 +64,7 @@ void Display::wipe(void)
 {
     // u8g2.begin();
     clearBuffer();
-    setFont(u8g2_font_8x13_tf);
+    //setFont(u8g2_font_8x13_tf);
     for (int i = 0; i < DISPLAY_LINES; i++)
     {
         strcpy(displayLine[i], " ");
@@ -80,29 +80,29 @@ void Display::writeLine(int lineNumber, const char *lineText)
     strcpy(displayLine[lineNumber - 1], lineText);
 }
 
-void Display::printO(int x, int y, const char *text)
-{
-    begin();
-    clearBuffer();
-    setFont(u8g2_font_8x13_tf);
-    drawStr(x, y, text);
-    sendBuffer();
-    delay(10);
-}
+// void Display::printO(int x, int y, const char *text)
+// {
+//     begin();
+//     clearBuffer();
+//     //setFont(u8g2_font_8x13_tf);
+//     drawStr(x, y, text);
+//     sendBuffer();
+//     delay(10);
+// }
 
-void Display::printO(const char *message)
-{
-    this->print(message);
-}
+// void Display::printO(const char *message)
+// {
+//     this->print(message);
+// }
 
-void Display::printOWithVal(const char *message, int value)
-{
-    this->print(message);
-    this->print(value);
-}
+// void Display::printOWithVal(const char *message, int value)
+// {
+//     this->print(message);
+//     this->print(value);
+// }
 
-void Display::printO2Str(const char *str1, const char *str2)
-{
-    this->print(str1);
-    this->print(str2);
-}
+// void Display::printO2Str(const char *str1, const char *str2)
+// {
+//     this->print(str1);
+//     this->print(str2);
+// }

@@ -28,11 +28,11 @@ class Display : public U8G2
 	void refresh(void);
 	void wipe(void);
 	void setup();
-	void printO(int x, int y, const char *text);
-	void printO(const char *message);
-	void printOWithVal(const char *message, int value);
+	//void printO(int x, int y, const char *text);
+	//void printO(const char *message);
+	//void printOWithVal(const char *message, int value);
 
-	void printO2Str(const char *str1, const char *str2);
+	//void printO2Str(const char *str1, const char *str2);
 };
 
 #endif
