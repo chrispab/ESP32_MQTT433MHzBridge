@@ -10,6 +10,8 @@
 #include "Display.h"
 #include "ZoneController.h"
 
+#include <sendemail.h>
+
 // forward decs
 void printWifiStatus();
 boolean processRequest(String &getLine);
@@ -81,7 +83,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.95 Br:\"OO\""
+#define SW_VERSION "V2.96 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -148,6 +150,13 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     // MQTTclient.loop(); //process any MQTT stuff
     // checkConnections();
     myDisplay.wipe();
+
+    // create object
+    SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
+                5000, true);
+    // Send Email
+    e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
+           "programm started/restarted");
 }
 
 void loop() {
