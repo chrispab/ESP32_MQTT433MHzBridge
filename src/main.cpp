@@ -81,14 +81,16 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.94 Br:\"OO\""
+#define SW_VERSION "V2.95 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;
 unsigned long intervalConnCheckMillis = 63000;
-unsigned long previousTempDisplayMillis = 0;
 unsigned long intervalTempDisplayMillis = 60000;
+unsigned long previousTempDisplayMillis =
+    millis() - intervalTempDisplayMillis; // trigger on start
+
 char tempStr[17];                               // buffer for 16 chars and eos
 static unsigned long dispUpdateInterval = 1000; // 1000ms
 
@@ -115,6 +117,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
     delay(3000);
+    myDisplay.wipe();
 
     dht.setup(DHTPIN, dht.AM2302);
 
@@ -148,7 +151,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 }
 
 void loop() {
-    //checkConnections(); // reconnect if reqd
+    // checkConnections(); // reconnect if reqd
     myDisplay.refresh();
 
     MQTTclient.loop();   // process any MQTT stuff returned in callback
@@ -171,10 +174,8 @@ void loop() {
 void checkConnections() {
     currentMillis = millis();
     if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis) {
-        Serial.println("Check WiFi and MQTT connections"); // save the last time
-                                                           // looped
-        if (!WiFi.isConnected())                           //!= WL_CONNECTED)
-        {
+
+        if (!WiFi.isConnected()) { //!= WL_CONNECTED)
             Serial.println("Wifi Needs reconnecting");
             connectWiFi();
         } else {
@@ -316,7 +317,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // Serial.println("--EOP");
 
     // CR;
-    Serial.print("Message arrived [");
+    Serial.print("MQTT rxed [");
     Serial.print(topic);
     Serial.print("] : ");
     for (uint8_t i = 0; i < length; i++) {
