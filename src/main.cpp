@@ -29,6 +29,8 @@ void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
 
 void updateZoneDisplayLines(void);
+void updateDisplayData(void);
+
 int freeRam(void);
 void printFreeRam(void);
 
@@ -83,7 +85,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.96 Br:\"OO\""
+#define SW_VERSION "V2.97 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -102,6 +104,8 @@ Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 15, "SHD", "SSS")};
+//display vars
+boolean bigTempDisplayEnabled=true;
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
                // open:
@@ -152,20 +156,20 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     myDisplay.wipe();
 
     // create object
-    SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
-                5000, true);
+    SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com",
+                "fbmfbmqluzaakvso", 5000, true);
     // Send Email
     e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
            "programm started/restarted");
 }
 
 void loop() {
-    // checkConnections(); // reconnect if reqd
+    updateDisplayData();
+
     myDisplay.refresh();
 
     MQTTclient.loop();   // process any MQTT stuff returned in callback
-    updateTempDisplay(); // get and display temp
-    myDisplay.refresh();
+    //myDisplay.refresh();
 
     processZoneRF24Message(); // process any zone messages
     ZCs[0].manageRestarts(transmitter);
@@ -175,9 +179,19 @@ void loop() {
     // manageRestarts(2);
     ZCs[2].manageRestarts(transmitter);
 
-    updateZoneDisplayLines();
-    myDisplay.refresh();
+    //myDisplay.refresh();
     checkConnections(); // reconnect if reqd
+}
+
+void updateDisplayData(){
+
+    if (bigTempDisplayEnabled){
+
+    }
+
+    updateTempDisplay(); // get and display temp
+    updateZoneDisplayLines();
+
 }
 
 void checkConnections() {
