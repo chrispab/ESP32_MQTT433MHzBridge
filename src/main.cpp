@@ -34,6 +34,8 @@ void updateDisplayData(void);
 int freeRam(void);
 void printFreeRam(void);
 
+char *getTempStatus(char *thistempStr);
+
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
 #define DHTPIN 33 // what digital pin we're connected to
@@ -85,7 +87,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.97 Br:\"OO\""
+#define SW_VERSION "V2.98 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -95,8 +97,8 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-char tempStr[17];                               // buffer for 16 chars and eos
-static unsigned long dispUpdateInterval = 1000; // 1000ms
+char tempStr[17];                           // buffer for 16 chars and eos
+static unsigned long UpdateInterval = 1000; // 1000ms
 
 // create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -104,14 +106,18 @@ Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 15, "SHD", "SSS")};
-//display vars
-boolean bigTempDisplayEnabled=true;
+// display vars
+boolean bigTempDisplayEnabled = true;
+
+enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
+// enum displayModes ;
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
                // open:
     Serial.begin(115200);
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
-
+    displayMode = NORMAL;
+    displayMode = BIG_TEMP;
     // setup OLED display
     myDisplay.begin();
     myDisplay.setFont(u8g2_font_8x13_tf);
@@ -168,8 +174,8 @@ void loop() {
 
     myDisplay.refresh();
 
-    MQTTclient.loop();   // process any MQTT stuff returned in callback
-    //myDisplay.refresh();
+    MQTTclient.loop(); // process any MQTT stuff returned in callback
+    // myDisplay.refresh();
 
     processZoneRF24Message(); // process any zone messages
     ZCs[0].manageRestarts(transmitter);
@@ -179,19 +185,32 @@ void loop() {
     // manageRestarts(2);
     ZCs[2].manageRestarts(transmitter);
 
-    //myDisplay.refresh();
+    // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
 }
 
-void updateDisplayData(){
+void updateDisplayData() {
+    static unsigned long lastUpdateMillis = 0;
+    char tempStatus[] = {"1234567890111"};
+    char zone1Status[] = {"12345678901234567"};
+    char zone3Status[] = {"12345678901234567"};
 
-    if (bigTempDisplayEnabled){
+    // check if time to display a new message updates
+    if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to update?
+        if (displayMode == NORMAL) {
+            updateTempDisplay(); // get and display temp
+            updateZoneDisplayLines();
+        } else if (displayMode == BIG_TEMP) {
+            getTempStatus(
+                tempStatus); // update tempStatus with latest temp reading
+            ZCs[0].getStatus(zone1Status);
+            ZCs[2].getStatus(zone3Status);
+            myDisplay.setFont(u8g2_font_10x20_tf);
 
+            myDisplay.writeLine(4, tempStatus);
+        }
     }
-
-    updateTempDisplay(); // get and display temp
-    updateZoneDisplayLines();
-
+    lastUpdateMillis = millis();
 }
 
 void checkConnections() {
@@ -289,6 +308,40 @@ void connectMQTT() {
     }
     (!MQTTConnectTimeout) ? Serial.println("MQTT Connection made!")
                           : Serial.println("MQTT Connection attempt Time Out!");
+}
+
+// get status string from temp sensor
+char *getTempStatus(char *thistempStr) {
+    currentMillis = millis();
+    //if (currentMillis - previousTempDisplayMillis > intervalTempDisplayMillis) {
+
+        // Read temperature as Celsius (the default)
+        float t = dht.getTemperature();
+        float h = dht.getHumidity();
+        char humiStr[] = "string to hold humidity";
+        char msgStr[] = "Message String long enough?";
+        strcpy(msgStr, "Temp: ");
+        if (isnan(t)) {
+            Serial.println("Failed to read from DHT sensor!");
+            strcpy(thistempStr, "-=NaN=-");
+        } else { // is a number
+            dtostrf(t, 4, 1, thistempStr);
+            MQTTclient.publish(publishTempTopic, thistempStr);
+            dtostrf(h, 4, 1, humiStr);
+            MQTTclient.publish(publishHumiTopic, humiStr);
+
+            strcat(tempStr, "*C");
+            Serial.print("MQTT publish Temp: ");
+            Serial.println(thistempStr);
+        }
+        //myDisplay.writeLine(1, strcat(msgStr, thistempStr));
+
+        Serial.print("Temp reading: ");
+        Serial.println(thistempStr);
+
+        previousTempDisplayMillis = currentMillis;
+        return thistempStr; // pass back pointer to the temp string
+    //}
 }
 
 void updateTempDisplay() {
@@ -500,9 +553,7 @@ void updateZoneDisplayLines(void) {
     const char rebootMsg[] = {"Reboot: "};
     const char powerCycleMsg[] = {"Power Cycle"};
     int zoneID; // only initialised once at start
-    static unsigned long lastDispUpdateTimeMillis = 0;
-
-    // static unsigned long dispUpdateInterval = 1000 / dispUpdateFreq;
+    static unsigned long lastUpdateMillis = 0;
 
     unsigned int secsSinceAck = 0;
     // max secs out considered good
@@ -510,16 +561,9 @@ void updateZoneDisplayLines(void) {
     char str_output[20] = {0};
     unsigned int secsLeft;
     char buf[17];
-    // Serial.println(zoneID);
-    // this loop
-    // create info string for each zone then display it
-    // setup disp
-    // u8g2.clearBuffer();
-    // u8g2.setFont(u8g2_font_7x14_tf);
 
     // check if time to display a new message updates
-    if ((millis() - lastDispUpdateTimeMillis) >=
-        dispUpdateInterval) { // ready to update?
+    if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to update?
         // printFreeRam();
         for (zoneID = 0; zoneID < 3; zoneID++) {
             // Serial.println(zoneID);
@@ -586,7 +630,7 @@ void updateZoneDisplayLines(void) {
                 // goodLED();
             }
         }
-        lastDispUpdateTimeMillis = millis();
+        lastUpdateMillis = millis();
         myDisplay.refresh();
     }
 }

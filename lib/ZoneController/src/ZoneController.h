@@ -12,7 +12,9 @@ public:
   void manageRestarts(NewRemoteTransmitter transmitter);
   void powerCycle(NewRemoteTransmitter transmitter);
   void resetZoneDevice(void);
-  
+  char *getStatus(char *statusMessage);
+
+
 
   char heartBeatText[4]; // allow enough space for text plus 1 extra for null terminator
   unsigned long lastGoodAckMillis;
