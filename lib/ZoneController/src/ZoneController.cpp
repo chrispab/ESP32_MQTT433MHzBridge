@@ -93,9 +93,9 @@ void ZoneController::powerCycle(NewRemoteTransmitter transmitter) {
 }
 
 void ZoneController::resetZoneDevice(void) {
-    lastGoodAckMillis = millis();
-    isRebooting = 0;
-    rebootMillisLeft = 0;
+    this->lastGoodAckMillis = millis();
+    this->isRebooting = 0;
+    this->rebootMillisLeft = 0;
 }
 
 // return a text string with current status of zone controller

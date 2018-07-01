@@ -35,6 +35,8 @@ int freeRam(void);
 void printFreeRam(void);
 
 char *getTempStatus(char *thistempStr);
+void processMQTTMessage(void);
+char *getMQTTStatus(char *MQTTStatus);
 
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -87,7 +89,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.98 Br:\"OO\""
+#define SW_VERSION "V2.99 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -97,8 +99,8 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-char tempStr[17];                           // buffer for 16 chars and eos
-static unsigned long UpdateInterval = 1000; // 1000ms
+char tempStr[17];                          // buffer for 16 chars and eos
+static unsigned long UpdateInterval = 250; // 1000ms
 
 // create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -112,12 +114,17 @@ boolean bigTempDisplayEnabled = true;
 enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
 // enum displayModes ;
 
+int MQTTNewState = 0;     // 0 or 1
+int MQTTSocketNumber = 0; // 1-16
+boolean MQTTNewData = false;
+
 void setup() { // Initialize serial monitor port to PC and wait for port to
                // open:
     Serial.begin(115200);
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
+    displayMode = MULTI;
     // setup OLED display
     myDisplay.begin();
     myDisplay.setFont(u8g2_font_8x13_tf);
@@ -170,14 +177,14 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 }
 
 void loop() {
-    updateDisplayData();
+    // updateDisplayData();
 
-    myDisplay.refresh();
-
-    MQTTclient.loop(); // process any MQTT stuff returned in callback
     // myDisplay.refresh();
 
-    processZoneRF24Message(); // process any zone messages
+    MQTTclient.loop();    // process any MQTT stuff, returned in callback
+    processMQTTMessage(); // check flags set above and act on
+    // updateDisplayData();
+    processZoneRF24Message(); // process any zone watchdog messages
     ZCs[0].manageRestarts(transmitter);
     // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
@@ -187,6 +194,15 @@ void loop() {
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
+    updateDisplayData();
+}
+
+void processMQTTMessage(void) {
+    if (MQTTNewData) {
+        digitalWrite(LEDPIN, MQTTNewState);
+        operateSocket(MQTTSocketNumber - 1, MQTTNewState);
+        MQTTNewData = false; // indicate not new data now, processed
+    }
 }
 
 void updateDisplayData() {
@@ -194,6 +210,7 @@ void updateDisplayData() {
     char tempStatus[] = {"1234567890111"};
     char zone1Status[] = {"12345678901234567"};
     char zone3Status[] = {"12345678901234567"};
+    char MQTTStatus[] = {"12345678901234567"};
 
     // check if time to display a new message updates
     if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to update?
@@ -207,10 +224,39 @@ void updateDisplayData() {
             ZCs[2].getStatus(zone3Status);
             myDisplay.setFont(u8g2_font_10x20_tf);
 
-            myDisplay.writeLine(4, tempStatus);
+            myDisplay.writeLine(5, tempStatus);
+        } else if (displayMode == MULTI) {
+            // get text to display
+            getTempStatus(tempStatus);
+            ZCs[0].getStatus(zone1Status);
+            ZCs[2].getStatus(zone3Status);
+            getMQTTStatus(MQTTStatus);
+            myDisplay.setFont(u8g2_font_8x13_tf);
+            myDisplay.writeLine(1, tempStatus);
+            myDisplay.writeLine(3, MQTTStatus);
+            myDisplay.writeLine(5, zone1Status);
+            myDisplay.writeLine(6, zone3Status);
         }
+        myDisplay.refresh();
     }
     lastUpdateMillis = millis();
+}
+char *getMQTTStatus(char *MQTTStatus) {
+    char msg[17] = "Socket:";
+    char buff[10];
+
+    sprintf(buff, "%d", (MQTTSocketNumber));
+    strcat(msg, buff);
+
+    if (MQTTNewState == 0) {
+        strcat(msg, " OFF");
+    } else {
+        strcat(msg, " ON");
+    }
+    Serial.println(msg);
+    strcpy(MQTTStatus, msg);
+
+    return MQTTStatus;
 }
 
 void checkConnections() {
@@ -313,34 +359,39 @@ void connectMQTT() {
 // get status string from temp sensor
 char *getTempStatus(char *thistempStr) {
     currentMillis = millis();
-    //if (currentMillis - previousTempDisplayMillis > intervalTempDisplayMillis) {
+    // if (currentMillis - previousTempDisplayMillis >
+    // intervalTempDisplayMillis) {
 
-        // Read temperature as Celsius (the default)
-        float t = dht.getTemperature();
-        float h = dht.getHumidity();
-        char humiStr[] = "string to hold humidity";
-        char msgStr[] = "Message String long enough?";
-        strcpy(msgStr, "Temp: ");
-        if (isnan(t)) {
-            Serial.println("Failed to read from DHT sensor!");
-            strcpy(thistempStr, "-=NaN=-");
-        } else { // is a number
-            dtostrf(t, 4, 1, thistempStr);
-            MQTTclient.publish(publishTempTopic, thistempStr);
-            dtostrf(h, 4, 1, humiStr);
-            MQTTclient.publish(publishHumiTopic, humiStr);
+    // Read temperature as Celsius (the default)
+    float t = dht.getTemperature();
+    float h = dht.getHumidity();
+    char humiStr[] = "string to hold humidity";
+    char msgStr[] = "Message String long enough?";
+    strcpy(msgStr, "Temp: ");
+    if (isnan(t)) {
+        Serial.println("Failed to read from DHT sensor!");
+        strcpy(thistempStr, "-=NaN=-");
+    } else { // is a number
+        dtostrf(t, 4, 1, thistempStr);
+        MQTTclient.publish(publishTempTopic, thistempStr);
+        dtostrf(h, 4, 1, humiStr);
+        MQTTclient.publish(publishHumiTopic, humiStr);
 
-            strcat(tempStr, "*C");
-            Serial.print("MQTT publish Temp: ");
-            Serial.println(thistempStr);
-        }
-        //myDisplay.writeLine(1, strcat(msgStr, thistempStr));
+        //            strcat(thistempStr, "\0xb0\0x00");
+        strcat(thistempStr, "\xb0");
+        strcat(thistempStr, "C");
 
-        Serial.print("Temp reading: ");
+        Serial.print("MQTT publish Temp: ");
         Serial.println(thistempStr);
+    }
+    // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
 
-        previousTempDisplayMillis = currentMillis;
-        return thistempStr; // pass back pointer to the temp string
+    Serial.print("Temp reading: ");
+    Serial.println(thistempStr);
+
+    previousTempDisplayMillis = currentMillis;
+    // strcpy(thistempStr, tempStr);
+    return thistempStr; // pass back pointer to the temp string
     //}
 }
 
@@ -423,9 +474,17 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     if ((payload[0] - '1') == 0) {
         newState = 1;
     }
+    // signal a new command has been rxed
+    // and
+    // topic and payload also available
+    MQTTNewState = newState;         // 0 or 1
+    MQTTSocketNumber = socketNumber; // 1-16
+    MQTTNewData = true;
+    // then leave main control loop to turn of/onn sockets
+    // and reset sigmals
 
-    digitalWrite(LEDPIN, newState);
-    operateSocket(socketID, newState);
+    // digitalWrite(LEDPIN, newState);
+    // operateSocket(socketID, newState);
 }
 
 // 0-15, 0,1
@@ -433,7 +492,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
 // only used by mqtt function
 void operateSocket(uint8_t socketID, uint8_t state) {
     // this is a blocking routine !!!!!!!
-    char msg[17] = "Socket : ";
+    char msg[17] = "Socket:";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
@@ -446,8 +505,8 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     } else {
         strcat(msg, " ON");
     }
-    myDisplay.writeLine(2, msg);
-    myDisplay.refresh();
+    // myDisplay.writeLine(2, msg);
+    // myDisplay.refresh();
 
     // for (int i = 0; i < 2; i++)
     // { // turn socket off
@@ -519,18 +578,14 @@ void processZoneRF24Message(void) {
             strcpy(messageText, ZCs[0].heartBeatText);
         } else if (equalID(receive_payload, ZCs[1].heartBeatText)) {
             ZCs[1].resetZoneDevice();
-            // ZCs[1].lastGoodAckMillis = millis();
             Serial.println("RESET CCC");
             strcpy(messageText, ZCs[1].heartBeatText);
         } else if (equalID(receive_payload, ZCs[2].heartBeatText)) {
             ZCs[2].resetZoneDevice();
-            // ZCs[2].lastGoodAckMillis = millis();
             Serial.println("RESET SSS");
             strcpy(messageText, ZCs[2].heartBeatText);
         } else {
             Serial.println("NO MATCH");
-            // badLED();
-            // LEDsOff();
             strcpy(messageText, "NO MATCH");
         }
         // writeLine(6, messageText);
