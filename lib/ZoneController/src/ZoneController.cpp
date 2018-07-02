@@ -31,10 +31,7 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
 
         // printFreeRam();
         if (!isRebooting) { // all this done first time triggered
-            // printD("Reboot : ");
-
             isRebooting = true; // signal device is rebooting
-
             isPowerCycling = true; // signal in power cycle
 
             powerCycle(transmitter);
@@ -44,10 +41,9 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
             rebootMillisLeft = waitForPiPowerUpMillis;
             lastRebootMillisLeftUpdate = millis();
 
-            Serial.println("triggered reboot in manage reboots");
+            Serial.println("power cycled in manageRestarts");
 
             Serial.println(rebootMillisLeft);
-            // delay(1000);
         } else // is rebooting
         {      // this executes till end of reboot timer
             // device is rebooting now - do some stuff to update countdown
@@ -55,22 +51,19 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
             // update
             unsigned long millisLapsed = millis() - lastRebootMillisLeftUpdate;
 
-            // next subtraction will take us to/over limit
+            // test if next subtraction will take us to/over limit
             if (millisLapsed >= rebootMillisLeft) {
-                // zero or neg reached
-                rebootMillisLeft = false;
-                // timerDone = 1;
-            } else { // ok to do timer subtraction
-
+                // zero or neg will be reached reached
+                rebootMillisLeft = 0;
+            } else { // otherwise ok to do timer subtraction
                 rebootMillisLeft = rebootMillisLeft - millisLapsed;
             }
             lastRebootMillisLeftUpdate = millis();
 
             // if next time  takes it below zero, act as if it was zero
             if (rebootMillisLeft == 0) { // reboot stuff completed here
-                // if (timerDone == 1) { // reboot stuff completed here
                 lastGoodAckMillis = millis();
-                Serial.print(F("Assume Pi back up:"));
+                Serial.print("Assume Pi back up:");
                 Serial.println(id_number);
                 // printD("Assume pi back up");
                 // printD2Str("Assume up:", name);
@@ -89,13 +82,13 @@ void ZoneController::powerCycle(NewRemoteTransmitter transmitter) {
     delay(3000);
     Serial.println("sending on");
     transmitter.sendUnit(socketID, true);
-    Serial.println("complete");
+    Serial.println("power cycle completed");
 }
 
 void ZoneController::resetZoneDevice(void) {
     this->lastGoodAckMillis = millis();
-    this->isRebooting = 0;
-    this->rebootMillisLeft = 0;
+    this->isRebooting = false;
+    this->rebootMillisLeft = false;
 }
 
 // return a text string with current status of zone controller
@@ -104,7 +97,7 @@ char *ZoneController::getStatus(char *statusMessage) {
     // all three lines can be displayed at once
     const char rebootMsg[] = {"Reboot: "};
     const char powerCycleMsg[] = {"Power Cycle"};
-    int zoneID; // only initialised once at start
+    //int zoneID; // only initialised once at start
 
     unsigned int secsSinceAck = 0; // max secs out considered good
 
@@ -115,7 +108,7 @@ char *ZoneController::getStatus(char *statusMessage) {
     // do just for THIS zone controller
     secsSinceAck = (millis() - this->lastGoodAckMillis) / 1000;
     // make sure check for restarting device
-    // if so display current secs in wait for reboot cycle
+    // if so return current secs in wait for reboot cycle
     if (this->isRebooting) {
         secsLeft = (this->rebootMillisLeft) / 1000UL;
 
@@ -125,9 +118,7 @@ char *ZoneController::getStatus(char *statusMessage) {
         Serial.print("--secsLeft var: ");
         Serial.println(secsLeft);
 
-        // build string to show if cycling or coming
-        // back up char str_output[20] = { 0 }; //,
-        // str_two[]="two"; start with device name
+        // build string to show if cycling or coming back up
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         // char message[] = " Reboot: ";

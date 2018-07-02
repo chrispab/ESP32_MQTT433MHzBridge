@@ -89,7 +89,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V2.99 Br:\"OO\""
+#define SW_VERSION "V3.0 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -99,8 +99,9 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-char tempStr[17];                          // buffer for 16 chars and eos
-static unsigned long UpdateInterval = 250; // 1000ms
+char tempStr[17];                                 // buffer for 16 chars and eos
+static unsigned long UpdateInterval = 250;        // 1000ms
+static unsigned long displayUpdateInterval = 2000; // ms
 
 // create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -180,8 +181,11 @@ void loop() {
     // updateDisplayData();
 
     // myDisplay.refresh();
+//capture new sensor readings
 
-    MQTTclient.loop();    // process any MQTT stuff, returned in callback
+    MQTTclient.loop(); // process any MQTT stuff, returned in callback
+    updateDisplayData();
+
     processMQTTMessage(); // check flags set above and act on
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
@@ -194,7 +198,6 @@ void loop() {
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
-    updateDisplayData();
 }
 
 void processMQTTMessage(void) {
@@ -206,31 +209,27 @@ void processMQTTMessage(void) {
 }
 
 void updateDisplayData() {
-    static unsigned long lastUpdateMillis = 0;
-    char tempStatus[] = {"1234567890111"};
-    char zone1Status[] = {"12345678901234567"};
-    char zone3Status[] = {"12345678901234567"};
-    char MQTTStatus[] = {"12345678901234567"};
+    static unsigned long lastDisplayUpdateMillis = 0;
+    char tempStatus[] = {"12345678901234567890"};
+    char zone1Status[] = {"12345678901234567890"};
+    char zone3Status[] = {"12345678901234567890"};
+    char MQTTStatus[] = {"12345678901234567890"};
 
     // check if time to display a new message updates
-    if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to update?
+    if ((millis() - lastDisplayUpdateMillis) >=
+        displayUpdateInterval) { // ready to update?
+        // get all status messages ready to use
+        getTempStatus(tempStatus);
+        ZCs[0].getStatus(zone1Status);
+        ZCs[2].getStatus(zone3Status);
+        getMQTTStatus(MQTTStatus);
         if (displayMode == NORMAL) {
             updateTempDisplay(); // get and display temp
             updateZoneDisplayLines();
         } else if (displayMode == BIG_TEMP) {
-            getTempStatus(
-                tempStatus); // update tempStatus with latest temp reading
-            ZCs[0].getStatus(zone1Status);
-            ZCs[2].getStatus(zone3Status);
             myDisplay.setFont(u8g2_font_10x20_tf);
-
             myDisplay.writeLine(5, tempStatus);
         } else if (displayMode == MULTI) {
-            // get text to display
-            getTempStatus(tempStatus);
-            ZCs[0].getStatus(zone1Status);
-            ZCs[2].getStatus(zone3Status);
-            getMQTTStatus(MQTTStatus);
             myDisplay.setFont(u8g2_font_8x13_tf);
             myDisplay.writeLine(1, tempStatus);
             myDisplay.writeLine(3, MQTTStatus);
@@ -238,9 +237,10 @@ void updateDisplayData() {
             myDisplay.writeLine(6, zone3Status);
         }
         myDisplay.refresh();
+        lastDisplayUpdateMillis = millis();
     }
-    lastUpdateMillis = millis();
 }
+
 char *getMQTTStatus(char *MQTTStatus) {
     char msg[17] = "Socket:";
     char buff[10];
@@ -253,7 +253,7 @@ char *getMQTTStatus(char *MQTTStatus) {
     } else {
         strcat(msg, " ON");
     }
-    Serial.println(msg);
+    //Serial.println(msg);
     strcpy(MQTTStatus, msg);
 
     return MQTTStatus;
@@ -358,7 +358,7 @@ void connectMQTT() {
 
 // get status string from temp sensor
 char *getTempStatus(char *thistempStr) {
-    currentMillis = millis();
+    // currentMillis = millis();
     // if (currentMillis - previousTempDisplayMillis >
     // intervalTempDisplayMillis) {
 
@@ -389,7 +389,7 @@ char *getTempStatus(char *thistempStr) {
     Serial.print("Temp reading: ");
     Serial.println(thistempStr);
 
-    previousTempDisplayMillis = currentMillis;
+    // previousTempDisplayMillis = currentMillis;
     // strcpy(thistempStr, tempStr);
     return thistempStr; // pass back pointer to the temp string
     //}

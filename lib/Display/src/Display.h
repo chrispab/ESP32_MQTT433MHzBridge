@@ -20,14 +20,14 @@ class Display : public U8G2
 	// 	u8x8_SetPin_HW_I2C(getU8x8(), reset, clock, data);
 	// };
 
-	
+
 	Display(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE, uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE);
 	// 	: U8G2()
     //void setFont()
 	void writeLine(int lineNumber, const char *lineText);
 	void refresh(void);
 	void wipe(void);
-	void setup();
+	//void setup();
 	//void printO(int x, int y, const char *text);
 	//void printO(const char *message);
 	//void printOWithVal(const char *message, int value);
