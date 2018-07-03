@@ -20,17 +20,6 @@ char displayLine[6][17]; // 6 lines of 16 chars +eol for dispaly store
 
 #include "Display.h"
 
-// Display::Display(void)
-// {
-//     //U8G2_SSD1306_128X64_NONAME_F_HW_I2C
-//     //: U8G2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22, /* data=*/21);
-//     // ESP32 Thing, HW I2C with pin remapping
-
-//     // pinMode(_pin, OUTPUT);
-// }
-// Display::Display(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE,
-// uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE) : U8G2(){}
-
 Display::Display(const u8g2_cb_t *rotation, uint8_t reset, uint8_t clock,
                  uint8_t data)
     : U8G2() {
@@ -38,14 +27,6 @@ Display::Display(const u8g2_cb_t *rotation, uint8_t reset, uint8_t clock,
         &u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);
     u8x8_SetPin_HW_I2C(getU8x8(), reset, clock, data);
 }
-
-// void Display::setup() { // Initialize serial monitor port to PC and wait for
-//                         // port to open:
-
-//     begin();
-
-//     wipe();
-// }
 
 // redraw the display with contents of displayLine array
 void Display::refresh(void) {
@@ -55,9 +36,9 @@ void Display::refresh(void) {
     for (int i = 0; i < DISPLAY_LINES; i++) {
         drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
     }
-    delay(20);
+    //delay(50);
     sendBuffer();
-    //delay(10);
+    //delay(50);
 }
 // redraw the display with contents of displayLine array
 void Display::wipe(void) {
@@ -68,7 +49,7 @@ void Display::wipe(void) {
         strcpy(displayLine[i], " ");
         drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
     }
-    delay(20);
+    //delay(20);
     sendBuffer();
 }
 // add-update a line of text in the display text buffer

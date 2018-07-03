@@ -1,3 +1,8 @@
+// note : for I2C problem use ;
+// https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/
+//
+//https://github.com/espressif/arduino-esp32/issues/1352
+
 #include <Arduino.h>
 #include <DHT.h>
 #include <NewRemoteTransmitter.h>
@@ -89,19 +94,24 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.0 Br:\"OO\""
+#define SW_VERSION "V3.1 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;
 unsigned long intervalConnCheckMillis = 63000;
+
 unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
+unsigned long intervalTempReadMillis = 30000;
+unsigned long previousTempReadMillis =
+    millis() - intervalTempReadMillis; // trigger on start
+
 char tempStr[17];                                 // buffer for 16 chars and eos
 static unsigned long UpdateInterval = 250;        // 1000ms
-static unsigned long displayUpdateInterval = 2000; // ms
+static unsigned long displayUpdateInterval = 250; // ms
 
 // create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -181,7 +191,7 @@ void loop() {
     // updateDisplayData();
 
     // myDisplay.refresh();
-//capture new sensor readings
+    // capture new sensor readings
 
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
     updateDisplayData();
@@ -210,16 +220,16 @@ void processMQTTMessage(void) {
 
 void updateDisplayData() {
     static unsigned long lastDisplayUpdateMillis = 0;
-    char tempStatus[] = {"12345678901234567890"};
+    static char tempStatus[] = {"12345678901234567890"};
     char zone1Status[] = {"12345678901234567890"};
     char zone3Status[] = {"12345678901234567890"};
     char MQTTStatus[] = {"12345678901234567890"};
 
-    // check if time to display a new message updates
-    if ((millis() - lastDisplayUpdateMillis) >=
-        displayUpdateInterval) { // ready to update?
+    // check if time to display new message updates
+    if ((millis() - lastDisplayUpdateMillis) >= displayUpdateInterval) {
         // get all status messages ready to use
-        getTempStatus(tempStatus);
+        // only read temp
+        getTempStatus(tempStatus); // TODO throttle saple rate to 30 secs
         ZCs[0].getStatus(zone1Status);
         ZCs[2].getStatus(zone3Status);
         getMQTTStatus(MQTTStatus);
@@ -253,7 +263,7 @@ char *getMQTTStatus(char *MQTTStatus) {
     } else {
         strcat(msg, " ON");
     }
-    //Serial.println(msg);
+    // Serial.println(msg);
     strcpy(MQTTStatus, msg);
 
     return MQTTStatus;
@@ -358,41 +368,48 @@ void connectMQTT() {
 
 // get status string from temp sensor
 char *getTempStatus(char *thistempStr) {
-    // currentMillis = millis();
-    // if (currentMillis - previousTempDisplayMillis >
-    // intervalTempDisplayMillis) {
 
-    // Read temperature as Celsius (the default)
-    float t = dht.getTemperature();
-    float h = dht.getHumidity();
-    char humiStr[] = "string to hold humidity";
-    char msgStr[] = "Message String long enough?";
-    strcpy(msgStr, "Temp: ");
-    if (isnan(t)) {
-        Serial.println("Failed to read from DHT sensor!");
-        strcpy(thistempStr, "-=NaN=-");
-    } else { // is a number
-        dtostrf(t, 4, 1, thistempStr);
-        MQTTclient.publish(publishTempTopic, thistempStr);
-        dtostrf(h, 4, 1, humiStr);
-        MQTTclient.publish(publishHumiTopic, humiStr);
+    char humiStr[] = "012345678901234567";
+    char msgStr[] = "012345678901234567";
+    static float t;
+    static float h;
 
-        //            strcat(thistempStr, "\0xb0\0x00");
-        strcat(thistempStr, "\xb0");
-        strcat(thistempStr, "C");
+    currentMillis = millis();
+    // ready to read?
+    if (currentMillis - previousTempReadMillis > intervalTempReadMillis) {
+        // Read temperature as Celsius (the default)
+        t = dht.getTemperature();
+        h = dht.getHumidity();
 
-        Serial.print("MQTT publish Temp: ");
+        strcpy(msgStr, "Temp: ");
+        if (isnan(t)) {
+            Serial.println("Failed to read from DHT sensor!");
+            strcpy(thistempStr, "-=NaN=-");
+        } else { // is a number
+            dtostrf(t, 4, 1, thistempStr);
+            MQTTclient.publish(publishTempTopic, thistempStr);
+            dtostrf(h, 4, 1, humiStr);
+            MQTTclient.publish(publishHumiTopic, humiStr);
+
+            //            strcat(thistempStr, "\0xb0\0x00");
+            strcat(thistempStr, "\xb0");
+            strcat(thistempStr, "C");
+
+            Serial.print("MQTT publish Temp: ");
+            Serial.println(thistempStr);
+        }
+        // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
+
+        Serial.print("Temp reading: ");
         Serial.println(thistempStr);
+
+        previousTempReadMillis = currentMillis;
+        // strcpy(thistempStr, tempStr);
+        return thistempStr; // pass back pointer to the temp string
+    } else {
+        // return previous read value
+        return thistempStr;
     }
-    // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
-
-    Serial.print("Temp reading: ");
-    Serial.println(thistempStr);
-
-    // previousTempDisplayMillis = currentMillis;
-    // strcpy(thistempStr, tempStr);
-    return thistempStr; // pass back pointer to the temp string
-    //}
 }
 
 void updateTempDisplay() {
