@@ -66,7 +66,8 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 // 433Mhz settings
 #define TX433PIN 32
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN,257,4); // tx address, pin for tx
+NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
+                                 4); // tx address, pin for tx
 
 byte socket = 3;
 bool state = false;
@@ -94,7 +95,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.1 Br:\"OO\""
+#define SW_VERSION "V3.11 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -220,19 +221,39 @@ void processMQTTMessage(void) {
 
 void updateDisplayData() {
     static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempStatus[] = {"12345678901234567890"};
-    char zone1Status[] = {"12345678901234567890"};
-    char zone3Status[] = {"12345678901234567890"};
-    char MQTTStatus[] = {"12345678901234567890"};
+    static char tempStatus[20];// = {"12345678901234567890"};
+    static char zone1Status[20];// = {"12345678901234567890"};
+    static char zone3Status[20];// = {"12345678901234567890"};
+    static char MQTTStatus[20];// = {"12345678901234567890"};
 
-    // check if time to display new message updates
-    if ((millis() - lastDisplayUpdateMillis) >= displayUpdateInterval) {
+    static char newTempStatus[20];// = {"12345678901234567890"};
+    static char newZone1Status[20];// = {"12345678901234567890"};
+    static char newZone3Status[20];// = {"12345678901234567890"};
+    static char newMQTTStatus[20];// = {"12345678901234567890"};
+
+    // TODO only update screen if data has changed
+    // compare new display data to new data
+    // if different - update the actual OLED display
+    // if any non zero then data has changed
+    if (strcmp(tempStatus, getTempStatus(newTempStatus)) ||
+        strcmp(zone1Status, ZCs[0].getStatus(newZone1Status)) ||
+        strcmp(zone3Status, ZCs[2].getStatus(newZone3Status)) ||
+        strcmp(MQTTStatus, getMQTTStatus(newMQTTStatus))) {
+
+        // copy new data to old vars
+        strcpy(tempStatus, newTempStatus);
+        strcpy(zone1Status, newZone1Status);
+        strcpy(zone3Status, newZone3Status);
+        strcpy(MQTTStatus, newMQTTStatus);
+
+        // check if time to display new message updates
+        // if ((millis() - lastDisplayUpdateMillis) >= displayUpdateInterval) {
         // get all status messages ready to use
         // only read temp
-        getTempStatus(tempStatus); // TODO throttle saple rate to 30 secs
-        ZCs[0].getStatus(zone1Status);
-        ZCs[2].getStatus(zone3Status);
-        getMQTTStatus(MQTTStatus);
+        // getTempStatus(tempStatus); // TODO throttle saple rate to 30 secs
+        // ZCs[0].getStatus(zone1Status);
+        // ZCs[2].getStatus(zone3Status);
+        // getMQTTStatus(MQTTStatus);
         if (displayMode == NORMAL) {
             updateTempDisplay(); // get and display temp
             updateZoneDisplayLines();
@@ -247,7 +268,11 @@ void updateDisplayData() {
             myDisplay.writeLine(6, zone3Status);
         }
         myDisplay.refresh();
-        lastDisplayUpdateMillis = millis();
+        Serial.println("Display Refreshed.......");
+
+        // lastDisplayUpdateMillis = millis();
+        // }
+        // LEDBlink(LEDPIN,2);
     }
 }
 
@@ -525,10 +550,10 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     // myDisplay.writeLine(2, msg);
     // myDisplay.refresh();
 
-    //for (int i = 0; i < 3; i++) { // turn socket off
-                                  // processZoneRF24Message();
-                                  // refresh();
-        transmitter.sendUnit(socketID, state);
+    // for (int i = 0; i < 3; i++) { // turn socket off
+    // processZoneRF24Message();
+    // refresh();
+    transmitter.sendUnit(socketID, state);
     //}
     Serial.println(msg);
 
