@@ -1,7 +1,7 @@
 // note : for I2C problem use ;
 // https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/
 //
-//https://github.com/espressif/arduino-esp32/issues/1352
+// https://github.com/espressif/arduino-esp32/issues/1352
 
 #include <Arduino.h>
 #include <DHT.h>
@@ -66,7 +66,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 // 433Mhz settings
 #define TX433PIN 32
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN); // tx address, pin for tx
+NewRemoteTransmitter transmitter(282830, TX433PIN,257,4); // tx address, pin for tx
 
 byte socket = 3;
 bool state = false;
@@ -525,12 +525,11 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     // myDisplay.writeLine(2, msg);
     // myDisplay.refresh();
 
-    // for (int i = 0; i < 2; i++)
-    // { // turn socket off
-    //	processZoneRF24Message();
-    //	refresh();
-    transmitter.sendUnit(socketID, state);
-    // }
+    //for (int i = 0; i < 3; i++) { // turn socket off
+                                  // processZoneRF24Message();
+                                  // refresh();
+        transmitter.sendUnit(socketID, state);
+    //}
     Serial.println(msg);
 
     // Serial.println("OK - TX socket state updated");
