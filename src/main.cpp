@@ -15,6 +15,7 @@
 #include "Display.h"
 #include "ZoneController.h"
 
+#include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
 #include <sendemail.h>
 
 // forward decs
@@ -42,6 +43,8 @@ void printFreeRam(void);
 char *getTempStatus(char *thistempStr);
 void processMQTTMessage(void);
 char *getMQTTStatus(char *MQTTStatus);
+
+void resetI2C(void);
 
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -95,7 +98,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.11 Br:\"OO\""
+#define SW_VERSION "V3.12 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -131,7 +134,13 @@ int MQTTSocketNumber = 0; // 1-16
 boolean MQTTNewData = false;
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
-               // open:
+    // open:
+
+    periph_module_reset(
+        PERIPH_I2C0_MODULE); // reset i2c bus controllerfrom IDF call
+    // periph_module_reset(PERIPH_I2C1_MODULE);//do both cos not sure which in
+    // use
+
     Serial.begin(115200);
     pinMode(LEDPIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
@@ -209,8 +218,21 @@ void loop() {
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
+    resetI2C();
 }
-
+void resetI2C(void) {
+    static unsigned long lastResetI2CMillis = millis();
+    unsigned long resetI2CInterval = 360000;
+    // do only every few hours
+    // u_long is 0 to 4,294,967,295
+    // 3600000 ms is 1hr
+    if ((millis() - lastResetI2CMillis) >= resetI2CInterval) {
+        // reset i2c bus controllerfrom IDF call
+        periph_module_reset(PERIPH_I2C0_MODULE);
+        lastResetI2CMillis = millis();
+        Serial.println("\nI2C RESET.......\n");
+    }
+}
 void processMQTTMessage(void) {
     if (MQTTNewData) {
         digitalWrite(LEDPIN, MQTTNewState);
@@ -221,17 +243,17 @@ void processMQTTMessage(void) {
 
 void updateDisplayData() {
     static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempStatus[20];// = {"12345678901234567890"};
-    static char zone1Status[20];// = {"12345678901234567890"};
-    static char zone3Status[20];// = {"12345678901234567890"};
-    static char MQTTStatus[20];// = {"12345678901234567890"};
+    static char tempStatus[20];  // = {"12345678901234567890"};
+    static char zone1Status[20]; // = {"12345678901234567890"};
+    static char zone3Status[20]; // = {"12345678901234567890"};
+    static char MQTTStatus[20];  // = {"12345678901234567890"};
 
-    static char newTempStatus[20];// = {"12345678901234567890"};
-    static char newZone1Status[20];// = {"12345678901234567890"};
-    static char newZone3Status[20];// = {"12345678901234567890"};
-    static char newMQTTStatus[20];// = {"12345678901234567890"};
+    static char newTempStatus[20];  // = {"12345678901234567890"};
+    static char newZone1Status[20]; // = {"12345678901234567890"};
+    static char newZone3Status[20]; // = {"12345678901234567890"};
+    static char newMQTTStatus[20];  // = {"12345678901234567890"};
 
-    // TODO only update screen if data has changed
+    // TODO only update screen if status messages has changed
     // compare new display data to new data
     // if different - update the actual OLED display
     // if any non zero then data has changed
