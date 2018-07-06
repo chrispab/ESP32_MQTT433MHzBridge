@@ -98,7 +98,7 @@ static unsigned int goodSecsMax = 15; // 20
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.12 Br:\"OO\""
+#define SW_VERSION "V3.13 Br:\"OO\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -218,7 +218,7 @@ void loop() {
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
-    resetI2C();
+    resetI2C();         // not sure if this is reqd. maybe display at fault
 }
 void resetI2C(void) {
     static unsigned long lastResetI2CMillis = millis();
@@ -243,17 +243,17 @@ void processMQTTMessage(void) {
 
 void updateDisplayData() {
     static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempStatus[20];  // = {"12345678901234567890"};
-    static char zone1Status[20]; // = {"12345678901234567890"};
-    static char zone3Status[20]; // = {"12345678901234567890"};
-    static char MQTTStatus[20];  // = {"12345678901234567890"};
+    static char tempStatus[20];
+    static char zone1Status[20];
+    static char zone3Status[20];
+    static char MQTTStatus[20];
 
-    static char newTempStatus[20];  // = {"12345678901234567890"};
-    static char newZone1Status[20]; // = {"12345678901234567890"};
-    static char newZone3Status[20]; // = {"12345678901234567890"};
-    static char newMQTTStatus[20];  // = {"12345678901234567890"};
+    static char newTempStatus[20];
+    static char newZone1Status[20];
+    static char newZone3Status[20];
+    static char newMQTTStatus[20];
 
-    // TODO only update screen if status messages has changed
+    // only update screen if status messages has changed
     // compare new display data to new data
     // if different - update the actual OLED display
     // if any non zero then data has changed
@@ -268,14 +268,6 @@ void updateDisplayData() {
         strcpy(zone3Status, newZone3Status);
         strcpy(MQTTStatus, newMQTTStatus);
 
-        // check if time to display new message updates
-        // if ((millis() - lastDisplayUpdateMillis) >= displayUpdateInterval) {
-        // get all status messages ready to use
-        // only read temp
-        // getTempStatus(tempStatus); // TODO throttle saple rate to 30 secs
-        // ZCs[0].getStatus(zone1Status);
-        // ZCs[2].getStatus(zone3Status);
-        // getMQTTStatus(MQTTStatus);
         if (displayMode == NORMAL) {
             updateTempDisplay(); // get and display temp
             updateZoneDisplayLines();
@@ -290,11 +282,12 @@ void updateDisplayData() {
             myDisplay.writeLine(6, zone3Status);
         }
         myDisplay.refresh();
-        Serial.println("Display Refreshed.......");
-
-        // lastDisplayUpdateMillis = millis();
-        // }
-        // LEDBlink(LEDPIN,2);
+        Serial.println("!----------! Display Refreshed");
+        Serial.println(tempStatus);
+        Serial.println(MQTTStatus);
+        Serial.println(zone1Status);
+        Serial.println(zone3Status);
+        Serial.println("^----------^");
     }
 }
 
