@@ -4,7 +4,6 @@
 // https://github.com/espressif/arduino-esp32/issues/1352
 
 #include <Arduino.h>
-#include <DHT.h>
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
 #include <RF24.h>
@@ -16,6 +15,7 @@
 #include "ZoneController.h"
 
 #include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
+#include "TempSensor.h"
 #include <sendemail.h>
 
 // forward decs
@@ -40,7 +40,7 @@ void updateDisplayData(void);
 int freeRam(void);
 void printFreeRam(void);
 
-char *getTempStatus(char *thistempStr);
+// char *getTempStatus(char *thistempStr);
 void processMQTTMessage(void);
 char *getMQTTStatus(char *MQTTStatus);
 
@@ -48,8 +48,9 @@ void resetI2C(void);
 
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
+// SENSOR object
 #define DHTPIN 33 // what digital pin we're connected to
-DHT dht;
+TempSensor dht;
 
 // WiFi settings
 const char ssid[] = "notwork"; // your network SSID (name)
@@ -109,13 +110,9 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-unsigned long intervalTempReadMillis = 30000;
-unsigned long previousTempReadMillis =
-    millis() - intervalTempReadMillis; // trigger on start
-
-char tempStr[17];                                 // buffer for 16 chars and eos
-static unsigned long UpdateInterval = 250;        // 1000ms
-static unsigned long displayUpdateInterval = 250; // ms
+char tempStr[17];                          // buffer for 16 chars and eos
+static unsigned long UpdateInterval = 250; // 1000ms
+// static unsigned long displayUpdateInterval = 250; // ms
 
 // create system objects
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -219,6 +216,7 @@ void loop() {
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
+    dht.takeReadings();
 }
 void resetI2C(void) {
     static unsigned long lastResetI2CMillis = millis();
@@ -242,7 +240,7 @@ void processMQTTMessage(void) {
 }
 
 void updateDisplayData() {
-    static unsigned long lastDisplayUpdateMillis = 0;
+    //static unsigned long lastDisplayUpdateMillis = 0;
     static char tempStatus[20];
     static char zone1Status[20];
     static char zone3Status[20];
@@ -257,7 +255,7 @@ void updateDisplayData() {
     // compare new display data to new data
     // if different - update the actual OLED display
     // if any non zero then data has changed
-    if (strcmp(tempStatus, getTempStatus(newTempStatus)) ||
+    if (strcmp(tempStatus, dht.getDisplayString(newTempStatus)) ||
         strcmp(zone1Status, ZCs[0].getStatus(newZone1Status)) ||
         strcmp(zone3Status, ZCs[2].getStatus(newZone3Status)) ||
         strcmp(MQTTStatus, getMQTTStatus(newMQTTStatus))) {
@@ -407,50 +405,50 @@ void connectMQTT() {
 }
 
 // get status string from temp sensor
-char *getTempStatus(char *thistempStr) {
+// char *getTempStatus(char *thistempStr) {
 
-    char humiStr[] = "012345678901234567";
-    char msgStr[] = "012345678901234567";
-    static float t;
-    static float h;
+//     char humiStr[] = "012345678901234567";
+//     char msgStr[] = "012345678901234567";
+//     static float t;
+//     static float h;
 
-    currentMillis = millis();
-    // ready to read?
-    if (currentMillis - previousTempReadMillis > intervalTempReadMillis) {
-        // Read temperature as Celsius (the default)
-        t = dht.getTemperature();
-        h = dht.getHumidity();
+//     currentMillis = millis();
+//     // ready to read?
+//     if (currentMillis - previousTempReadMillis > intervalTempReadMillis) {
+//         // Read temperature as Celsius (the default)
+//         t = dht.getTemperature();
+//         h = dht.getHumidity();
 
-        strcpy(msgStr, "Temp: ");
-        if (isnan(t)) {
-            Serial.println("Failed to read from DHT sensor!");
-            strcpy(thistempStr, "-=NaN=-");
-        } else { // is a number
-            dtostrf(t, 4, 1, thistempStr);
-            MQTTclient.publish(publishTempTopic, thistempStr);
-            dtostrf(h, 4, 1, humiStr);
-            MQTTclient.publish(publishHumiTopic, humiStr);
+//         strcpy(msgStr, "Temp: ");
+//         if (isnan(t)) {
+//             Serial.println("Failed to read from DHT sensor!");
+//             strcpy(thistempStr, "-=NaN=-");
+//         } else { // is a number
+//             dtostrf(t, 4, 1, thistempStr);
+//             MQTTclient.publish(publishTempTopic, thistempStr);
+//             dtostrf(h, 4, 1, humiStr);
+//             MQTTclient.publish(publishHumiTopic, humiStr);
 
-            //            strcat(thistempStr, "\0xb0\0x00");
-            strcat(thistempStr, "\xb0");
-            strcat(thistempStr, "C");
+//             //            strcat(thistempStr, "\0xb0\0x00");
+//             strcat(thistempStr, "\xb0");
+//             strcat(thistempStr, "C");
 
-            Serial.print("MQTT publish Temp: ");
-            Serial.println(thistempStr);
-        }
-        // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
+//             Serial.print("MQTT publish Temp: ");
+//             Serial.println(thistempStr);
+//         }
+//         // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
 
-        Serial.print("Temp reading: ");
-        Serial.println(thistempStr);
+//         Serial.print("Temp reading: ");
+//         Serial.println(thistempStr);
 
-        previousTempReadMillis = currentMillis;
-        // strcpy(thistempStr, tempStr);
-        return thistempStr; // pass back pointer to the temp string
-    } else {
-        // return previous read value
-        return thistempStr;
-    }
-}
+//         previousTempReadMillis = currentMillis;
+//         // strcpy(thistempStr, tempStr);
+//         return thistempStr; // pass back pointer to the temp string
+//     } else {
+//         // return previous read value
+//         return thistempStr;
+//     }
+// }
 
 void updateTempDisplay() {
     currentMillis = millis();
@@ -524,9 +522,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     } else {
         socketNumber = (lastChar - '0');
     }
-
-    int socketID =
-        socketNumber - 1; // convert from 1-16 range to 0-15 range sendUnit uses
+    // convert from 1-16 range to 0-15 range sendUnit uses
+    //int socketID = socketNumber - 1;
     uint8_t newState = 0; // default to off
     if ((payload[0] - '1') == 0) {
         newState = 1;
