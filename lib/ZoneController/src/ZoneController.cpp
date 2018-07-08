@@ -93,7 +93,7 @@ void ZoneController::resetZoneDevice(void) {
 
 // return a text string with current status of zone controller
 // e.g ""
-char *ZoneController::getStatus(char *statusMessage) {
+char *ZoneController::getDisplayString(char *statusMessage) {
     // all three lines can be displayed at once
     const char rebootMsg[] = {"Reboot: "};
     const char powerCycleMsg[] = {"Power Cycle"};

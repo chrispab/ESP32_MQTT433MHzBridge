@@ -12,7 +12,7 @@ public:
   void manageRestarts(NewRemoteTransmitter transmitter);
   void powerCycle(NewRemoteTransmitter transmitter);
   void resetZoneDevice(void);
-  char *getStatus(char *statusMessage);
+  char *getDisplayString(char *statusMessage);
 
 
 

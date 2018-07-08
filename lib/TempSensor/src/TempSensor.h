@@ -5,7 +5,7 @@
 
 class TempSensor : public DHT {
   public:
-    TempSensor();
+    TempSensor() ;
     char *getDisplayString(char *thistempStr);
     void publishReadings(PubSubClient MQTTclient, char *publishTempTopic,
                             char *publishHumiTopic);
