@@ -11,7 +11,6 @@
 
 #include <Arduino.h>
 #include <NewRemoteTransmitter.h>
-#include <PubSubClient.h>
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
@@ -21,6 +20,7 @@
 #include "ZoneController.h"
 
 #include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
+#include "MyMQTTClient.h"
 #include "TempSensor.h"
 #include <sendemail.h>
 
@@ -48,7 +48,6 @@ void printFreeRam(void);
 
 // char *getsensorDisplayString(char *thistempStr);
 void processMQTTMessage(void);
-char *getMQTTDisplayString(char *MQTTStatus);
 
 void resetI2C(void);
 
@@ -67,23 +66,19 @@ int status = WL_IDLE_STATUS;
 
 // MQTT stuff
 IPAddress mqttserver(192, 168, 0, 200);
-const char subscribeTopic[] = "433Bridge/cmnd/#";
-const char publishTempTopic[] = "433Bridge/Temperature";
-const char publishHumiTopic[] = "433Bridge/Humidity";
+// const char publishTempTopic[] = "433Bridge/Temperature";
+// const char publishHumiTopic[] = "433Bridge/Humidity";
 
 WiFiClient WiFiEClient;
-PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
+// MyMQTTClient MQTTClient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
+//   PubSubClient(IPAddress, uint16_t, Client& client);
+MyMQTTClient MQTTClient(mqttserver, 1883, WiFiEClient); // callback in class
 
 // 433Mhz settings
 #define TX433PIN 32
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
                                  4); // tx address, pin for tx
-
-byte socket = 3;
-bool state = false;
-uint8_t socketNumber = 0;
-
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 #define ce_pin 5
 #define cs_pin 4
@@ -96,13 +91,13 @@ uint8_t writePipeLocG[] = "NodeG";
 uint8_t readPipeLocG[] = "Node0";
 // Payload
 const int max_payload_size = 32;
-char receive_payload[max_payload_size +
-                     1]; // +1 to allow room for a terminating NULL char
+// +1 to allow room for a terminating NULL char
+char receive_payload[max_payload_size + 1];
 // static unsigned int goodSecsMax = 15; // 20
 
 // misc stuff
 #define LEDPIN 2 // esp32 devkit on board blue LED
-#define CR Serial.println()
+//#define CR Serial.println()
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
@@ -117,10 +112,6 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-char tempStr[17]; // buffer for 16 chars and eos
-// static unsigned long UpdateInterval = 250; // 1000ms
-// static unsigned long displayUpdateInterval = 250; // ms
-
 // create system objects
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
@@ -133,10 +124,6 @@ boolean bigTempDisplayEnabled = true;
 
 enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
 // enum displayModes ;
-
-int MQTTNewState = 0;     // 0 or 1
-int MQTTSocketNumber = 0; // 1-16
-boolean MQTTNewData = false;
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
     // open:
@@ -190,7 +177,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     // you're connected now, so print out the status:
     printWifiStatus();
     CR;
-    connectMQTT();
+    MQTTClient.connectMQTT();
 
     // MQTTclient.loop(); //process any MQTT stuff
     // checkConnections();
@@ -205,29 +192,19 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 }
 
 void loop() {
-    // updateDisplayData();
     DHT22Sensor.takeReadings();
-
-    // myDisplay.refresh();
-    // capture new sensor readings
-
-    MQTTclient.loop(); // process any MQTT stuff, returned in callback
+    MQTTClient.loop(); // process any MQTT stuff, returned in callback
     updateDisplayData();
-
     processMQTTMessage(); // check flags set above and act on
-    // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
     ZCs[0].manageRestarts(transmitter);
-    // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
-    // manageRestarts(2);
     ZCs[2].manageRestarts(transmitter);
-
-    // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
 }
+
 void resetI2C(void) {
     static unsigned long lastResetI2CMillis = millis();
     unsigned long resetI2CInterval = 360000;
@@ -242,10 +219,12 @@ void resetI2C(void) {
     }
 }
 void processMQTTMessage(void) {
-    if (MQTTNewData) {
-        digitalWrite(LEDPIN, MQTTNewState);
-        operateSocket(MQTTSocketNumber - 1, MQTTNewState);
-        MQTTNewData = false; // indicate not new data now, processed
+    if (MQTTClient.hasNewData()) {
+        MQTTClient.clearNewDataFlag(); // indicate not new data now, processed
+        digitalWrite(LEDPIN, MQTTClient.getState());
+        operateSocket(MQTTClient.getSocketNumber() - 1, MQTTClient.getState());
+        MQTTClient.clearNewDataFlag();
+        // MQTTNewData = false;
     }
 }
 
@@ -271,7 +250,8 @@ void updateDisplayData() {
                ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString,
                ZCs[2].getDisplayString(newZone3DisplayString)) ||
-        strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString))) {
+        strcmp(MQTTDisplayString,
+               MQTTClient.getDisplayString(newMQTTDisplayString))) {
 
         // copy new data to old vars
         strcpy(sensorDisplayString, newSensorDisplayString);
@@ -302,24 +282,6 @@ void updateDisplayData() {
     }
 }
 
-char *getMQTTDisplayString(char *MQTTStatus) {
-    char msg[17] = "Socket:";
-    char buff[10];
-
-    sprintf(buff, "%d", (MQTTSocketNumber));
-    strcat(msg, buff);
-
-    if (MQTTNewState == 0) {
-        strcat(msg, " OFF");
-    } else {
-        strcat(msg, " ON");
-    }
-    // Serial.println(msg);
-    strcpy(MQTTStatus, msg);
-
-    return MQTTStatus;
-}
-
 void checkConnections() {
     currentMillis = millis();
     if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis) {
@@ -331,9 +293,9 @@ void checkConnections() {
             Serial.println("OK - WiFi still connected");
         }
 
-        if (!MQTTclient.connected()) {
+        if (!MQTTClient.connected()) {
             Serial.println("MQTTClient Needs reconnecting");
-            connectMQTT();
+            MQTTClient.connectMQTT();
         } else {
             Serial.println("OK - MQTT still connected");
         }
@@ -376,183 +338,6 @@ void connectWiFi() {
 
     // myDisplay.writeLine(5, "Connected WiFi!");
     // myDisplay.refresh();
-}
-
-void connectMQTT() {
-    bool MQTTConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 20000;
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
-    MQTTConnectTimeout = false;
-
-    startMillis = millis();
-    while (!MQTTclient.connected() && !MQTTConnectTimeout) {
-        // printO(1, 20, "Connect MQTT..");
-        myDisplay.writeLine(6, "Connect MQTT..");
-        myDisplay.refresh();
-        Serial.println(F("Attempting MQTT connection..."));
-        // Attempt to connect
-        //        if (MQTTclient.connect("ESP32Client","",""))
-        if (MQTTclient.connect("ESP32Client")) {
-            Serial.println(F("connected to MQTT server"));
-            // Once connected, publish an announcement...
-            // MQTTclient.publish("outTopic", "hello world");
-            // ... and resubscribe
-            // MQTTclient.subscribe("inTopic");
-            MQTTclient.subscribe(subscribeTopic);
-            myDisplay.writeLine(6, "Connected MQTT!");
-            myDisplay.refresh();
-        } else {
-            Serial.print("failed, rc=");
-            Serial.print(MQTTclient.state());
-            Serial.println(" try again ..");
-            // Wait 5 seconds before retrying
-            // delay(5000);
-        }
-        MQTTConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (!MQTTConnectTimeout) ? Serial.println("MQTT Connection made!")
-                          : Serial.println("MQTT Connection attempt Time Out!");
-}
-
-// get status string from temp sensor
-// char *getsensorDisplayString(char *thistempStr) {
-
-//     char humiStr[] = "012345678901234567";
-//     char msgStr[] = "012345678901234567";
-//     static float t;
-//     static float h;
-
-//     currentMillis = millis();
-//     // ready to read?
-//     if (currentMillis - previousTempReadMillis > intervalTempReadMillis) {
-//         // Read temperature as Celsius (the default)
-//         t = dht.getTemperature();
-//         h = dht.getHumidity();
-
-//         strcpy(msgStr, "Temp: ");
-//         if (isnan(t)) {
-//             Serial.println("Failed to read from DHT sensor!");
-//             strcpy(thistempStr, "-=NaN=-");
-//         } else { // is a number
-//             dtostrf(t, 4, 1, thistempStr);
-//             MQTTclient.publish(publishTempTopic, thistempStr);
-//             dtostrf(h, 4, 1, humiStr);
-//             MQTTclient.publish(publishHumiTopic, humiStr);
-
-//             //            strcat(thistempStr, "\0xb0\0x00");
-//             strcat(thistempStr, "\xb0");
-//             strcat(thistempStr, "C");
-
-//             Serial.print("MQTT publish Temp: ");
-//             Serial.println(thistempStr);
-//         }
-//         // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
-
-//         Serial.print("Temp reading: ");
-//         Serial.println(thistempStr);
-
-//         previousTempReadMillis = currentMillis;
-//         // strcpy(thistempStr, tempStr);
-//         return thistempStr; // pass back pointer to the temp string
-//     } else {
-//         // return previous read value
-//         return thistempStr;
-//     }
-// }
-
-// void updateTempDisplay() {
-//     currentMillis = millis();
-//     if (currentMillis - previousTempDisplayMillis >
-//     intervalTempDisplayMillis) {
-
-//         // Read temperature as Celsius (the default)
-//         float t = DHT22Sensor.getTemperature();
-//         float h = DHT22Sensor.getHumidity();
-//         char humiStr[] = "string to hold humidity";
-//         char msgStr[] = "Message String long enough?";
-//         strcpy(msgStr, "Temp: ");
-//         if (isnan(t)) {
-//             Serial.println("Failed to read from DHT sensor!");
-//             strcpy(tempStr, "-=NaN=-");
-//         } else { // is a number
-//             dtostrf(t, 4, 1, tempStr);
-//             MQTTclient.publish(publishTempTopic, tempStr);
-//             dtostrf(h, 4, 1, humiStr);
-//             MQTTclient.publish(publishHumiTopic, humiStr);
-
-//             strcat(tempStr, "*C");
-//             Serial.print("MQTT publish Temp: ");
-//             Serial.println(tempStr);
-//         }
-//         myDisplay.writeLine(1, strcat(msgStr, tempStr));
-
-//         Serial.print("Temp reading: ");
-//         Serial.println(tempStr);
-
-//         previousTempDisplayMillis = currentMillis;
-//     }
-// }
-
-// MQTTclient call back if mqtt messsage rxed
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
-    // Power<x> 		Show current power state of relay<x> as On or
-    // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
-    // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-    // pubsub
-
-    // Serial.println("Rxed a mesage from broker : ");
-
-    // do some extra checking on rxed topic and payload
-    payload[length] = '\0';
-    // String s = String((char *)payload);
-    // //float f = s.toFloat();
-    // Serial.print(s);
-    // Serial.println("--EOP");
-
-    // CR;
-    Serial.print("MQTT rxed [");
-    Serial.print(topic);
-    Serial.print("] : ");
-    for (uint8_t i = 0; i < length; i++) {
-        Serial.print((char)payload[i]);
-    }
-    CR;
-    // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
-    // either match whole topic string or trim off last 1or 2 chars and
-    // convert to a number, convert last 1-2 chars to socket number
-    char lastChar =
-        topic[strlen(topic) - 1]; // lst char will always be a digit char
-    // see if last but 1 is also a digit char - ie number has two digits -
-    // 10 to 16
-    char lastButOneChar = topic[strlen(topic) - 2];
-
-    if ((lastButOneChar >= '0') &&
-        (lastButOneChar <= '9')) { // is it a 2 digit number
-        socketNumber =
-            ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
-    } else {
-        socketNumber = (lastChar - '0');
-    }
-    // convert from 1-16 range to 0-15 range sendUnit uses
-    // int socketID = socketNumber - 1;
-    uint8_t newState = 0; // default to off
-    if ((payload[0] - '1') == 0) {
-        newState = 1;
-    }
-    // signal a new command has been rxed
-    // and
-    // topic and payload also available
-    MQTTNewState = newState;         // 0 or 1
-    MQTTSocketNumber = socketNumber; // 1-16
-    MQTTNewData = true;
-    // then leave main control loop to turn of/onn sockets
-    // and reset sigmals
-
-    // digitalWrite(LEDPIN, newState);
-    // operateSocket(socketID, newState);
 }
 
 // 0-15, 0,1

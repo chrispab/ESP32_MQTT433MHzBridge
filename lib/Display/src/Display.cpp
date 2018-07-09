@@ -36,9 +36,9 @@ void Display::refresh(void) {
     for (int i = 0; i < DISPLAY_LINES; i++) {
         drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
     }
-    //delay(50);
+    // delay(50);
     sendBuffer();
-    //delay(50);
+    // delay(50);
 }
 // redraw the display with contents of displayLine array
 void Display::wipe(void) {
@@ -49,7 +49,7 @@ void Display::wipe(void) {
         strcpy(displayLine[i], " ");
         drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
     }
-    //delay(20);
+    // delay(20);
     sendBuffer();
 }
 // add-update a line of text in the display text buffer

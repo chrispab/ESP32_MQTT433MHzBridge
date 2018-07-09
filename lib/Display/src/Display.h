@@ -8,7 +8,6 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-
 /**
  */
 class Display : public U8G2 {
