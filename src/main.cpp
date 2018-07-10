@@ -101,7 +101,7 @@ char receive_payload[max_payload_size + 1];
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.15 Br:\"OO2\""
+#define SW_VERSION "V3.15 Br:\"mqttclass\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -143,17 +143,12 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(3, TITLE_LINE2);
     myDisplay.writeLine(4, TITLE_LINE3);
-    // myDisplay.writeLine(5, "________________");
-
     myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
     delay(3000);
     myDisplay.wipe();
 
-    // TempSensor DHT22Sensor;
-
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
-    // DHT22Sensor::TempSensor();
 
     // rf24 stuff
     rf24Radio.begin();
@@ -171,7 +166,6 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
              readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
     rf24Radio.startListening();
 
-    // WiFi.begin();
     // attempt to connect to Wifi network:
     connectWiFi();
     // you're connected now, so print out the status:
@@ -179,8 +173,6 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     CR;
     MQTTClient.connectMQTT();
 
-    // MQTTclient.loop(); //process any MQTT stuff
-    // checkConnections();
     myDisplay.wipe();
 
     // create object
@@ -308,10 +300,6 @@ void connectWiFi() {
     u16_t startMillis;
     u16_t timeOutMillis = 20000;
 
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
-    // attempt to connect to Wifi network:
-    // printO(1, 20, "Connect WiFi..");
     myDisplay.writeLine(5, "Connect WiFi..");
     myDisplay.refresh();
     // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
@@ -336,8 +324,6 @@ void connectWiFi() {
     (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
                          : Serial.println("Wifi Connection made!");
 
-    // myDisplay.writeLine(5, "Connected WiFi!");
-    // myDisplay.refresh();
 }
 
 // 0-15, 0,1
@@ -358,17 +344,10 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     } else {
         strcat(msg, " ON");
     }
-    // myDisplay.writeLine(2, msg);
-    // myDisplay.refresh();
 
-    // for (int i = 0; i < 3; i++) { // turn socket off
-    // processZoneRF24Message();
-    // refresh();
     transmitter.sendUnit(socketID, state);
     //}
     Serial.println(msg);
-
-    // Serial.println("OK - TX socket state updated");
 }
 
 void LEDBlink(int LPin, int repeatNum) {
@@ -454,91 +433,3 @@ int equalID(char *receive_payload, const char *targetID) {
         return false;
     }
 }
-
-// void updateZoneDisplayLines(void) {
-//     // all three lines can be displayed at once
-//     const char rebootMsg[] = {"Reboot: "};
-//     const char powerCycleMsg[] = {"Power Cycle"};
-//     int zoneID; // only initialised once at start
-//     static unsigned long lastUpdateMillis = 0;
-
-//     unsigned int secsSinceAck = 0;
-//     // max secs out considered good
-
-//     char str_output[20] = {0};
-//     unsigned int secsLeft;
-//     char buf[17];
-
-//     // check if time to display a new message updates
-//     if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to
-//     update?
-//         // printFreeRam();
-//         for (zoneID = 0; zoneID < 3; zoneID++) {
-//             // Serial.println(zoneID);
-//             secsSinceAck = (millis() - ZCs[zoneID].lastGoodAckMillis) / 1000;
-
-//             // u8g2.setCursor(0, ((zoneID + 1) * 10) + (1 *
-//             // zoneID));
-//             // make sure check for restarting device
-//             // if so display current secs in wait for reboot cycle
-//             if (ZCs[zoneID].isRebooting) {
-//                 secsLeft = (ZCs[zoneID].rebootMillisLeft) / 1000UL;
-
-//                 Serial.print("--rebootMillisLeft: ");
-//                 Serial.println((ZCs[zoneID].rebootMillisLeft));
-
-//                 Serial.print("--secsLeft var: ");
-//                 Serial.println(secsLeft);
-
-//                 // build string to show if cycling or coming
-//                 // back up char str_output[20] = { 0 }; //,
-//                 // str_two[]="two"; start with device name
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 // char message[] = " Reboot: ";
-//                 if (ZCs[zoneID].isPowerCycling) {
-//                     strcat(str_output, powerCycleMsg);
-//                     // printD(str_output);
-//                     myDisplay.writeLine(zoneID + 4, str_output);
-//                     // secsLeft = '';
-//                 } else {
-//                     strcat(str_output, rebootMsg);
-//                     // printDWithVal(str_output, secsLeft);
-//                     sprintf(buf, "%d", secsLeft);
-//                     strcat(str_output, buf);
-
-//                     myDisplay.writeLine(zoneID + 4, str_output);
-//                 }
-//             } else if ((secsSinceAck > goodSecsMax)) {
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 strcat(str_output, ZCs[zoneID].badStatusMess);
-//                 strcat(str_output, ": ");
-
-//                 // printDWithVal(str_output, secsSinceAck);
-
-//                 sprintf(buf, "%d", secsSinceAck);
-//                 strcat(str_output, buf);
-//                 myDisplay.writeLine(zoneID + 4, str_output);
-//                 // badLED();
-//                 // LEDsOff();
-//             } else {
-//                 // u8g2.print("u");
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 strcat(str_output, ZCs[zoneID].goodStatusMess);
-//                 // add restarts soince power on
-//                 strcat(str_output, " (");
-
-//                 sprintf(buf, "%i", ZCs[zoneID].powerCyclesSincePowerOn);
-
-//                 strcat(str_output, buf);
-//                 strcat(str_output, ")");
-//                 myDisplay.writeLine(zoneID + 4, str_output);
-//                 // goodLED();
-//             }
-//         }
-//         lastUpdateMillis = millis();
-//         myDisplay.refresh();
-//     }
-// }
