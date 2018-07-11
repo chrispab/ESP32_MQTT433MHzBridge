@@ -9,10 +9,9 @@
 // /home/chris/Projects/git/ESP32_MQTT433MHzBridge/.piolibdeps/U8g2_ID942/src/U8x8lib.cpp
 // and add 2us delays - 3 off, start write, end transmission
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <NewRemoteTransmitter.h>
-#include <RF24.h>
-#include <WiFi.h>
+//#include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
 // classes code changes
@@ -21,6 +20,7 @@
 
 #include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
 #include "MyMQTTClient.h"
+#include "MyRF24Radio.h"
 #include "TempSensor.h"
 #include <sendemail.h>
 
@@ -28,23 +28,23 @@
 void printWifiStatus();
 boolean processRequest(String &getLine);
 void sendResponse(WiFiClient client);
-void listenForClients(void);
+// void listenForClients(void);
 void LEDBlink(int LEDPin, int repeatNum);
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
-void connectMQTT();
+// void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
+// void connectMQTT();
 void connectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
 void checkConnections(void);
 // void updateTempDisplay(void);
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
+// void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
 
 // void updateZoneDisplayLines(void);
 void updateDisplayData(void);
 
-int freeRam(void);
-void printFreeRam(void);
+// int freeRam(void);
+// void printFreeRam(void);
 
 // char *getsensorDisplayString(char *thistempStr);
 void processMQTTMessage(void);
@@ -82,18 +82,18 @@ NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 #define ce_pin 5
 #define cs_pin 4
-RF24 rf24Radio(ce_pin, cs_pin);
-uint8_t writePipeLocS[] = "NodeS";
-uint8_t readPipeLocS[] = "Node0";
-uint8_t writePipeLocC[] = "NodeC";
-uint8_t readPipeLocC[] = "Node0";
-uint8_t writePipeLocG[] = "NodeG";
-uint8_t readPipeLocG[] = "Node0";
-// Payload
-const int max_payload_size = 32;
-// +1 to allow room for a terminating NULL char
-char receive_payload[max_payload_size + 1];
-// static unsigned int goodSecsMax = 15; // 20
+MyRF24Radio rf24Radio(ce_pin, cs_pin);
+// uint8_t writePipeLocS[] = "NodeS";
+// uint8_t readPipeLocS[] = "Node0";
+// uint8_t writePipeLocC[] = "NodeC";
+// uint8_t readPipeLocC[] = "Node0";
+// uint8_t writePipeLocG[] = "NodeG";
+// uint8_t readPipeLocG[] = "Node0";
+// // Payload
+// const int max_payload_size = 32;
+// // +1 to allow room for a terminating NULL char
+// char receive_payload[max_payload_size + 1];
+// // static unsigned int goodSecsMax = 15; // 20
 
 // misc stuff
 #define LEDPIN 2 // esp32 devkit on board blue LED
@@ -101,7 +101,7 @@ char receive_payload[max_payload_size + 1];
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.15 Br:\"mqttclass\""
+#define SW_VERSION "V3.16 Br:\"mqttclass\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -124,6 +124,9 @@ boolean bigTempDisplayEnabled = true;
 
 enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
 // enum displayModes ;
+
+// will thos execute at start before setup?
+// Serial.begin(115200);
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
     // open:
@@ -162,8 +165,8 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     rf24Radio.startListening();
     rf24Radio.printDetails();
     // autoACK enabled by default
-    setPipes(writePipeLocC,
-             readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
+    // setPipes(writePipeLocC,
+    //          readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
     rf24Radio.startListening();
 
     // attempt to connect to Wifi network:
@@ -185,9 +188,10 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 
 void loop() {
     DHT22Sensor.takeReadings();
-    MQTTClient.loop(); // process any MQTT stuff, returned in callback
     updateDisplayData();
+    MQTTClient.loop();    // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
+    rf24Radio.checkForMessages();
     processZoneRF24Message(); // process any zone watchdog messages
     ZCs[0].manageRestarts(transmitter);
     // ZCs[1].manageRestarts(transmitter);
@@ -219,7 +223,34 @@ void processMQTTMessage(void) {
         // MQTTNewData = false;
     }
 }
+void processZoneRF24Message(void) {
+    char messageText[17];
+    if (rf24Radio.hasNewData()) {
+        rf24Radio.clearNewDataFlag(); // indicate not new data now, processed
+        // digitalWrite(LEDPIN, rf24Radio.getState());
+        // operateSocket(rf24Radio.getSocketNumber() - 1, rf24Radio.getState());
+        rf24Radio.clearNewDataFlag();
+        // MQTTNewData = false;
+    }
 
+    if (equalID(rf24Radio.getPayload(), ZCs[0].heartBeatText)) {
+        ZCs[0].resetZoneDevice();
+        Serial.println("RESET GGG");
+        strcpy(messageText, ZCs[0].heartBeatText);
+    } else if (equalID(rf24Radio.getPayload(), ZCs[1].heartBeatText)) {
+        ZCs[1].resetZoneDevice();
+        Serial.println("RESET CCC");
+        strcpy(messageText, ZCs[1].heartBeatText);
+    } else if (equalID(rf24Radio.getPayload(), ZCs[2].heartBeatText)) {
+        ZCs[2].resetZoneDevice();
+        Serial.println("RESET SSS");
+        strcpy(messageText, ZCs[2].heartBeatText);
+    } else {
+        Serial.println("NO MATCH");
+        strcpy(messageText, "NO MATCH");
+    }
+    // writeLine(6, messageText);
+}
 void updateDisplayData() {
     // static unsigned long lastDisplayUpdateMillis = 0;
     static char sensorDisplayString[20];
@@ -323,7 +354,6 @@ void connectWiFi() {
     }
     (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
                          : Serial.println("Wifi Connection made!");
-
 }
 
 // 0-15, 0,1
@@ -376,52 +406,12 @@ void printWifiStatus() {
     Serial.println(" dBm");
 }
 
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe) {
-    // config rf24Radio to comm with a node
-    rf24Radio.stopListening();
-    rf24Radio.openWritingPipe(writingPipe);
-    rf24Radio.openReadingPipe(1, readingPipe);
-}
-
-void processZoneRF24Message(void) {
-    char messageText[17];
-    while (rf24Radio.available()) { // Read all available payloads
-
-        // Grab the message and process
-        uint8_t len = rf24Radio.getDynamicPayloadSize();
-
-        // If a corrupt dynamic payload is received, it will be flushed
-        if (!len) {
-            return;
-        }
-
-        rf24Radio.read(receive_payload, len);
-
-        // Put a zero at the end for easy printing etc
-        receive_payload[len] = 0;
-
-        // who was it from?
-        // reset that timer
-
-        if (equalID(receive_payload, ZCs[0].heartBeatText)) {
-            ZCs[0].resetZoneDevice();
-            Serial.println("RESET GGG");
-            strcpy(messageText, ZCs[0].heartBeatText);
-        } else if (equalID(receive_payload, ZCs[1].heartBeatText)) {
-            ZCs[1].resetZoneDevice();
-            Serial.println("RESET CCC");
-            strcpy(messageText, ZCs[1].heartBeatText);
-        } else if (equalID(receive_payload, ZCs[2].heartBeatText)) {
-            ZCs[2].resetZoneDevice();
-            Serial.println("RESET SSS");
-            strcpy(messageText, ZCs[2].heartBeatText);
-        } else {
-            Serial.println("NO MATCH");
-            strcpy(messageText, "NO MATCH");
-        }
-        // writeLine(6, messageText);
-    }
-}
+// void setPipes(uint8_t *writingPipe, uint8_t *readingPipe) {
+//     // config rf24Radio to comm with a node
+//     rf24Radio.stopListening();
+//     rf24Radio.openWritingPipe(writingPipe);
+//     rf24Radio.openReadingPipe(1, readingPipe);
+// }
 
 int equalID(char *receive_payload, const char *targetID) {
     // check if same 1st 3 chars
