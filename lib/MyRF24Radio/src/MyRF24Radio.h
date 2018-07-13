@@ -16,7 +16,7 @@ class MyRF24Radio : public RF24 {
     //             void(char *topic, byte *payload, unsigned int length),
     //             WiFiClient wfc);
 
-    MyRF24Radio(int CEPin, int CSPin);
+    MyRF24Radio(uint16_t CEPin, uint16_t CSPin);
 
     char *getDisplayString(char *MQTTStatus);
     void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);

@@ -24,7 +24,7 @@
 //     // extra initialisation here now base cla ss done
 // }
 
-MyRF24Radio::MyRF24Radio(int CEPin, int CSPinZZZ)
+MyRF24Radio::MyRF24Radio(uint16_t CEPin, uint16_t CSPinZZZ)
 : RF24(CEPin, CSPinZZZ) {
     // extra initialisation here now base cla ss done
     // MyRF24Radio::MQTTState = 0;
@@ -35,7 +35,7 @@ MyRF24Radio::MyRF24Radio(int CEPin, int CSPinZZZ)
     // this->setCallback(this->MQTTRxcallback);
     //     setPipes(writePipeLocC,
     //          readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-    this->startListening();
+    //this->startListening();
 }
 
 void MyRF24Radio::setPipes(uint8_t *writingPipe, uint8_t *readingPipe) {
