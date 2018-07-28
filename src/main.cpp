@@ -106,7 +106,7 @@ char receive_payload[max_payload_size +
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.15 Br:\"OO2\""
+#define SW_VERSION "V3.16 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
