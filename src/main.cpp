@@ -20,7 +20,7 @@
 #include "Display.h"
 #include "ZoneController.h"
 
-#include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
+//#include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
 #include "TempSensor.h"
 #include <sendemail.h>
 
@@ -67,9 +67,9 @@ int status = WL_IDLE_STATUS;
 
 // MQTT stuff
 IPAddress mqttserver(192, 168, 0, 200);
-const char subscribeTopic[] = "433Bridge/cmnd/#";
-const char publishTempTopic[] = "433Bridge/Temperature";
-const char publishHumiTopic[] = "433Bridge/Humidity";
+ char subscribeTopic[] = "433Bridge/cmnd/#";
+ char publishTempTopic[] = "433Bridge/Temperature";
+ char publishHumiTopic[] = "433Bridge/Humidity";
 
 WiFiClient WiFiEClient;
 PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
@@ -106,7 +106,7 @@ char receive_payload[max_payload_size +
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.16 Br:\"OO2\""
+#define SW_VERSION "V3.18 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -141,7 +141,7 @@ boolean MQTTNewData = false;
 void setup() { // Initialize serial monitor port to PC and wait for port to
     // open:
     // reset i2c bus controllerfrom IDF call
-    periph_module_reset(PERIPH_I2C0_MODULE);
+    //periph_module_reset(PERIPH_I2C0_MODULE);
     // periph_module_reset(PERIPH_I2C1_MODULE);//do both cos not sure which in
     // use
 
@@ -206,7 +206,8 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 
 void loop() {
     // updateDisplayData();
-    DHT22Sensor.takeReadings();
+    //DHT22Sensor.takeReadings();
+    DHT22Sensor.publishReadings(MQTTclient, publishTempTopic,publishHumiTopic);
 
     // myDisplay.refresh();
     // capture new sensor readings
@@ -226,21 +227,21 @@ void loop() {
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
-    resetI2C();         // not sure if this is reqd. maybe display at fault
+    //resetI2C();         // not sure if this is reqd. maybe display at fault
 }
-void resetI2C(void) {
-    static unsigned long lastResetI2CMillis = millis();
-    unsigned long resetI2CInterval = 360000;
-    // do only every few hours
-    // u_long is 0 to 4,294,967,295
-    // 3600000 ms is 1hr
-    if ((millis() - lastResetI2CMillis) >= resetI2CInterval) {
-        // reset i2c bus controllerfrom IDF call
-        periph_module_reset(PERIPH_I2C0_MODULE);
-        lastResetI2CMillis = millis();
-        Serial.println("\nI2C RESET.......\n");
-    }
-}
+// void resetI2C(void) {
+//     static unsigned long lastResetI2CMillis = millis();
+//     unsigned long resetI2CInterval = 360000;
+//     // do only every few hours
+//     // u_long is 0to 4,294,967,295
+//     // 3600000 ms is 1hr
+//     if ((millis() - lastResetI2CMillis) >= resetI2CInterval) {
+//         // reset i2c bus controllerfrom IDF call
+//         periph_module_reset(PERIPH_I2C0_MODULE);
+//         lastResetI2CMillis = millis();
+//         Serial.println("\nI2C RESET.......\n");
+//     }
+// }
 void processMQTTMessage(void) {
     if (MQTTNewData) {
         digitalWrite(LEDPIN, MQTTNewState);

@@ -13,10 +13,11 @@ TempSensor::TempSensor() {
     Serial.println(previousSensorReadMillis);
 }
 
-void TempSensor::takeReadings(void) {
+// returns true if temp has been updated
+boolean TempSensor::takeReadings(void) {
     currentMillis = millis();
 
-    // throttle here and on read if passed read interval
+    // throttle here and only read if passed read interval
     if (currentMillis - previousSensorReadMillis > intervalSensorReadMillis) {
         Serial.println("Taking New sensor readings......");
 
@@ -28,8 +29,11 @@ void TempSensor::takeReadings(void) {
         // update other props
         dtostrf(temperature, 4, 1, temperatureString);
         dtostrf(humidity, 4, 1, humidityString);
+
         previousSensorReadMillis = currentMillis;
+        return true;
     }
+    return false;
 }
 
 char *TempSensor::getTemperatureString() { return temperatureString; }
@@ -40,17 +44,20 @@ void TempSensor::publishReadings(PubSubClient MQTTclient,
                                  char *publishTempTopic,
                                  char *publishHumiTopic) {
     // get current readings and pub via mqtt
-    char messageString[20];
-    MQTTclient.publish(publishTempTopic, temperatureString);
-    MQTTclient.publish(publishHumiTopic, humidityString);
-    // format for serial print
-    strcpy(messageString, getTemperatureString());
-    strcat(messageString, "\xb0"); // degree symbol
-    strcat(messageString, "C");    // suffix
-    Serial.print("MQTT published Temperature: ");
-    Serial.println(getTemperatureString());
-    Serial.print("MQTT published Humidity: ");
-    Serial.println(getHumidityString());
+    if (takeReadings()) {
+
+        char messageString[20];
+        MQTTclient.publish(publishTempTopic, temperatureString);
+        MQTTclient.publish(publishHumiTopic, humidityString);
+        // format for serial print
+        strcpy(messageString, getTemperatureString());
+        strcat(messageString, "\xb0"); // degree symbol
+        strcat(messageString, "C");    // suffix
+        Serial.print("MQTT published Temperature: ");
+        Serial.println(getTemperatureString());
+        Serial.print("MQTT published Humidity: ");
+        Serial.println(getHumidityString());
+    }
 }
 
 // get status string from temp sensor

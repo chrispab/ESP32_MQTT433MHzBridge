@@ -11,7 +11,7 @@ class TempSensor : public DHT {
                             char *publishHumiTopic);
     char *getTemperatureString();
     char *getHumidityString();
-     void takeReadings(void);
+    boolean takeReadings(void);
 
 
   private:
