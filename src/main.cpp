@@ -21,6 +21,7 @@
 #include "ZoneController.h"
 
 //#include "/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
+#include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
 #include "TempSensor.h"
 #include <sendemail.h>
 
