@@ -108,7 +108,7 @@ char receive_payload[max_payload_size +
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.19 Br:\"OO2\""
+#define SW_VERSION "V3.22 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -139,12 +139,15 @@ enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
 int MQTTNewState = 0;     // 0 or 1
 int MQTTSocketNumber = 0; // 1-16
 boolean MQTTNewData = false;
+// create object
+SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
+            5000, true);
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
     // open:
     // reset i2c bus controllerfrom IDF call
     periph_module_reset(PERIPH_I2C0_MODULE);
-    delay(100);
+    // delay(100);
 
     // periph_module_reset(PERIPH_I2C1_MODULE);//do both cos not sure which in
     // use
@@ -200,9 +203,6 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     // checkConnections();
     myDisplay.wipe();
 
-    // create object
-    SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com",
-                "fbmfbmqluzaakvso", 5000, true);
     // Send Email
     e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
            "programm started/restarted");
@@ -222,12 +222,18 @@ void loop() {
     processMQTTMessage(); // check flags set above and act on
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
-    ZCs[0].manageRestarts(transmitter);
+    if (ZCs[0].manageRestarts(transmitter)==true) {
+        e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
+               "ESP32 Watchdog: Zone 1 power cycled", "ESP32 Watchdog: Zone 1 power cycled");
+    }
     // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
     // manageRestarts(2);
-    ZCs[2].manageRestarts(transmitter);
+    if (ZCs[2].manageRestarts(transmitter)==true) {
+        e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
+              "ESP32 Watchdog: Zone 3 power cycled", "ESP32 Watchdog: Zone 3 power cycled");
+    }
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
@@ -301,7 +307,7 @@ void updateDisplayData() {
             myDisplay.writeLine(6, zone3DisplayString);
         }
         myDisplay.refresh();
-        delay(10);
+        // delay(10);
         Serial.println("!----------! Display Refresh");
         Serial.println(sensorDisplayString);
         Serial.println(MQTTDisplayString);

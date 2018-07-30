@@ -9,7 +9,7 @@ class ZoneController
 
 public:
   ZoneController(int zoneID, int socketID, const char *name, const char *heartBeatText);
-  void manageRestarts(NewRemoteTransmitter transmitter);
+  boolean manageRestarts(NewRemoteTransmitter transmitter);
   void powerCycle(NewRemoteTransmitter transmitter);
   void resetZoneDevice(void);
   char *getDisplayString(char *statusMessage);

@@ -23,15 +23,15 @@ ZoneController::ZoneController(int zoneID, int remoteSocketID,
     strcpy(heartBeatText, strHeartBeatText);
 }
 
-void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
+boolean ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
     // now check if need to reboot a device
     if ((millis() - lastGoodAckMillis) >
         maxMillisNoAckFromPi) { // over time limit so reboot first time in then
                                 // just upadte time each other time
 
         // printFreeRam();
-        if (!isRebooting) { // all this done first time triggered
-            isRebooting = true; // signal device is rebooting
+        if (!isRebooting) {        // all this done first time triggered
+            isRebooting = true;    // signal device is rebooting
             isPowerCycling = true; // signal in power cycle
 
             powerCycle(transmitter);
@@ -44,6 +44,9 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
             Serial.println("power cycled in manageRestarts");
 
             Serial.println(rebootMillisLeft);
+
+            return true; // inducate recycle device
+
         } else // is rebooting
         {      // this executes till end of reboot timer
             // device is rebooting now - do some stuff to update countdown
@@ -69,8 +72,11 @@ void ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
                 // printD2Str("Assume up:", name);
                 isRebooting = false; // signal device has stopped rebooting
             }
+            return false; // inducate not recycle device
         }
+        return false; // inducate not recycle device
     }
+    return false; // inducate not recycle device
 }
 void ZoneController::powerCycle(NewRemoteTransmitter transmitter) {
     // this is a blocking routine so need to keep checking messages and
@@ -79,7 +85,7 @@ void ZoneController::powerCycle(NewRemoteTransmitter transmitter) {
     // again.
     Serial.println("sending off");
     transmitter.sendUnit(socketID, false);
-    delay(3000);
+    delay(5000);
     Serial.println("sending on");
     transmitter.sendUnit(socketID, true);
     Serial.println("power cycle completed");
@@ -97,7 +103,7 @@ char *ZoneController::getDisplayString(char *statusMessage) {
     // all three lines can be displayed at once
     const char rebootMsg[] = {"Reboot: "};
     const char powerCycleMsg[] = {"Power Cycle"};
-    //int zoneID; // only initialised once at start
+    // int zoneID; // only initialised once at start
 
     unsigned int secsSinceAck = 0; // max secs out considered good
 
