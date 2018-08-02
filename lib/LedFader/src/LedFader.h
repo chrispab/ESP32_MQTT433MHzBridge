@@ -8,7 +8,7 @@ class LedFader
 
     // constructor
    LedFader (const byte pin,
-   const byte channel,
+              const byte pwmChannel,
               const byte minValue,
               const byte maxValue,
               const unsigned long msPerCycle,
@@ -23,7 +23,7 @@ class LedFader
 
    private:
      const byte pin_;
-     const channel_;
+     const byte pwmChannel_;
      const byte minValue_;
      const byte maxValue_;
      const unsigned long msPerCycle_;

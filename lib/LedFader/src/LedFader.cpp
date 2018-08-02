@@ -9,11 +9,11 @@ Chris Battisson
 
 Usage:
 
-  LedFader ledName (pin, minValue, maxValue, msPerCycle, initiallyActive);   // set parameters
+  LedFader ledName (pin, pwmChannel, minValue, maxValue, msPerCycle, initiallyActive);   // set parameters
 
   eg.
 
-  LedFader laserTurrent (5, 0, 255, 3000, true);   // set parameters. pin 5, go from 0 to 255 every 3 seconds
+  LedFader laserTurrent (13, 1, 0, 255, 3000, true);   // set parameters. pin 5, go from 0 to 255 every 3 seconds
 
   laserTurrent.begin ();    // initialize
   laserTurrent.on ();       // turn on
@@ -55,12 +55,13 @@ Usage:
 
 // constructor
 LedFader::LedFader (const byte pin,
+                    const byte pwmChannel,
                     const byte minValue,
                     const byte maxValue,
                     const unsigned long msPerCycle,
                     const bool active,
                     const bool stopWhenOn) :
-         pin_ (pin), minValue_ (minValue), maxValue_ (maxValue), msPerCycle_ (msPerCycle)
+         pin_ (pin), pwmChannel_(pwmChannel), minValue_ (minValue), maxValue_ (maxValue), msPerCycle_ (msPerCycle)
    {
    startTime_ = 0;
    active_ = active;
@@ -72,8 +73,17 @@ LedFader::LedFader (const byte pin,
 // set pin to output, get current time
 void LedFader::begin ()
   {
-  pinMode (pin_, OUTPUT);
-  digitalWrite (pin_, LOW);
+  //pinMode (pin_, OUTPUT);
+  //digitalWrite (pin_, LOW);
+      ledcAttachPin(pin_, pwmChannel_); // assign  led pins to channels
+          // Initialize channels
+    // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
+    // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
+    ledcSetup(pwmChannel_, 12000, 8); // 12 kHz PWM, 8-bit resolution
+    ledcWrite(pwmChannel_, 255);      // test high output of all leds in sequence
+    delay(1000);
+    ledcWrite(pwmChannel_, 0);
+
   startTime_ = millis ();
   }  // end of LedFader::begin
 
@@ -90,9 +100,12 @@ void LedFader::update ()
     {
     forwards_ = !forwards_;  // change direction
     if (forwards_)
-      analogWrite (pin_, minValue_);
+      //analogWrite (pin_, minValue_);
+      ledcWrite(pwmChannel_, minValue_);
+
     else
-      analogWrite (pin_, maxValue_);
+      //analogWrite (pin_, maxValue_);
+       ledcWrite(pwmChannel_, maxValue_);
     startTime_ = now;
 
     // stop when at required brightness?
@@ -109,8 +122,8 @@ void LedFader::update ()
     else
       newValue = ((msPerCycle_ - howFarDone) * valDifference) / msPerCycle_;
 
-    analogWrite (pin_, newValue + minValue_);
-
+    //analogWrite (pin_, newValue + minValue_);
+      ledcWrite(pwmChannel_, newValue + minValue_);
     }  // end of still in same cycle
 
 

@@ -30,6 +30,7 @@
 //#include
 //"/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
 #include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
+#include "LedFader.h"
 #include "TempSensor.h"
 #include <sendemail.h>
 
@@ -87,7 +88,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 #define TX433PIN 32
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
-                                 4); // tx address, pin for tx
+                                 5); // tx address, pin for tx
 
 byte socket = 3;
 bool state = false;
@@ -115,7 +116,7 @@ char receive_payload[max_payload_size +
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.24 Br:\"OO2\""
+#define SW_VERSION "V3.25 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -150,17 +151,13 @@ boolean MQTTNewData = false;
 SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
             5000, true);
 
+LedFader heartBeatLED(
+    13, 1, 0, 255, 1000,
+    true); // set parameters. pin 5, go from 0 to 255 every 3 seconds
+
 void setup() { // Initialize serial monitor port to PC and wait for port to
 
-    ledcAttachPin(greenLED, 1); // assign RGB led pins to channels
-
-    // Initialize channels
-    // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
-    // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
-    ledcSetup(1, 12000, 8); // 12 kHz PWM, 8-bit resolution
-    ledcWrite(1, 255);      // test high output of all leds in sequence
-    delay(1000);
-    ledcWrite(1, 0);
+    heartBeatLED.begin(); // initialize
 
     // open:
     // reset i2c bus controllerfrom IDF call
@@ -227,6 +224,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
 }
 
 void loop() {
+    heartBeatLED.update(); // initialize
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
     DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic);
