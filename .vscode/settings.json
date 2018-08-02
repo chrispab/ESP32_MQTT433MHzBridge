@@ -8,6 +8,10 @@
         "initializer_list": "cpp",
         "*.tcc": "cpp",
         "fstream": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "deque": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp"
     }
 }

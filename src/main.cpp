@@ -8,6 +8,13 @@
 // edit
 // /home/chris/Projects/git/ESP32_MQTT433MHzBridge/.piolibdeps/U8g2_ID942/src/U8x8lib.cpp
 // and add 2us delays - 3 off, start write, end transmission
+//! for led pwm
+// example here : https://github.com/kriswiner/ESP32/tree/master/PWM
+// use GPIO13 , phys pin 3 up on LHS
+#define greenLED 13
+
+// todo add heartbeat led
+// todo add oled power control fet
 
 #include <Arduino.h>
 #include <NewRemoteTransmitter.h>
@@ -108,7 +115,7 @@ char receive_payload[max_payload_size +
 #define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE2 "433Mhz Bridge"
 #define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.23 Br:\"OO2\""
+#define SW_VERSION "V3.24 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -144,6 +151,17 @@ SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
             5000, true);
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
+
+    ledcAttachPin(greenLED, 1); // assign RGB led pins to channels
+
+    // Initialize channels
+    // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
+    // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
+    ledcSetup(1, 12000, 8); // 12 kHz PWM, 8-bit resolution
+    ledcWrite(1, 255);      // test high output of all leds in sequence
+    delay(1000);
+    ledcWrite(1, 0);
+
     // open:
     // reset i2c bus controllerfrom IDF call
     periph_module_reset(PERIPH_I2C0_MODULE);
@@ -222,17 +240,19 @@ void loop() {
     processMQTTMessage(); // check flags set above and act on
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
-    if (ZCs[0].manageRestarts(transmitter)==true) {
+    if (ZCs[0].manageRestarts(transmitter) == true) {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
-               "ESP32 Watchdog: Zone 1 power cycled", "ESP32 Watchdog: Zone 1 power cycled");
+               "ESP32 Watchdog: Zone 1 power cycled",
+               "ESP32 Watchdog: Zone 1 power cycled");
     }
     // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
     // manageRestarts(2);
-    if (ZCs[2].manageRestarts(transmitter)==true) {
+    if (ZCs[2].manageRestarts(transmitter) == true) {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
-              "ESP32 Watchdog: Zone 3 power cycled", "ESP32 Watchdog: Zone 3 power cycled");
+               "ESP32 Watchdog: Zone 3 power cycled",
+               "ESP32 Watchdog: Zone 3 power cycled");
     }
 
     // myDisplay.refresh();
@@ -248,9 +268,9 @@ void resetI2C(void) {
     if ((millis() - lastResetI2CMillis) >= resetI2CInterval) {
         // reset i2c bus controllerfrom IDF call
         periph_module_reset(PERIPH_I2C0_MODULE);
-        delay(100);
+        // delay(100);
         lastResetI2CMillis = millis();
-        Serial.println("\nI2C RESET/restart.......\n");
+        Serial.println("\nI2C RESET.......\n");
 
         // ESP.restart();
     }
