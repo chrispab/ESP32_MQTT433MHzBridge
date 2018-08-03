@@ -13,7 +13,6 @@
 // use GPIO13 , phys pin 3 up on LHS
 #define greenLED 13
 
-// todo add heartbeat led
 // todo add oled power control fet
 
 #include <Arduino.h>
@@ -133,8 +132,11 @@ char tempStr[17]; // buffer for 16 chars and eos
 
 // create system objects
 // create the display object
-Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/22,
-                  /* data=*/21);
+#define OLED_CLOCK_PIN 22
+#define OLED_DATA_PIN 21
+
+Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
+                  /* data=*/OLED_DATA_PIN);
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 15, "SHD", "SSS")};
@@ -450,85 +452,6 @@ void connectMQTT() {
                           : Serial.println("MQTT Connection attempt Time Out!");
 }
 
-// get status string from temp sensor
-// char *getsensorDisplayString(char *thistempStr) {
-
-//     char humiStr[] = "012345678901234567";
-//     char msgStr[] = "012345678901234567";
-//     static float t;
-//     static float h;
-
-//     currentMillis = millis();
-//     // ready to read?
-//     if (currentMillis - previousTempReadMillis > intervalTempReadMillis) {
-//         // Read temperature as Celsius (the default)
-//         t = dht.getTemperature();
-//         h = dht.getHumidity();
-
-//         strcpy(msgStr, "Temp: ");
-//         if (isnan(t)) {
-//             Serial.println("Failed to read from DHT sensor!");
-//             strcpy(thistempStr, "-=NaN=-");
-//         } else { // is a number
-//             dtostrf(t, 4, 1, thistempStr);
-//             MQTTclient.publish(publishTempTopic, thistempStr);
-//             dtostrf(h, 4, 1, humiStr);
-//             MQTTclient.publish(publishHumiTopic, humiStr);
-
-//             //            strcat(thistempStr, "\0xb0\0x00");
-//             strcat(thistempStr, "\xb0");
-//             strcat(thistempStr, "C");
-
-//             Serial.print("MQTT publish Temp: ");
-//             Serial.println(thistempStr);
-//         }
-//         // myDisplay.writeLine(1, strcat(msgStr, thistempStr));
-
-//         Serial.print("Temp reading: ");
-//         Serial.println(thistempStr);
-
-//         previousTempReadMillis = currentMillis;
-//         // strcpy(thistempStr, tempStr);
-//         return thistempStr; // pass back pointer to the temp string
-//     } else {
-//         // return previous read value
-//         return thistempStr;
-//     }
-// }
-
-// void updateTempDisplay() {
-//     currentMillis = millis();
-//     if (currentMillis - previousTempDisplayMillis >
-//     intervalTempDisplayMillis) {
-
-//         // Read temperature as Celsius (the default)
-//         float t = DHT22Sensor.getTemperature();
-//         float h = DHT22Sensor.getHumidity();
-//         char humiStr[] = "string to hold humidity";
-//         char msgStr[] = "Message String long enough?";
-//         strcpy(msgStr, "Temp: ");
-//         if (isnan(t)) {
-//             Serial.println("Failed to read from DHT sensor!");
-//             strcpy(tempStr, "-=NaN=-");
-//         } else { // is a number
-//             dtostrf(t, 4, 1, tempStr);
-//             MQTTclient.publish(publishTempTopic, tempStr);
-//             dtostrf(h, 4, 1, humiStr);
-//             MQTTclient.publish(publishHumiTopic, humiStr);
-
-//             strcat(tempStr, "*C");
-//             Serial.print("MQTT publish Temp: ");
-//             Serial.println(tempStr);
-//         }
-//         myDisplay.writeLine(1, strcat(msgStr, tempStr));
-
-//         Serial.print("Temp reading: ");
-//         Serial.println(tempStr);
-
-//         previousTempDisplayMillis = currentMillis;
-//     }
-// }
-
 // MQTTclient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // Power<x> 		Show current power state of relay<x> as On or
@@ -703,90 +626,3 @@ int equalID(char *receive_payload, const char *targetID) {
     }
 }
 
-// void updateZoneDisplayLines(void) {
-//     // all three lines can be displayed at once
-//     const char rebootMsg[] = {"Reboot: "};
-//     const char powerCycleMsg[] = {"Power Cycle"};
-//     int zoneID; // only initialised once at start
-//     static unsigned long lastUpdateMillis = 0;
-
-//     unsigned int secsSinceAck = 0;
-//     // max secs out considered good
-
-//     char str_output[20] = {0};
-//     unsigned int secsLeft;
-//     char buf[17];
-
-//     // check if time to display a new message updates
-//     if ((millis() - lastUpdateMillis) >= UpdateInterval) { // ready to
-//     update?
-//         // printFreeRam();
-//         for (zoneID = 0; zoneID < 3; zoneID++) {
-//             // Serial.println(zoneID);
-//             secsSinceAck = (millis() - ZCs[zoneID].lastGoodAckMillis) / 1000;
-
-//             // u8g2.setCursor(0, ((zoneID + 1) * 10) + (1 *
-//             // zoneID));
-//             // make sure check for restarting device
-//             // if so display current secs in wait for reboot cycle
-//             if (ZCs[zoneID].isRebooting) {
-//                 secsLeft = (ZCs[zoneID].rebootMillisLeft) / 1000UL;
-
-//                 Serial.print("--rebootMillisLeft: ");
-//                 Serial.println((ZCs[zoneID].rebootMillisLeft));
-
-//                 Serial.print("--secsLeft var: ");
-//                 Serial.println(secsLeft);
-
-//                 // build string to show if cycling or coming
-//                 // back up char str_output[20] = { 0 }; //,
-//                 // str_two[]="two"; start with device name
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 // char message[] = " Reboot: ";
-//                 if (ZCs[zoneID].isPowerCycling) {
-//                     strcat(str_output, powerCycleMsg);
-//                     // printD(str_output);
-//                     myDisplay.writeLine(zoneID + 4, str_output);
-//                     // secsLeft = '';
-//                 } else {
-//                     strcat(str_output, rebootMsg);
-//                     // printDWithVal(str_output, secsLeft);
-//                     sprintf(buf, "%d", secsLeft);
-//                     strcat(str_output, buf);
-
-//                     myDisplay.writeLine(zoneID + 4, str_output);
-//                 }
-//             } else if ((secsSinceAck > goodSecsMax)) {
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 strcat(str_output, ZCs[zoneID].badStatusMess);
-//                 strcat(str_output, ": ");
-
-//                 // printDWithVal(str_output, secsSinceAck);
-
-//                 sprintf(buf, "%d", secsSinceAck);
-//                 strcat(str_output, buf);
-//                 myDisplay.writeLine(zoneID + 4, str_output);
-//                 // badLED();
-//                 // LEDsOff();
-//             } else {
-//                 // u8g2.print("u");
-//                 strcpy(str_output, ZCs[zoneID].name);
-//                 strcat(str_output, ": ");
-//                 strcat(str_output, ZCs[zoneID].goodStatusMess);
-//                 // add restarts soince power on
-//                 strcat(str_output, " (");
-
-//                 sprintf(buf, "%i", ZCs[zoneID].powerCyclesSincePowerOn);
-
-//                 strcat(str_output, buf);
-//                 strcat(str_output, ")");
-//                 myDisplay.writeLine(zoneID + 4, str_output);
-//                 // goodLED();
-//             }
-//         }
-//         lastUpdateMillis = millis();
-//         myDisplay.refresh();
-//     }
-// }
