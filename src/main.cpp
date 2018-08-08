@@ -11,7 +11,23 @@
 //! for led pwm
 // example here : https://github.com/kriswiner/ESP32/tree/master/PWM
 // use GPIO13 , phys pin 3 up on LHS
-#define greenLED 13
+// mod of gammon ledfader
+
+// startup screen text
+#define SW_VERSION "V3.35 Br:\"OO2\""
+
+//#define TITLE_LINE1 "ESP32 MQTT"
+#define TITLE_LINE1 "MQTT 433MhZ Bridge"
+#define TITLE_LINE2 "RF24/443M Wireless Dog"
+#define TITLE_LINE3 "Temp Sensor"
+#define TITLE_LINE4 ""
+//#define SYS_FONT u8g2_font_8x13_tf
+#define SYS_FONT u8g2_font_6x12_tf
+
+
+#define ESP32_ONBOARD_BLUE_LED_PIN 2 // esp32 devkit on board blue LED
+#define CR Serial.println()
+#define GREEN_LED_PIN 13
 
 // todo add oled power control fet
 
@@ -21,6 +37,8 @@
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
+//#include <stdio.h>
+//#include <string.h>
 
 // classes code changes
 #include "Display.h"
@@ -31,7 +49,7 @@
 #include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
 #include "LedFader.h"
 #include "TempSensor.h"
-#include <sendemail.h>
+#include "sendemail.h"
 
 // forward decs
 void printWifiStatus();
@@ -89,14 +107,14 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
                                  5); // tx address, pin for tx
 
-byte socket = 3;
-bool state = false;
-uint8_t socketNumber = 0;
+// byte socket = 3;
+// bool state = false;
+// uint8_t socketNumber = 0;
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
-#define ce_pin 5
-#define cs_pin 4
-RF24 rf24Radio(ce_pin, cs_pin);
+#define RF24_CE_PIN 5
+#define RF24_CS_PIN 4
+RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 uint8_t writePipeLocS[] = "NodeS";
 uint8_t readPipeLocS[] = "Node0";
 uint8_t writePipeLocC[] = "NodeC";
@@ -105,17 +123,9 @@ uint8_t writePipeLocG[] = "NodeG";
 uint8_t readPipeLocG[] = "Node0";
 // Payload
 const int max_payload_size = 32;
-char receive_payload[max_payload_size +
-                     1]; // +1 to allow room for a terminating NULL char
+char receive_payload[max_payload_size + 1];
+// +1 to allow room for a terminating NULL char
 // static unsigned int goodSecsMax = 15; // 20
-
-// misc stuff
-#define LEDPIN 2 // esp32 devkit on board blue LED
-#define CR Serial.println()
-#define TITLE_LINE1 "ESP32 MQTT"
-#define TITLE_LINE2 "433Mhz Bridge"
-#define TITLE_LINE3 "Wireless Dog"
-#define SW_VERSION "V3.25 Br:\"OO2\""
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -152,42 +162,54 @@ boolean MQTTNewData = false;
 // create object
 SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
             5000, true);
+// set parameters. pin 13, go from 0 to 255 every n milliseconds
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
 
-LedFader heartBeatLED(
-    13, 1, 0, 255, 1000,
-    true); // set parameters. pin 5, go from 0 to 255 every 3 seconds
+// array to enable translation from socket ID (0-15) to string representing
+// socket function
+const char *socketIDFunctionStrings[16];
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
+    // strcpy(socketIDFunctionStrings[0], "blah");
+    socketIDFunctionStrings[0] = "blah";
+    socketIDFunctionStrings[1] = "blah";
+    socketIDFunctionStrings[2] = "L Lights";
+    socketIDFunctionStrings[3] = "D Lights";
+    socketIDFunctionStrings[4] = "C Lights";
+    socketIDFunctionStrings[5] = "DAB";
+    socketIDFunctionStrings[6] = "Amp";
+    socketIDFunctionStrings[7] = "TV";
+    socketIDFunctionStrings[8] = "CSV Rads";
+    socketIDFunctionStrings[9] = "Fan";
+    socketIDFunctionStrings[10] = "blah";
+    socketIDFunctionStrings[11] = "blah";
+    socketIDFunctionStrings[12] = "blah";
+    socketIDFunctionStrings[13] = "blah";
+    socketIDFunctionStrings[14] = "blah";
+    socketIDFunctionStrings[15] = "blah";
 
     heartBeatLED.begin(); // initialize
 
-    // open:
     // reset i2c bus controllerfrom IDF call
     periph_module_reset(PERIPH_I2C0_MODULE);
-    // delay(100);
-
-    // periph_module_reset(PERIPH_I2C1_MODULE);//do both cos not sure which in
-    // use
 
     Serial.begin(115200);
-    pinMode(LEDPIN, OUTPUT); // set the LED pin mode
+    pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
     displayMode = MULTI;
     // setup OLED display
     myDisplay.begin();
-    myDisplay.setFont(u8g2_font_8x13_tf);
+    myDisplay.setFont(SYS_FONT);
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(3, TITLE_LINE2);
     myDisplay.writeLine(4, TITLE_LINE3);
+    myDisplay.writeLine(5, TITLE_LINE4);
     // myDisplay.writeLine(5, "________________");
-
     myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
     delay(3000);
     myDisplay.wipe();
-
-    // TempSensor DHT22Sensor;
 
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
     // DHT22Sensor::TempSensor();
@@ -277,7 +299,7 @@ void resetI2C(void) {
 }
 void processMQTTMessage(void) {
     if (MQTTNewData) {
-        digitalWrite(LEDPIN, MQTTNewState);
+        digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
@@ -317,10 +339,10 @@ void updateDisplayData() {
             // updateTempDisplay(); // get and display temp
             // updateZoneDisplayLines();
         } else if (displayMode == BIG_TEMP) {
-            myDisplay.setFont(u8g2_font_10x20_tf);
+            myDisplay.setFont(SYS_FONT);
             myDisplay.writeLine(5, sensorDisplayString);
         } else if (displayMode == MULTI) {
-            myDisplay.setFont(u8g2_font_8x13_tf);
+            myDisplay.setFont(SYS_FONT);
             myDisplay.writeLine(1, sensorDisplayString);
             myDisplay.writeLine(3, MQTTDisplayString);
             myDisplay.writeLine(5, zone1DisplayString);
@@ -338,11 +360,17 @@ void updateDisplayData() {
 }
 
 char *getMQTTDisplayString(char *MQTTStatus) {
-    char msg[17] = "Socket:";
+    char msg[20] = "Socket:";
     char buff[10];
 
     sprintf(buff, "%d", (MQTTSocketNumber));
+
+    // strcpy()
+    strcpy(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
+    strcat(msg, "(");
+
     strcat(msg, buff);
+    strcat(msg, "):");
 
     if (MQTTNewState == 0) {
         strcat(msg, " OFF");
@@ -363,14 +391,14 @@ void checkConnections() {
             Serial.println("Wifi Needs reconnecting");
             connectWiFi();
         } else {
-            Serial.println("OK - WiFi still connected");
+            Serial.println("OK - WiFi is connected");
         }
 
         if (!MQTTclient.connected()) {
             Serial.println("MQTTClient Needs reconnecting");
             connectMQTT();
         } else {
-            Serial.println("OK - MQTT still connected");
+            Serial.println("OK - MQTT is connected");
         }
         previousConnCheckMillis = currentMillis;
     }
@@ -454,6 +482,8 @@ void connectMQTT() {
 
 // MQTTclient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
+    uint8_t socketNumber = 0;
+
     // Power<x> 		Show current power state of relay<x> as On or
     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
@@ -507,7 +537,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // then leave main control loop to turn of/onn sockets
     // and reset sigmals
 
-    // digitalWrite(LEDPIN, newState);
+    // digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, newState);
     // operateSocket(socketID, newState);
 }
 
@@ -529,12 +559,7 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     } else {
         strcat(msg, " ON");
     }
-    // myDisplay.writeLine(2, msg);
-    // myDisplay.refresh();
 
-    // for (int i = 0; i < 3; i++) { // turn socket off
-    // processZoneRF24Message();
-    // refresh();
     transmitter.sendUnit(socketID, state);
     //}
     Serial.println(msg);
@@ -597,21 +622,20 @@ void processZoneRF24Message(void) {
 
         if (equalID(receive_payload, ZCs[0].heartBeatText)) {
             ZCs[0].resetZoneDevice();
-            Serial.println("RESET GGG");
+            Serial.println("RESET G Watchdog");
             strcpy(messageText, ZCs[0].heartBeatText);
         } else if (equalID(receive_payload, ZCs[1].heartBeatText)) {
             ZCs[1].resetZoneDevice();
-            Serial.println("RESET CCC");
+            Serial.println("RESET C Watchdog");
             strcpy(messageText, ZCs[1].heartBeatText);
         } else if (equalID(receive_payload, ZCs[2].heartBeatText)) {
             ZCs[2].resetZoneDevice();
-            Serial.println("RESET SSS");
+            Serial.println("RESET S Watchdog");
             strcpy(messageText, ZCs[2].heartBeatText);
         } else {
             Serial.println("NO MATCH");
             strcpy(messageText, "NO MATCH");
         }
-        // writeLine(6, messageText);
     }
 }
 
@@ -625,4 +649,3 @@ int equalID(char *receive_payload, const char *targetID) {
         return false;
     }
 }
-
