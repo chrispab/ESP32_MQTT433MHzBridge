@@ -14,7 +14,7 @@
 // mod of gammon ledfader
 
 // startup screen text
-#define SW_VERSION "V3.35 Br:\"OO2\""
+#define SW_VERSION "V3.40 Br:\"OO2\""
 
 //#define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE1 "MQTT 433MhZ Bridge"
@@ -23,7 +23,6 @@
 #define TITLE_LINE4 ""
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf
-
 
 #define ESP32_ONBOARD_BLUE_LED_PIN 2 // esp32 devkit on board blue LED
 #define CR Serial.println()
@@ -78,6 +77,7 @@ void processMQTTMessage(void);
 char *getMQTTDisplayString(char *MQTTStatus);
 
 void resetI2C(void);
+void resetWatchdog(void);
 
 // DHT22 stuff
 //#define DHTPIN 23 // what digital pin we're connected to
@@ -169,7 +169,17 @@ LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
 // socket function
 const char *socketIDFunctionStrings[16];
 
+//! WATCHDOG STUFF
+hw_timer_t *timer = NULL;
+
+void IRAM_ATTR resetModule() {
+    ets_printf("Reboot ESP32 by Watchdog\n");
+    esp_restart_noos();
+}
+
 void setup() { // Initialize serial monitor port to PC and wait for port to
+    Serial.println("running setup");
+
     // strcpy(socketIDFunctionStrings[0], "blah");
     socketIDFunctionStrings[0] = "blah";
     socketIDFunctionStrings[1] = "blah";
@@ -245,9 +255,17 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     // Send Email
     e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
            "programm started/restarted");
+
+    //! watchdog setup
+    timer = timerBegin(0, 80, true); // timer 0, div 80
+    timerAttachInterrupt(timer, &resetModule, true);
+    //20 secs?
+    timerAlarmWrite(timer, 20000000, false); // set time in us
+    timerAlarmEnable(timer);                 // enable interrupt
 }
 
 void loop() {
+    resetWatchdog();
     heartBeatLED.update(); // initialize
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
@@ -280,6 +298,17 @@ void loop() {
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
+}
+void resetWatchdog(void) {
+    static unsigned long lastResetWatchdogMillis = millis();
+    unsigned long resetWatchdogInterval = 10000;
+
+    if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval) {
+
+        timerWrite(timer, 0); // reset timer (feed watchdog)
+        Serial.println("Reset Module Watchdog......");
+        lastResetWatchdogMillis = millis();
+    }
 }
 void resetI2C(void) {
     static unsigned long lastResetI2CMillis = millis();
