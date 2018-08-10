@@ -14,7 +14,7 @@
 // mod of gammon ledfader
 
 // startup screen text
-#define SW_VERSION "V3.40 Br:\"OO2\""
+#define SW_VERSION "V3.42 Br:\"OO2\""
 
 //#define TITLE_LINE1 "ESP32 MQTT"
 #define TITLE_LINE1 "MQTT 433MhZ Bridge"
@@ -105,7 +105,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 #define TX433PIN 32
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
-                                 5); // tx address, pin for tx
+                                 4); // tx address, pin for tx
 
 // byte socket = 3;
 // bool state = false;
@@ -178,7 +178,6 @@ void IRAM_ATTR resetModule() {
 }
 
 void setup() { // Initialize serial monitor port to PC and wait for port to
-    Serial.println("running setup");
 
     // strcpy(socketIDFunctionStrings[0], "blah");
     socketIDFunctionStrings[0] = "blah";
@@ -204,6 +203,8 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     periph_module_reset(PERIPH_I2C0_MODULE);
 
     Serial.begin(115200);
+    Serial.println("==========running setup==========");
+
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
@@ -259,7 +260,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
-    //20 secs?
+    // 20 secs?
     timerAlarmWrite(timer, 20000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 }
@@ -299,6 +300,7 @@ void loop() {
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
 }
+
 void resetWatchdog(void) {
     static unsigned long lastResetWatchdogMillis = millis();
     unsigned long resetWatchdogInterval = 10000;
@@ -321,7 +323,7 @@ void resetI2C(void) {
         periph_module_reset(PERIPH_I2C0_MODULE);
         // delay(100);
         lastResetI2CMillis = millis();
-        Serial.println("\nI2C RESET.......\n");
+        Serial.println("I2C RESET.......");
 
         // ESP.restart();
     }
