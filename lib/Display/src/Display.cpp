@@ -16,7 +16,7 @@
 #define XPIX 128
 #define YPIX 64
 #define DISPLAY_LINES 6
-char displayLine[6][17]; // 6 lines of 16 chars +eol for dispaly store
+char displayLine[6][31]; // 6 lines of n chars +terminator for dispaly store
 
 #include "Display.h"
 

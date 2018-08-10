@@ -13,14 +13,28 @@
 // use GPIO13 , phys pin 3 up on LHS
 // mod of gammon ledfader
 
-// startup screen text
-#define SW_VERSION "V3.42 Br:\"OO2\""
+/* I2C slave Address Scanner
+for 5V bus
+ * Connect a 4.7k resistor between SDA and Vcc
+ * Connect a 4.7k resistor between SCL and Vcc
+for 3.3V bus
+ * Connect a 2.4k resistor between SDA and Vcc
+ * Connect a 2.4k resistor between SCL and Vcc
 
-//#define TITLE_LINE1 "ESP32 MQTT"
-#define TITLE_LINE1 "MQTT 433MhZ Bridge"
-#define TITLE_LINE2 "RF24/443M Wireless Dog"
-#define TITLE_LINE3 "Temp Sensor"
-#define TITLE_LINE4 ""
+A resistor value of 4.7KΩ is recommended
+It is strongly recommended that you place a 10 micro farad capacitor
+between +ve and -ve as close to your ESP32 as you can
+*/
+
+// startup screen text
+#define SW_VERSION "V3.45 Br:\"master\""
+
+#define TITLE_LINE1 "     ESP32"
+#define TITLE_LINE2 "MQTT 433MhZ Bridge"
+#define TITLE_LINE3 "Zone Wireless Dog"
+#define TITLE_LINE4 "MQTT Temp Sensor"
+#define TITLE_LINE5 ""
+#define TITLE_LINE6 ""
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf
 
@@ -211,15 +225,19 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     displayMode = MULTI;
     // setup OLED display
     myDisplay.begin();
+
     myDisplay.setFont(SYS_FONT);
+    myDisplay.wipe();
+
     myDisplay.writeLine(1, TITLE_LINE1);
-    myDisplay.writeLine(3, TITLE_LINE2);
-    myDisplay.writeLine(4, TITLE_LINE3);
-    myDisplay.writeLine(5, TITLE_LINE4);
+    myDisplay.writeLine(2, TITLE_LINE2);
+    myDisplay.writeLine(3, TITLE_LINE3);
+    myDisplay.writeLine(4, TITLE_LINE4);
+    myDisplay.writeLine(5, TITLE_LINE5);
     // myDisplay.writeLine(5, "________________");
     myDisplay.writeLine(6, SW_VERSION);
     myDisplay.refresh();
-    delay(3000);
+    delay(4000);
     myDisplay.wipe();
 
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
@@ -444,7 +462,7 @@ void connectWiFi() {
     // check is MQTTclient is connected first
     // attempt to connect to Wifi network:
     // printO(1, 20, "Connect WiFi..");
-    myDisplay.writeLine(5, "Connect WiFi..");
+    myDisplay.writeLine(1, "Connect to WiFi..");
     myDisplay.refresh();
     // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
     // while (!WiFiEClient.connected())
@@ -483,7 +501,7 @@ void connectMQTT() {
     startMillis = millis();
     while (!MQTTclient.connected() && !MQTTConnectTimeout) {
         // printO(1, 20, "Connect MQTT..");
-        myDisplay.writeLine(6, "Connect MQTT..");
+        myDisplay.writeLine(2, "Connect to MQTT..");
         myDisplay.refresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
