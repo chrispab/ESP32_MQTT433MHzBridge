@@ -118,11 +118,11 @@ char *ZoneController::getDisplayString(char *statusMessage) {
     if (this->isRebooting) {
         secsLeft = (this->rebootMillisLeft) / 1000UL;
 
-        Serial.print("--rebootMillisLeft: ");
-        Serial.println((this->rebootMillisLeft));
+        //Serial.print("--rebootMillisLeft: ");
+        //Serial.println((this->rebootMillisLeft));
 
-        Serial.print("--secsLeft var: ");
-        Serial.println(secsLeft);
+        //Serial.print("--secsLeft var: ");
+        //Serial.println(secsLeft);
 
         // build string to show if cycling or coming back up
         strcpy(str_output, this->name);
@@ -130,16 +130,10 @@ char *ZoneController::getDisplayString(char *statusMessage) {
         // char message[] = " Reboot: ";
         if (this->isPowerCycling) {
             strcat(str_output, powerCycleMsg);
-            // printD(str_output);
-            // myDisplay.writeLine(zoneID + 4, str_output);
-            // secsLeft = '';
         } else {
             strcat(str_output, rebootMsg);
-            // printDWithVal(str_output, secsLeft);
             sprintf(buf, "%d", secsLeft);
             strcat(str_output, buf);
-
-            // myDisplay.writeLine(zoneID + 4, str_output);
         }
     } else if ((secsSinceAck > goodSecsMax)) {
         strcpy(str_output, this->name);
@@ -147,15 +141,9 @@ char *ZoneController::getDisplayString(char *statusMessage) {
         strcat(str_output, this->badStatusMess);
         strcat(str_output, ": ");
 
-        // printDWithVal(str_output, secsSinceAck);
-
         sprintf(buf, "%d", secsSinceAck);
         strcat(str_output, buf);
-        // myDisplay.writeLine(zoneID + 4, str_output);
-        // badLED();
-        // LEDsOff();
     } else {
-        // u8g2.print("u");
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         strcat(str_output, this->goodStatusMess);
@@ -166,8 +154,6 @@ char *ZoneController::getDisplayString(char *statusMessage) {
 
         strcat(str_output, buf);
         strcat(str_output, ")");
-        // myDisplay.writeLine(zoneID + 4, str_output);
-        // goodLED();
     }
     strcpy(statusMessage, str_output); // copy status mess to loc
     return statusMessage;              // return pointer to status message
