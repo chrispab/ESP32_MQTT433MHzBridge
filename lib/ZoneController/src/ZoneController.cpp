@@ -63,7 +63,7 @@ boolean ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
             }
             lastRebootMillisLeftUpdate = millis();
 
-            // if next time  takes it below zero, act as if it was zero
+            // if next time  takes it below zero, process as if it was zero
             if (rebootMillisLeft == 0) { // reboot stuff completed here
                 lastGoodAckMillis = millis();
                 Serial.print("Assume Pi back up:");
