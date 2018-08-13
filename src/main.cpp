@@ -24,10 +24,21 @@ for 3.3V bus
 A resistor value of 4.7KΩ is recommended
 It is strongly recommended that you place a 10 micro farad capacitor
 between +ve and -ve as close to your ESP32 as you can
-*/
+
+Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only. You can not use these pins
+for signal output. Also, pins 6 (SD_CLK), 7 (SD_DATA0), 8 (SD_DATA1), 9
+(SD_DATA2), 10 (SD_DATA3), 11 (SD_CMD) 16 (CS) and 17(Q) are used to interact
+with the SPI flash chip ... you can not use those for other purposes.
+When using pSRAM,
+Strapping pins are GPIO0, GPIO2 and GPIO12.
+TX and RX (as used for flash) are GPIO1 and GPIO3.
+The data type called gpio_num_t is a C language enumeration with values
+corresponding to these names. It is recommended to use these values rather than
+attempt to use numeric values.
 
 // startup screen text
-#define SW_VERSION "V3.46 Br:\"master\""
+*/
+#define SW_VERSION "V3.47 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -38,9 +49,27 @@ between +ve and -ve as close to your ESP32 as you can
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf
 
-#define ESP32_ONBOARD_BLUE_LED_PIN 2 // esp32 devkit on board blue LED
-#define CR Serial.println()
+//! Pin GPIO usage
+//Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only
+#define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // esp32 devkit on board blue LED
 #define GREEN_LED_PIN 33 //13
+#define RED_LED_PIN 1
+#define DHTPIN 25 // what digital pin we're connected to
+#define TX433PIN 32
+#define RF24_CE_PIN 5
+#define RF24_CS_PIN 4
+#define OLED_CLOCK_PIN 22
+#define OLED_DATA_PIN 21
+#define TOUCH_SENSOR_1 13 
+#define TOUCH_SENSOR_2 12 
+#define TOUCH_SENSOR_3 14 
+#define TOUCH_SENSOR_4 27 
+#define TOUCH_SENSOR_5 32  // !! also used by 433 Tx??? - resolve
+
+
+
+#define CR Serial.println()
+
 
 // todo add oled power control fet
 
@@ -98,7 +127,6 @@ void resetWatchdog(void);
 // SENSOR object
 //    Serial.begin(115200);
 
-#define DHTPIN 25 // what digital pin we're connected to
 TempSensor DHT22Sensor;
 
 // WiFi settings
@@ -116,7 +144,6 @@ WiFiClient WiFiEClient;
 PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
-#define TX433PIN 32
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
                                  4); // tx address, pin for tx
@@ -126,8 +153,7 @@ NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
 // uint8_t socketNumber = 0;
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
-#define RF24_CE_PIN 5
-#define RF24_CS_PIN 4
+
 RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 uint8_t writePipeLocS[] = "NodeS";
 uint8_t readPipeLocS[] = "Node0";
@@ -156,8 +182,7 @@ char tempStr[17]; // buffer for 16 chars and eos
 
 // create system objects
 // create the display object
-#define OLED_CLOCK_PIN 22
-#define OLED_DATA_PIN 21
+
 
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
                   /* data=*/OLED_DATA_PIN);
