@@ -40,7 +40,7 @@ between +ve and -ve as close to your ESP32 as you can
 
 #define ESP32_ONBOARD_BLUE_LED_PIN 2 // esp32 devkit on board blue LED
 #define CR Serial.println()
-#define GREEN_LED_PIN 13
+#define GREEN_LED_PIN 33 //13
 
 // todo add oled power control fet
 
@@ -98,7 +98,7 @@ void resetWatchdog(void);
 // SENSOR object
 //    Serial.begin(115200);
 
-#define DHTPIN 33 // what digital pin we're connected to
+#define DHTPIN 25 // what digital pin we're connected to
 TempSensor DHT22Sensor;
 
 // WiFi settings
