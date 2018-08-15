@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.52 Br:\"master\""
+#define SW_VERSION "V3.53 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -124,10 +124,6 @@ void resetI2C(void);
 void resetWatchdog(void);
 
 // DHT22 stuff
-//#define DHTPIN 23 // what digital pin we're connected to
-// SENSOR object
-//    Serial.begin(115200);
-
 TempSensor DHT22Sensor;
 
 // WiFi settings
@@ -149,9 +145,6 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
                                  4); // tx address, pin for tx
 
-// byte socket = 3;
-// bool state = false;
-// uint8_t socketNumber = 0;
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 
@@ -269,7 +262,7 @@ void setup()
     myDisplay.writeLine(4, TITLE_LINE4);
     myDisplay.writeLine(5, TITLE_LINE5);
     // myDisplay.writeLine(5, "________________");
-    myDisplay.writeLine(6, SW_VERSION);
+    myDisplay.writeLine(6, TITLE_LINE6);
     myDisplay.refresh();
     delay(4000);
     myDisplay.wipe();
