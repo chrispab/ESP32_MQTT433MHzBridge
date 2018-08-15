@@ -52,28 +52,25 @@ attempt to use numeric values.
 //! Pin GPIO usage
 //Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only
 #define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
-#define GREEN_LED_PIN GPIO_NUM_33 //LHS_P_9
-#define DHTPIN GPIO_NUM_25 // LHS_P_8 what digital pin we're connected to
-#define TX433PIN GPIO_NUM_32 //LHS_P_10
-#define RF24_CE_PIN GPIO_NUM_5 //RHS_P_8
-#define RF24_CS_PIN GPIO_NUM_4 //RHS_P_5
-#define RF24_SPI_CLK GPIO_NUM_18 //RHS_P_9 green wire
-#define RF24_SPI_MISO GPIO_NUM_19 //RHS_P_10 purple wire
-#define RF24_SPI_MOSI GPIO_NUM_23 //RHS_P_15 blue wire
-#define OLED_CLOCK_PIN GPIO_NUM_22 //RHS_P_14 SCL
-#define OLED_DATA_PIN GPIO_NUM_21 //RHS_P_11 SDA
+#define GREEN_LED_PIN GPIO_NUM_33             //LHS_P_9
+#define DHTPIN GPIO_NUM_25                    // LHS_P_8 what digital pin we're connected to
+#define TX433PIN GPIO_NUM_32                  //LHS_P_10
+#define RF24_CE_PIN GPIO_NUM_5                //RHS_P_8
+#define RF24_CS_PIN GPIO_NUM_4                //RHS_P_5
+#define RF24_SPI_CLK GPIO_NUM_18              //RHS_P_9 green wire
+#define RF24_SPI_MISO GPIO_NUM_19             //RHS_P_10 purple wire
+#define RF24_SPI_MOSI GPIO_NUM_23             //RHS_P_15 blue wire
+#define OLED_CLOCK_PIN GPIO_NUM_22            //RHS_P_14 SCL
+#define OLED_DATA_PIN GPIO_NUM_21             //RHS_P_11 SDA
 
-#define RED_LED_PIN GPIO_NUM_26 //LHS_P_7  ??
+#define RED_LED_PIN GPIO_NUM_26    //LHS_P_7  ??
 #define TOUCH_SENSOR_1 GPIO_NUM_13 //LHS_P_3
 #define TOUCH_SENSOR_2 GPIO_NUM_12 //LHS_P_4
 #define TOUCH_SENSOR_3 GPIO_NUM_14 //LHS_P_5
 #define TOUCH_SENSOR_4 GPIO_NUM_27 //LHS_P_6
 #define TOUCH_SENSOR_5 GPIO_NUM_15 // RHS_P_3  !! also used by 433 Tx??? - resolve
 
-
-
 #define CR Serial.println()
-
 
 // todo add oled power control fet
 
@@ -187,7 +184,6 @@ char tempStr[17]; // buffer for 16 chars and eos
 // create system objects
 // create the display object
 
-
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
                   /* data=*/OLED_DATA_PIN);
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
@@ -196,7 +192,12 @@ ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
 // display vars
 boolean bigTempDisplayEnabled = true;
 
-enum displayModes { NORMAL, BIG_TEMP, MULTI } displayMode;
+enum displayModes
+{
+    NORMAL,
+    BIG_TEMP,
+    MULTI
+} displayMode;
 // enum displayModes ;
 
 int MQTTNewState = 0;     // 0 or 1
@@ -216,12 +217,14 @@ const char *socketIDFunctionStrings[16];
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
 
-void IRAM_ATTR resetModule() {
+void IRAM_ATTR resetModule()
+{
     ets_printf("Reboot ESP32 by Watchdog\n");
     esp_restart_noos();
 }
 
-void setup() { // Initialize serial monitor port to PC and wait for port to
+void setup()
+{ // Initialize serial monitor port to PC and wait for port to
 
     // strcpy(socketIDFunctionStrings[0], "blah");
     socketIDFunctionStrings[0] = "blah";
@@ -242,8 +245,7 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     socketIDFunctionStrings[15] = "blah";
 
     heartBeatLED.begin(); // initialize
-        warnLED.begin(); // initialize
-
+    warnLED.begin();      // initialize
 
     // reset i2c bus controllerfrom IDF call
     periph_module_reset(PERIPH_I2C0_MODULE);
@@ -315,10 +317,11 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     timerAlarmEnable(timer);                 // enable interrupt
 }
 
-void loop() {
+void loop()
+{
     resetWatchdog();
     heartBeatLED.update(); // initialize
-        warnLED.update(); // initialize
+    warnLED.update();      // initialize
 
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
@@ -331,11 +334,12 @@ void loop() {
     //updateDisplayData();
 
     processMQTTMessage(); // check flags set above and act on
-        updateDisplayData();
+    updateDisplayData();
 
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
-    if (ZCs[0].manageRestarts(transmitter) == true) {
+    if (ZCs[0].manageRestarts(transmitter) == true)
+    {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
                "ESP32 Watchdog: Zone 1 power cycled",
                "ESP32 Watchdog: Zone 1 power cycled");
@@ -344,7 +348,8 @@ void loop() {
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
     // manageRestarts(2);
-    if (ZCs[2].manageRestarts(transmitter) == true) {
+    if (ZCs[2].manageRestarts(transmitter) == true)
+    {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
                "ESP32 Watchdog: Zone 3 power cycled",
                "ESP32 Watchdog: Zone 3 power cycled");
@@ -355,24 +360,28 @@ void loop() {
     resetI2C();         // not sure if this is reqd. maybe display at fault
 }
 
-void resetWatchdog(void) {
+void resetWatchdog(void)
+{
     static unsigned long lastResetWatchdogMillis = millis();
     unsigned long resetWatchdogInterval = 10000;
 
-    if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval) {
+    if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval)
+    {
 
         timerWrite(timer, 0); // reset timer (feed watchdog)
         Serial.println("Reset Module Watchdog......");
         lastResetWatchdogMillis = millis();
     }
 }
-void resetI2C(void) {
+void resetI2C(void)
+{
     static unsigned long lastResetI2CMillis = millis();
     unsigned long resetI2CInterval = 360000;
     // do only every few hours
     // u_long is 0to 4,294,967,295
     // 3600000 ms is 1hr
-    if ((millis() - lastResetI2CMillis) >= resetI2CInterval) {
+    if ((millis() - lastResetI2CMillis) >= resetI2CInterval)
+    {
         // reset i2c bus controllerfrom IDF call
         periph_module_reset(PERIPH_I2C0_MODULE);
         // delay(100);
@@ -382,15 +391,18 @@ void resetI2C(void) {
         // ESP.restart();
     }
 }
-void processMQTTMessage(void) {
-    if (MQTTNewData) {
+void processMQTTMessage(void)
+{
+    if (MQTTNewData)
+    {
         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
 }
 
-void updateDisplayData() {
+void updateDisplayData()
+{
     // static unsigned long lastDisplayUpdateMillis = 0;
     static char sensorDisplayString[20];
     static char zone1DisplayString[20];
@@ -412,7 +424,8 @@ void updateDisplayData() {
                ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString,
                ZCs[2].getDisplayString(newZone3DisplayString)) ||
-        strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString))) {
+        strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
+    {
 
         // copy new data to old vars
         strcpy(sensorDisplayString, newSensorDisplayString);
@@ -420,13 +433,18 @@ void updateDisplayData() {
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
-        if (displayMode == NORMAL) {
+        if (displayMode == NORMAL)
+        {
             // updateTempDisplay(); // get and display temp
             // updateZoneDisplayLines();
-        } else if (displayMode == BIG_TEMP) {
+        }
+        else if (displayMode == BIG_TEMP)
+        {
             myDisplay.setFont(SYS_FONT);
             myDisplay.writeLine(5, sensorDisplayString);
-        } else if (displayMode == MULTI) {
+        }
+        else if (displayMode == MULTI)
+        {
             myDisplay.setFont(SYS_FONT);
             myDisplay.writeLine(1, sensorDisplayString);
             myDisplay.writeLine(3, MQTTDisplayString);
@@ -444,7 +462,8 @@ void updateDisplayData() {
     }
 }
 
-char *getMQTTDisplayString(char *MQTTStatus) {
+char *getMQTTDisplayString(char *MQTTStatus)
+{
     char msg[20] = "Socket:";
     char buff[10];
 
@@ -457,9 +476,12 @@ char *getMQTTDisplayString(char *MQTTStatus) {
     strcat(msg, buff);
     strcat(msg, "):");
 
-    if (MQTTNewState == 0) {
+    if (MQTTNewState == 0)
+    {
         strcat(msg, " OFF");
-    } else {
+    }
+    else
+    {
         strcat(msg, " ON");
     }
     // Serial.println(msg);
@@ -468,28 +490,37 @@ char *getMQTTDisplayString(char *MQTTStatus) {
     return MQTTStatus;
 }
 
-void checkConnections() {
+void checkConnections()
+{
     currentMillis = millis();
-    if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis) {
+    if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis)
+    {
 
-        if (!WiFi.isConnected()) { //!= WL_CONNECTED)
+        if (!WiFi.isConnected())
+        { //!= WL_CONNECTED)
             Serial.println("Wifi Needs reconnecting");
             connectWiFi();
-        } else {
+        }
+        else
+        {
             Serial.println("OK - WiFi is connected");
         }
 
-        if (!MQTTclient.connected()) {
+        if (!MQTTclient.connected())
+        {
             Serial.println("MQTTClient Needs reconnecting");
             connectMQTT();
-        } else {
+        }
+        else
+        {
             Serial.println("OK - MQTT is connected");
         }
         previousConnCheckMillis = currentMillis;
     }
 }
 
-void connectWiFi() {
+void connectWiFi()
+{
     bool wifiConnectTimeout = false;
     u16_t startMillis;
     u16_t timeOutMillis = 20000;
@@ -506,7 +537,8 @@ void connectWiFi() {
     wifiConnectTimeout = false;
 
     startMillis = millis();
-    while (!WiFi.isConnected() && !wifiConnectTimeout) {
+    while (!WiFi.isConnected() && !wifiConnectTimeout)
+    {
         Serial.print("Attempting to connect to SSID: ");
         Serial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open
@@ -526,7 +558,8 @@ void connectWiFi() {
     // myDisplay.refresh();
 }
 
-void connectMQTT() {
+void connectMQTT()
+{
     bool MQTTConnectTimeout = false;
     u16_t startMillis;
     u16_t timeOutMillis = 20000;
@@ -535,14 +568,16 @@ void connectMQTT() {
     MQTTConnectTimeout = false;
 
     startMillis = millis();
-    while (!MQTTclient.connected() && !MQTTConnectTimeout) {
+    while (!MQTTclient.connected() && !MQTTConnectTimeout)
+    {
         // printO(1, 20, "Connect MQTT..");
         myDisplay.writeLine(2, "Connect to MQTT..");
         myDisplay.refresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
         //        if (MQTTclient.connect("ESP32Client","",""))
-        if (MQTTclient.connect("ESP32Client")) {
+        if (MQTTclient.connect("ESP32Client"))
+        {
             Serial.println(F("connected to MQTT server"));
             // Once connected, publish an announcement...
             // MQTTclient.publish("outTopic", "hello world");
@@ -551,7 +586,9 @@ void connectMQTT() {
             MQTTclient.subscribe(subscribeTopic);
             myDisplay.writeLine(6, "Connected MQTT!");
             myDisplay.refresh();
-        } else {
+        }
+        else
+        {
             Serial.print("failed, rc=");
             Serial.print(MQTTclient.state());
             Serial.println(" try again ..");
@@ -566,7 +603,8 @@ void connectMQTT() {
 }
 
 // MQTTclient call back if mqtt messsage rxed
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
+void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
+{
     uint8_t socketNumber = 0;
 
     // Power<x> 		Show current power state of relay<x> as On or
@@ -587,7 +625,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     Serial.print("MQTT rxed [");
     Serial.print(topic);
     Serial.print("] : ");
-    for (uint8_t i = 0; i < length; i++) {
+    for (uint8_t i = 0; i < length; i++)
+    {
         Serial.print((char)payload[i]);
     }
     CR;
@@ -601,16 +640,20 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     char lastButOneChar = topic[strlen(topic) - 2];
 
     if ((lastButOneChar >= '0') &&
-        (lastButOneChar <= '9')) { // is it a 2 digit number
+        (lastButOneChar <= '9'))
+    { // is it a 2 digit number
         socketNumber =
             ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
-    } else {
+    }
+    else
+    {
         socketNumber = (lastChar - '0');
     }
     // convert from 1-16 range to 0-15 range sendUnit uses
     // int socketID = socketNumber - 1;
     uint8_t newState = 0; // default to off
-    if ((payload[0] - '1') == 0) {
+    if ((payload[0] - '1') == 0)
+    {
         newState = 1;
     }
     // signal a new command has been rxed
@@ -629,7 +672,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
 // 0-15, 0,1
 // mqtt funct to operate a remote power socket
 // only used by mqtt function
-void operateSocket(uint8_t socketID, uint8_t state) {
+void operateSocket(uint8_t socketID, uint8_t state)
+{
     // this is a blocking routine !!!!!!!
     char msg[17] = "Socket:";
     char buff[10];
@@ -639,9 +683,12 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     strcat(msg, buff);
 
     // u8g2.setCursor(55, 40);
-    if (state == 0) {
+    if (state == 0)
+    {
         strcat(msg, " OFF");
-    } else {
+    }
+    else
+    {
         strcat(msg, " ON");
     }
 
@@ -652,8 +699,10 @@ void operateSocket(uint8_t socketID, uint8_t state) {
     // Serial.println("OK - TX socket state updated");
 }
 
-void LEDBlink(int LPin, int repeatNum) {
-    for (int i = 0; i < repeatNum; i++) {
+void LEDBlink(int LPin, int repeatNum)
+{
+    for (int i = 0; i < repeatNum; i++)
+    {
         digitalWrite(LPin, 1); // GET /H turns the LED on
         delay(50);
         digitalWrite(LPin, 0); // GET /H turns the LED on
@@ -661,7 +710,8 @@ void LEDBlink(int LPin, int repeatNum) {
     }
 }
 
-void printWifiStatus() {
+void printWifiStatus()
+{
     // print the SSID of the network you're attached to:
     Serial.print("SSID: ");
     Serial.println(WiFi.SSID());
@@ -678,22 +728,26 @@ void printWifiStatus() {
     Serial.println(" dBm");
 }
 
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe) {
+void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
+{
     // config rf24Radio to comm with a node
     rf24Radio.stopListening();
     rf24Radio.openWritingPipe(writingPipe);
     rf24Radio.openReadingPipe(1, readingPipe);
 }
 
-void processZoneRF24Message(void) {
+void processZoneRF24Message(void)
+{
     char messageText[17];
-    while (rf24Radio.available()) { // Read all available payloads
+    while (rf24Radio.available())
+    { // Read all available payloads
 
         // Grab the message and process
         uint8_t len = rf24Radio.getDynamicPayloadSize();
 
         // If a corrupt dynamic payload is received, it will be flushed
-        if (!len) {
+        if (!len)
+        {
             return;
         }
 
@@ -705,32 +759,43 @@ void processZoneRF24Message(void) {
         // who was it from?
         // reset that timer
 
-        if (equalID(receive_payload, ZCs[0].heartBeatText)) {
+        if (equalID(receive_payload, ZCs[0].heartBeatText))
+        {
             ZCs[0].resetZoneDevice();
             Serial.println("RESET G Watchdog");
             strcpy(messageText, ZCs[0].heartBeatText);
-        } else if (equalID(receive_payload, ZCs[1].heartBeatText)) {
+        }
+        else if (equalID(receive_payload, ZCs[1].heartBeatText))
+        {
             ZCs[1].resetZoneDevice();
             Serial.println("RESET C Watchdog");
             strcpy(messageText, ZCs[1].heartBeatText);
-        } else if (equalID(receive_payload, ZCs[2].heartBeatText)) {
+        }
+        else if (equalID(receive_payload, ZCs[2].heartBeatText))
+        {
             ZCs[2].resetZoneDevice();
             Serial.println("RESET S Watchdog");
             strcpy(messageText, ZCs[2].heartBeatText);
-        } else {
+        }
+        else
+        {
             Serial.println("NO MATCH");
             strcpy(messageText, "NO MATCH");
         }
     }
 }
 
-int equalID(char *receive_payload, const char *targetID) {
+int equalID(char *receive_payload, const char *targetID)
+{
     // check if same 1st 3 chars
     if ((receive_payload[0] == targetID[0]) &&
         (receive_payload[1] == targetID[1]) &&
-        (receive_payload[2] == targetID[2])) {
+        (receive_payload[2] == targetID[2]))
+    {
         return true;
-    } else {
+    }
+    else
+    {
         return false;
     }
 }
