@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.50 Br:\"master\""
+#define SW_VERSION "V3.52 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -207,6 +207,7 @@ SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
+LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
@@ -241,6 +242,8 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     socketIDFunctionStrings[15] = "blah";
 
     heartBeatLED.begin(); // initialize
+        warnLED.begin(); // initialize
+
 
     // reset i2c bus controllerfrom IDF call
     periph_module_reset(PERIPH_I2C0_MODULE);
@@ -308,13 +311,15 @@ void setup() { // Initialize serial monitor port to PC and wait for port to
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
     // 20 secs?
-    timerAlarmWrite(timer, 20000000, false); // set time in us
+    timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 }
 
 void loop() {
     resetWatchdog();
     heartBeatLED.update(); // initialize
+        warnLED.update(); // initialize
+
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
     DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic);
@@ -323,9 +328,11 @@ void loop() {
     // capture new sensor readings
 
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    updateDisplayData();
+    //updateDisplayData();
 
     processMQTTMessage(); // check flags set above and act on
+        updateDisplayData();
+
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true) {
