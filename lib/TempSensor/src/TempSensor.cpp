@@ -61,7 +61,7 @@ void TempSensor::publishReadings(PubSubClient MQTTclient,
 }
 
 // get status string from temp sensor
-char *TempSensor::getDisplayString(char *displayString) {
+char *TempSensor::getTempDisplayString(char *displayString) {
 
     strcpy(displayString, "Temp: ");
     strcat(displayString, temperatureString);
@@ -71,6 +71,20 @@ char *TempSensor::getDisplayString(char *displayString) {
     } else {                           // is a number
         strcat(displayString, "\xb0"); // degree symbol
         strcat(displayString, "C");    // add suffix degrees C
+    }
+
+    return displayString; // pass back pointer to the temp string
+}
+char *TempSensor::getHumiDisplayString(char *displayString) {
+
+    strcpy(displayString, "Humi: ");
+    strcat(displayString, humidityString);
+    if (isnan(humidity)) {
+        // Serial.println("Failed to read from DHT sensor!");
+        strcat(displayString, "-=NaN=-");
+    } else {                           // is a number
+        strcat(displayString, "\%"); // degree symbol
+        //strcat(displayString, "C");    // add suffix degrees C
     }
 
     return displayString; // pass back pointer to the temp string

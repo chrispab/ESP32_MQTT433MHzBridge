@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.53 Br:\"master\""
+#define SW_VERSION "V3.54 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -62,8 +62,8 @@ attempt to use numeric values.
 #define RF24_SPI_MOSI GPIO_NUM_23             //RHS_P_15 blue wire
 #define OLED_CLOCK_PIN GPIO_NUM_22            //RHS_P_14 SCL
 #define OLED_DATA_PIN GPIO_NUM_21             //RHS_P_11 SDA
+#define RED_LED_PIN GPIO_NUM_26               //LHS_P_7  ??
 
-#define RED_LED_PIN GPIO_NUM_26    //LHS_P_7  ??
 #define TOUCH_SENSOR_1 GPIO_NUM_13 //LHS_P_3
 #define TOUCH_SENSOR_2 GPIO_NUM_12 //LHS_P_4
 #define TOUCH_SENSOR_3 GPIO_NUM_14 //LHS_P_5
@@ -144,7 +144,6 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
                                  4); // tx address, pin for tx
-
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 
@@ -397,12 +396,14 @@ void processMQTTMessage(void)
 void updateDisplayData()
 {
     // static unsigned long lastDisplayUpdateMillis = 0;
-    static char sensorDisplayString[20];
+    static char tempDisplayString[20];
+    static char humiDisplayString[20];
     static char zone1DisplayString[20];
     static char zone3DisplayString[20];
     static char MQTTDisplayString[20];
 
-    static char newSensorDisplayString[20];
+    static char newTempDisplayString[20];
+    static char newHumiDisplayString[20];
     static char newZone1DisplayString[20];
     static char newZone3DisplayString[20];
     static char newMQTTDisplayString[20];
@@ -411,17 +412,18 @@ void updateDisplayData()
     // compare new display data to new data
     // if different - update the actual OLED display
     // if any non zero then data has changed
-    if (strcmp(sensorDisplayString,
-               DHT22Sensor.getDisplayString(newSensorDisplayString)) ||
+    if (strcmp(tempDisplayString,
+               DHT22Sensor.getTempDisplayString(newTempDisplayString)) ||
         strcmp(zone1DisplayString,
                ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString,
                ZCs[2].getDisplayString(newZone3DisplayString)) ||
         strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
     {
-
+        DHT22Sensor.getHumiDisplayString(newHumiDisplayString);
         // copy new data to old vars
-        strcpy(sensorDisplayString, newSensorDisplayString);
+        strcpy(tempDisplayString, newTempDisplayString);
+        strcpy(humiDisplayString, newHumiDisplayString);
         strcpy(zone1DisplayString, newZone1DisplayString);
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
@@ -434,12 +436,14 @@ void updateDisplayData()
         else if (displayMode == BIG_TEMP)
         {
             myDisplay.setFont(SYS_FONT);
-            myDisplay.writeLine(5, sensorDisplayString);
+            myDisplay.writeLine(5, tempDisplayString);
         }
         else if (displayMode == MULTI)
         {
             myDisplay.setFont(SYS_FONT);
-            myDisplay.writeLine(1, sensorDisplayString);
+            myDisplay.writeLine(1, tempDisplayString);
+            myDisplay.writeLine(2, humiDisplayString);
+
             myDisplay.writeLine(3, MQTTDisplayString);
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
@@ -447,7 +451,8 @@ void updateDisplayData()
         myDisplay.refresh();
         // delay(10);
         Serial.println("!----------! Display Refresh");
-        Serial.println(sensorDisplayString);
+        Serial.println(tempDisplayString);
+        Serial.println(humiDisplayString);
         Serial.println(MQTTDisplayString);
         Serial.println(zone1DisplayString);
         Serial.println(zone3DisplayString);
