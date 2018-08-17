@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.54 Br:\"master\""
+#define SW_VERSION "V3.56 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -48,6 +48,8 @@ attempt to use numeric values.
 #define TITLE_LINE6 SW_VERSION
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf
+#define BIG_TEMP_FONT u8g2_font_fub30_tf
+// 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 
 //! Pin GPIO usage
 //Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only
@@ -248,7 +250,7 @@ void setup()
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
-    displayMode = MULTI;
+    //displayMode = MULTI;
     // setup OLED display
     myDisplay.begin();
 
@@ -304,7 +306,7 @@ void setup()
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
-    // 20 secs?
+    // 40 secs
     timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 }
@@ -388,6 +390,7 @@ void processMQTTMessage(void)
     if (MQTTNewData)
     {
         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
+        //Serial
         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
@@ -408,6 +411,8 @@ void updateDisplayData()
     static char newZone3DisplayString[20];
     static char newMQTTDisplayString[20];
 
+    char justTempString[20];
+
     // only update screen if status messages has changed
     // compare new display data to new data
     // if different - update the actual OLED display
@@ -420,7 +425,7 @@ void updateDisplayData()
                ZCs[2].getDisplayString(newZone3DisplayString)) ||
         strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
     {
-        DHT22Sensor.getHumiDisplayString(newHumiDisplayString);
+        DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
         // copy new data to old vars
         strcpy(tempDisplayString, newTempDisplayString);
         strcpy(humiDisplayString, newHumiDisplayString);
@@ -435,8 +440,21 @@ void updateDisplayData()
         }
         else if (displayMode == BIG_TEMP)
         {
+            myDisplay.clearBuffer();
+            myDisplay.setFont(BIG_TEMP_FONT);
+            //just get the temp bit of displaystring
+            //end of string is 'C', need to get string from that pos
+            strcpy(justTempString, &tempDisplayString[6]);
+            //myDisplay.writeLine(4, justTempString);
+            myDisplay.drawStr(0, 38, justTempString);
+            //myDisplay.refresh();
+
             myDisplay.setFont(SYS_FONT);
-            myDisplay.writeLine(5, tempDisplayString);
+            myDisplay.drawStr(0, 47, MQTTDisplayString);
+
+            myDisplay.drawStr(0, 55, zone1DisplayString);
+            myDisplay.drawStr(0, 63, zone3DisplayString);
+            myDisplay.sendBuffer();
         }
         else if (displayMode == MULTI)
         {
@@ -447,8 +465,8 @@ void updateDisplayData()
             myDisplay.writeLine(3, MQTTDisplayString);
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
+            myDisplay.refresh();
         }
-        myDisplay.refresh();
         // delay(10);
         Serial.println("!----------! Display Refresh");
         Serial.println(tempDisplayString);
@@ -673,7 +691,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[17] = "Socket:";
+    char msg[17] = "Operate Socket:";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
@@ -683,16 +701,16 @@ void operateSocket(uint8_t socketID, uint8_t state)
     // u8g2.setCursor(55, 40);
     if (state == 0)
     {
-        strcat(msg, " OFF");
+        strcat(msg, " - OFF");
     }
     else
     {
-        strcat(msg, " ON");
+        strcat(msg, " - ON");
     }
-
+    Serial.println(msg);
     transmitter.sendUnit(socketID, state);
     //}
-    Serial.println(msg);
+
 
     // Serial.println("OK - TX socket state updated");
 }

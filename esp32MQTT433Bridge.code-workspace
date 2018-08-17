@@ -6,7 +6,7 @@
 	],
 	"settings": {
 		"terminal.integrated.env.linux": {
-			"PATH": "/home/chris/.platformio/penv/bin:/home/chris/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+			"PATH": "/home/chris/.platformio/penv/bin:/home/chris/.platformio/penv:/home/chris/bin:/home/chris/.local/bin:/opt/OpenPrinting-Gutenprint/sbin:/opt/OpenPrinting-Gutenprint/bin:/home/chris/bin:/home/chris/.local/bin:/opt/OpenPrinting-Gutenprint/sbin:/opt/OpenPrinting-Gutenprint/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
 			"PLATFORMIO_CALLER": "vscode"
 		}
 	}
