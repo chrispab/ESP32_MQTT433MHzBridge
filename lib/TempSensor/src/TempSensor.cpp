@@ -14,6 +14,7 @@ TempSensor::TempSensor() {
 }
 
 // returns true if temp has been updated
+// takes a new reading every intervalSensorReadMillis - in class header
 boolean TempSensor::takeReadings(void) {
     currentMillis = millis();
 
@@ -21,7 +22,7 @@ boolean TempSensor::takeReadings(void) {
     if (currentMillis - previousSensorReadMillis > intervalSensorReadMillis) {
         Serial.println("Taking New sensor readings......");
 
-        readSensor(); // update temperature and humidity properties
+        this->readSensor(); // update temperature and humidity properties
         if (!(getStatus() == ERROR_NONE)) {
             Serial.println(getStatusString());
         }

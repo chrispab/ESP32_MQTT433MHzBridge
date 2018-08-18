@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.56 Br:\"master\""
+#define SW_VERSION "V3.60 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -71,6 +71,8 @@ attempt to use numeric values.
 #define TOUCH_SENSOR_3 GPIO_NUM_14 //LHS_P_5
 #define TOUCH_SENSOR_4 GPIO_NUM_27 //LHS_P_6
 #define TOUCH_SENSOR_5 GPIO_NUM_15 // RHS_P_3  !! also used by 433 Tx??? - resolve
+
+#define TOUCH_PIN T4 // ESP32 Pin gpio13
 
 #define CR Serial.println()
 
@@ -124,6 +126,7 @@ char *getMQTTDisplayString(char *MQTTStatus);
 
 void resetI2C(void);
 void resetWatchdog(void);
+boolean processTouchPads(void);
 
 // DHT22 stuff
 TempSensor DHT22Sensor;
@@ -145,7 +148,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 // 433Mhz settings
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
-                                 4); // tx address, pin for tx
+                                 5); // last param is num times control message  is txed
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 
@@ -311,6 +314,8 @@ void setup()
     timerAlarmEnable(timer);                 // enable interrupt
 }
 
+boolean touchedFlag=false;
+
 void loop()
 {
     resetWatchdog();
@@ -328,6 +333,7 @@ void loop()
     //updateDisplayData();
 
     processMQTTMessage(); // check flags set above and act on
+    //touchedFlag = processTouchPads();
     updateDisplayData();
 
     // updateDisplayData();
@@ -353,7 +359,35 @@ void loop()
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
 }
+boolean processTouchPads(void)
+{
+    int touchThreshold = 45;
+    int touch_value = 100;
 
+    static int lastTouchValue = 54;
+
+    touch_value = touchRead(TOUCH_PIN);
+    Serial.println(touch_value);
+    delay(500);
+
+    // detect edges
+
+    if (touch_value < lastTouchValue)
+    {
+        if (touch_value < 45)
+        {
+
+            displayMode = MULTI;
+            return true;
+        }
+        else
+        {
+            displayMode = BIG_TEMP;
+            return true;
+        }
+    }
+    lastTouchValue = touch_value;
+}
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
@@ -419,8 +453,8 @@ void updateDisplayData()
     // if any non zero then data has changed
     if (strcmp(tempDisplayString,
                DHT22Sensor.getTempDisplayString(newTempDisplayString)) ||
-        strcmp(zone1DisplayString,
-               ZCs[0].getDisplayString(newZone1DisplayString)) ||
+        touchedFlag ||
+        strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString,
                ZCs[2].getDisplayString(newZone3DisplayString)) ||
         strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
@@ -432,6 +466,17 @@ void updateDisplayData()
         strcpy(zone1DisplayString, newZone1DisplayString);
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
+
+        // int touch_value = 100;
+        // touch_value = touchRead(TOUCH_PIN);
+        // if (touch_value < 50)
+        // {
+        //     displayMode = MULTI;
+        // }
+        // else
+        // {
+        //     displayMode = BIG_TEMP;
+        // }
 
         if (displayMode == NORMAL)
         {
@@ -466,15 +511,15 @@ void updateDisplayData()
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
             myDisplay.refresh();
+            // delay(10);
+            Serial.println("!----------! Display Refresh");
+            Serial.println(tempDisplayString);
+            Serial.println(humiDisplayString);
+            Serial.println(MQTTDisplayString);
+            Serial.println(zone1DisplayString);
+            Serial.println(zone3DisplayString);
+            Serial.println("^----------^");
         }
-        // delay(10);
-        Serial.println("!----------! Display Refresh");
-        Serial.println(tempDisplayString);
-        Serial.println(humiDisplayString);
-        Serial.println(MQTTDisplayString);
-        Serial.println(zone1DisplayString);
-        Serial.println(zone3DisplayString);
-        Serial.println("^----------^");
     }
 }
 
@@ -691,7 +736,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[17] = "Operate Socket:";
+    char msg[30] = "Operate Socket:";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
@@ -710,7 +755,6 @@ void operateSocket(uint8_t socketID, uint8_t state)
     Serial.println(msg);
     transmitter.sendUnit(socketID, state);
     //}
-
 
     // Serial.println("OK - TX socket state updated");
 }
