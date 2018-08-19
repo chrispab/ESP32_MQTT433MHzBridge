@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.60 Br:\"master\""
+#define SW_VERSION "V3.61 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -270,11 +270,14 @@ void setup()
     myDisplay.refresh();
     delay(4000);
     myDisplay.wipe();
-
+    myDisplay.writeLine(1, "Connecting to Sensor..");
+    myDisplay.refresh();
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
     // DHT22Sensor::TempSensor();
 
     // rf24 stuff
+    myDisplay.writeLine(2, "Connecting to RF24..");
+    myDisplay.refresh();
     rf24Radio.begin();
     // enable dynamic payloads
     rf24Radio.enableDynamicPayloads();
@@ -314,7 +317,7 @@ void setup()
     timerAlarmEnable(timer);                 // enable interrupt
 }
 
-boolean touchedFlag=false;
+boolean touchedFlag = false;
 
 void loop()
 {
@@ -333,7 +336,7 @@ void loop()
     //updateDisplayData();
 
     processMQTTMessage(); // check flags set above and act on
-    //touchedFlag = processTouchPads();
+    touchedFlag = processTouchPads();
     updateDisplayData();
 
     // updateDisplayData();
@@ -361,33 +364,76 @@ void loop()
 }
 boolean processTouchPads(void)
 {
-    int touchThreshold = 45;
-    int touch_value = 100;
+    static int lastFilteredVal = 54;
+    static int filteredVal = 54;
+    const int filterConstant = 2; // 2 ishalf, 4 is quarter etc
+    int touchThreshold = 32;
+    int newTouchValue = 100;
 
-    static int lastTouchValue = 54;
+    //newTouchValue = touchRead(TOUCH_PIN);
+    //Serial.println(newTouchValue);
+    //delay(500);
 
-    touch_value = touchRead(TOUCH_PIN);
-    Serial.println(touch_value);
-    delay(500);
+    // only read touch sensors every 100ms
+    static unsigned long lastTouchReadMillis = millis();
+    unsigned long touchReadInterval = 25;
 
-    // detect edges
-
-    if (touch_value < lastTouchValue)
+    if ((millis() - lastTouchReadMillis) >= touchReadInterval)
     {
-        if (touch_value < 45)
+        newTouchValue = touchRead(TOUCH_PIN);
+        lastTouchReadMillis = millis();
+
+        //! try software addition filterhere to even out spurious readings
+        int diff;
+        //filteredVal = filteredVal + (filteredVal )
+        if (newTouchValue > filteredVal) //if going up - add onto filteredval
         {
+            diff = (newTouchValue - filteredVal);
+            filteredVal = filteredVal + (diff / filterConstant);
+        }
+        if (newTouchValue < filteredVal) //if going down - subtract  from filteredval
+        {
+            diff = (filteredVal - newTouchValue);
+            filteredVal = filteredVal - (diff / filterConstant);
+        }
+        // Serial.print("Touch Val    = ");
+        // Serial.println(newTouchValue);
+        // Serial.print("filtered Val = ");
+        // Serial.println(filteredVal);
+
+        // !! detect edges
+        if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
+        { //high to low edge finger on
+            Serial.print("$$$]_ Touch Val = ");
+            Serial.println(newTouchValue);
+            Serial.print("filtered Val = ");
+            Serial.println(filteredVal);
 
             displayMode = MULTI;
+            lastFilteredVal = filteredVal;
+            //lastTouchReadMillis = millis();
+
             return true;
         }
-        else
-        {
+        if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
+        { //low to high edge finger off
+            Serial.print("$$$_[ Touch Val = ");
+            Serial.println(newTouchValue);
+            Serial.print("filtered Val = ");
+            Serial.println(filteredVal);
             displayMode = BIG_TEMP;
+            lastFilteredVal = filteredVal;
+            //lastTouchReadMillis = millis();
+
             return true;
         }
+        lastFilteredVal = filteredVal;
+
+        return false; // no edge detected
     }
-    lastTouchValue = touch_value;
+    return false; // no edge detected
 }
+
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
@@ -467,9 +513,9 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
-        // int touch_value = 100;
-        // touch_value = touchRead(TOUCH_PIN);
-        // if (touch_value < 50)
+        // int newTouchValue = 100;
+        // newTouchValue = touchRead(TOUCH_PIN);
+        // if (newTouchValue < 50)
         // {
         //     displayMode = MULTI;
         // }
@@ -500,6 +546,13 @@ void updateDisplayData()
             myDisplay.drawStr(0, 55, zone1DisplayString);
             myDisplay.drawStr(0, 63, zone3DisplayString);
             myDisplay.sendBuffer();
+            Serial.println("!----------! BIG_TEMP Display Refresh");
+            Serial.println(tempDisplayString);
+            // Serial.println(humiDisplayString);
+            Serial.println(MQTTDisplayString);
+            Serial.println(zone1DisplayString);
+            Serial.println(zone3DisplayString);
+            Serial.println("^----------^");
         }
         else if (displayMode == MULTI)
         {
@@ -512,7 +565,7 @@ void updateDisplayData()
             myDisplay.writeLine(6, zone3DisplayString);
             myDisplay.refresh();
             // delay(10);
-            Serial.println("!----------! Display Refresh");
+            Serial.println("!----------! MULTI Display Refresh");
             Serial.println(tempDisplayString);
             Serial.println(humiDisplayString);
             Serial.println(MQTTDisplayString);
@@ -579,7 +632,44 @@ void checkConnections()
         previousConnCheckMillis = currentMillis;
     }
 }
+void connectRF24()
+{
+    bool wifiConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 20000;
 
+    // Loop until we're reconnected
+    // check is MQTTclient is connected first
+    // attempt to connect to Wifi network:
+    // printO(1, 20, "Connect WiFi..");
+    myDisplay.writeLine(1, "Connecting to RF24..");
+    myDisplay.refresh();
+    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
+    // while (!WiFiEClient.connected())
+    // while (status != WL_CONNECTED)
+    wifiConnectTimeout = false;
+
+    startMillis = millis();
+    while (!WiFi.isConnected() && !wifiConnectTimeout)
+    {
+        Serial.print("Attempting to connect to SSID: ");
+        Serial.println(ssid);
+        // Connect to WPA/WPA2 network. Change this line if using open
+        // or WEP network:
+        WiFi.begin(ssid, pass);
+
+        // wait 10 seconds for connection:
+        delay(5000);
+        // enable jump out if connection attempt has timed out
+        wifiConnectTimeout =
+            ((millis() - startMillis) > timeOutMillis) ? true : false;
+    }
+    (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
+                         : Serial.println("Wifi Connection made!");
+
+    // myDisplay.writeLine(5, "Connected WiFi!");
+    // myDisplay.refresh();
+}
 void connectWiFi()
 {
     bool wifiConnectTimeout = false;
@@ -590,7 +680,7 @@ void connectWiFi()
     // check is MQTTclient is connected first
     // attempt to connect to Wifi network:
     // printO(1, 20, "Connect WiFi..");
-    myDisplay.writeLine(1, "Connect to WiFi..");
+    myDisplay.writeLine(3, "Connecting to WiFi..");
     myDisplay.refresh();
     // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
     // while (!WiFiEClient.connected())
@@ -632,7 +722,7 @@ void connectMQTT()
     while (!MQTTclient.connected() && !MQTTConnectTimeout)
     {
         // printO(1, 20, "Connect MQTT..");
-        myDisplay.writeLine(2, "Connect to MQTT..");
+        myDisplay.writeLine(4, "Connecting to MQTT..");
         myDisplay.refresh();
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
@@ -645,7 +735,7 @@ void connectMQTT()
             // ... and resubscribe
             // MQTTclient.subscribe("inTopic");
             MQTTclient.subscribe(subscribeTopic);
-            myDisplay.writeLine(6, "Connected MQTT!");
+            myDisplay.writeLine(3, "Connected MQTT!");
             myDisplay.refresh();
         }
         else

@@ -61,21 +61,25 @@ void TempSensor::publishReadings(PubSubClient MQTTclient,
     }
 }
 
+
+//! check for nan and use previous temp val
 // get status string from temp sensor
 char *TempSensor::getTempDisplayString(char *displayString) {
 
     strcpy(displayString, "Temp: ");
-    strcat(displayString, temperatureString);
+    //strcat(displayString, temperatureString);
     if (isnan(temperature)) {
         // Serial.println("Failed to read from DHT sensor!");
-        strcat(displayString, "-=NaN=-");
-    } else {                           // is a number
+        strcat(displayString, "------");
+    } else {         
+        strcat(displayString, temperatureString);                  // is a number
         strcat(displayString, "\xb0"); // degree symbol
         strcat(displayString, "C");    // add suffix degrees C
     }
 
     return displayString; // pass back pointer to the temp string
 }
+
 char *TempSensor::getHumiDisplayString(char *displayString) {
 
     strcpy(displayString, "Humi: ");
