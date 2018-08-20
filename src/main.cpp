@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.61 Br:\"master\""
+#define SW_VERSION "V3.62 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -127,6 +127,7 @@ char *getMQTTDisplayString(char *MQTTStatus);
 void resetI2C(void);
 void resetWatchdog(void);
 boolean processTouchPads(void);
+void connectRF24(void);
 
 // DHT22 stuff
 TempSensor DHT22Sensor;
@@ -273,37 +274,27 @@ void setup()
     myDisplay.writeLine(1, "Connecting to Sensor..");
     myDisplay.refresh();
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
-    // DHT22Sensor::TempSensor();
 
     // rf24 stuff
     myDisplay.writeLine(2, "Connecting to RF24..");
     myDisplay.refresh();
-    rf24Radio.begin();
-    // enable dynamic payloads
-    rf24Radio.enableDynamicPayloads();
-    // optionally, increase the delay between retries & # of retries
-    // rf24Radio.setRetries(15, 15);
-    rf24Radio.setPALevel(RF24_PA_MAX);
-    rf24Radio.setDataRate(RF24_250KBPS);
-    rf24Radio.setChannel(124);
-    rf24Radio.startListening();
-    rf24Radio.printDetails();
-    // autoACK enabled by default
-    setPipes(writePipeLocC,
-             readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-    rf24Radio.startListening();
+    connectRF24();
 
-    // WiFi.begin();
     // attempt to connect to Wifi network:
+    myDisplay.writeLine(3, "Connecting to WiFi..");
+    myDisplay.refresh();
     connectWiFi();
     // you're connected now, so print out the status:
     printWifiStatus();
     CR;
+    myDisplay.writeLine(4, "Connecting to MQTT..");
+    myDisplay.refresh();
     connectMQTT();
+    myDisplay.writeLine(5, "All Connected");
+    myDisplay.refresh();
 
     // MQTTclient.loop(); //process any MQTT stuff
     // checkConnections();
-    myDisplay.wipe();
 
     // Send Email
     e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
@@ -315,6 +306,7 @@ void setup()
     // 40 secs
     timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
+    myDisplay.wipe();
 }
 
 boolean touchedFlag = false;
@@ -366,7 +358,7 @@ boolean processTouchPads(void)
 {
     static int lastFilteredVal = 54;
     static int filteredVal = 54;
-    const int filterConstant = 2; // 2 ishalf, 4 is quarter etc
+    const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
     int touchThreshold = 32;
     int newTouchValue = 100;
 
@@ -383,7 +375,7 @@ boolean processTouchPads(void)
         newTouchValue = touchRead(TOUCH_PIN);
         lastTouchReadMillis = millis();
 
-        //! try software addition filterhere to even out spurious readings
+        //! software addition filter here to even out spurious readings
         int diff;
         //filteredVal = filteredVal + (filteredVal )
         if (newTouchValue > filteredVal) //if going up - add onto filteredval
@@ -634,41 +626,20 @@ void checkConnections()
 }
 void connectRF24()
 {
-    bool wifiConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 20000;
-
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
-    // attempt to connect to Wifi network:
-    // printO(1, 20, "Connect WiFi..");
-    myDisplay.writeLine(1, "Connecting to RF24..");
-    myDisplay.refresh();
-    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
-    // while (!WiFiEClient.connected())
-    // while (status != WL_CONNECTED)
-    wifiConnectTimeout = false;
-
-    startMillis = millis();
-    while (!WiFi.isConnected() && !wifiConnectTimeout)
-    {
-        Serial.print("Attempting to connect to SSID: ");
-        Serial.println(ssid);
-        // Connect to WPA/WPA2 network. Change this line if using open
-        // or WEP network:
-        WiFi.begin(ssid, pass);
-
-        // wait 10 seconds for connection:
-        delay(5000);
-        // enable jump out if connection attempt has timed out
-        wifiConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
-                         : Serial.println("Wifi Connection made!");
-
-    // myDisplay.writeLine(5, "Connected WiFi!");
-    // myDisplay.refresh();
+    rf24Radio.begin();
+    // enable dynamic payloads
+    rf24Radio.enableDynamicPayloads();
+    // optionally, increase the delay between retries & # of retries
+    // rf24Radio.setRetries(15, 15);
+    rf24Radio.setPALevel(RF24_PA_MAX);
+    rf24Radio.setDataRate(RF24_250KBPS);
+    rf24Radio.setChannel(124);
+    rf24Radio.startListening();
+    rf24Radio.printDetails();
+    // autoACK enabled by default
+    setPipes(writePipeLocC,
+             readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
+    rf24Radio.startListening();
 }
 void connectWiFi()
 {
@@ -680,8 +651,7 @@ void connectWiFi()
     // check is MQTTclient is connected first
     // attempt to connect to Wifi network:
     // printO(1, 20, "Connect WiFi..");
-    myDisplay.writeLine(3, "Connecting to WiFi..");
-    myDisplay.refresh();
+
     // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
     // while (!WiFiEClient.connected())
     // while (status != WL_CONNECTED)
@@ -722,8 +692,7 @@ void connectMQTT()
     while (!MQTTclient.connected() && !MQTTConnectTimeout)
     {
         // printO(1, 20, "Connect MQTT..");
-        myDisplay.writeLine(4, "Connecting to MQTT..");
-        myDisplay.refresh();
+
         Serial.println(F("Attempting MQTT connection..."));
         // Attempt to connect
         //        if (MQTTclient.connect("ESP32Client","",""))
@@ -735,8 +704,6 @@ void connectMQTT()
             // ... and resubscribe
             // MQTTclient.subscribe("inTopic");
             MQTTclient.subscribe(subscribeTopic);
-            myDisplay.writeLine(3, "Connected MQTT!");
-            myDisplay.refresh();
         }
         else
         {
