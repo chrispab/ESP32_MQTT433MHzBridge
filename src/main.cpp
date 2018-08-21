@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.62 Br:\"master\""
+#define SW_VERSION "V3.65 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -47,8 +47,8 @@ attempt to use numeric values.
 #define TITLE_LINE5 ""
 #define TITLE_LINE6 SW_VERSION
 //#define SYS_FONT u8g2_font_8x13_tf
-#define SYS_FONT u8g2_font_6x12_tf
-#define BIG_TEMP_FONT u8g2_font_fub30_tf
+#define SYS_FONT u8g2_font_6x12_tf // 7 px high
+#define BIG_TEMP_FONT u8g2_font_fub30_tf //30px hieght
 // 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 
 //! Pin GPIO usage
@@ -97,6 +97,18 @@ attempt to use numeric values.
 #include "LedFader.h"
 #include "TempSensor.h"
 #include "sendemail.h"
+
+//time stuff
+#include <NTPClient.h>
+//#include <WiFi.h>
+#include <WiFiUdp.h>
+#define NTP_OFFSET 60 * 60     // In seconds
+#define NTP_INTERVAL 60 * 1000 // In miliseconds
+#define NTP_ADDRESS "europe.pool.ntp.org"
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
+//NTPClient timeClient(ntpUDP);
 
 // forward decs
 void printWifiStatus();
@@ -148,8 +160,8 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 256,
-                                 5); // last param is num times control message  is txed
+NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 5);
+// last param is num times control message  is txed
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 
@@ -217,7 +229,7 @@ hw_timer_t *timer = NULL;
 
 void IRAM_ATTR resetModule()
 {
-    ets_printf("Reboot ESP32 by Watchdog\n");
+    ets_printf("ESP32 Rebooted by Internal Watchdog\n");
     esp_restart_noos();
 }
 
@@ -266,10 +278,10 @@ void setup()
     myDisplay.writeLine(3, TITLE_LINE3);
     myDisplay.writeLine(4, TITLE_LINE4);
     myDisplay.writeLine(5, TITLE_LINE5);
-    // myDisplay.writeLine(5, "________________");
     myDisplay.writeLine(6, TITLE_LINE6);
     myDisplay.refresh();
-    delay(4000);
+    delay(3000);
+
     myDisplay.wipe();
     myDisplay.writeLine(1, "Connecting to Sensor..");
     myDisplay.refresh();
@@ -292,6 +304,13 @@ void setup()
     connectMQTT();
     myDisplay.writeLine(5, "All Connected");
     myDisplay.refresh();
+
+    timeClient.begin();
+    timeClient.update();
+
+    Serial.println(timeClient.getFormattedTime());
+
+    delay(500);
 
     // MQTTclient.loop(); //process any MQTT stuff
     // checkConnections();
@@ -388,10 +407,6 @@ boolean processTouchPads(void)
             diff = (filteredVal - newTouchValue);
             filteredVal = filteredVal - (diff / filterConstant);
         }
-        // Serial.print("Touch Val    = ");
-        // Serial.println(newTouchValue);
-        // Serial.print("filtered Val = ");
-        // Serial.println(filteredVal);
 
         // !! detect edges
         if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
@@ -505,17 +520,6 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
-        // int newTouchValue = 100;
-        // newTouchValue = touchRead(TOUCH_PIN);
-        // if (newTouchValue < 50)
-        // {
-        //     displayMode = MULTI;
-        // }
-        // else
-        // {
-        //     displayMode = BIG_TEMP;
-        // }
-
         if (displayMode == NORMAL)
         {
             // updateTempDisplay(); // get and display temp
@@ -534,14 +538,18 @@ void updateDisplayData()
 
             myDisplay.setFont(SYS_FONT);
             myDisplay.drawStr(0, 47, MQTTDisplayString);
+            timeClient.update();
+            //Serial.println(timeClient.getFormattedTime());
 
             myDisplay.drawStr(0, 55, zone1DisplayString);
             myDisplay.drawStr(0, 63, zone3DisplayString);
+            myDisplay.drawStr(80, 63, timeClient.getFormattedTime().c_str());
+
             myDisplay.sendBuffer();
             Serial.println("!----------! BIG_TEMP Display Refresh");
             Serial.println(tempDisplayString);
-            // Serial.println(humiDisplayString);
             Serial.println(MQTTDisplayString);
+            Serial.println(timeClient.getFormattedTime().c_str());
             Serial.println(zone1DisplayString);
             Serial.println(zone3DisplayString);
             Serial.println("^----------^");
@@ -556,7 +564,6 @@ void updateDisplayData()
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
             myDisplay.refresh();
-            // delay(10);
             Serial.println("!----------! MULTI Display Refresh");
             Serial.println(tempDisplayString);
             Serial.println(humiDisplayString);
@@ -674,9 +681,6 @@ void connectWiFi()
     }
     (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
                          : Serial.println("Wifi Connection made!");
-
-    // myDisplay.writeLine(5, "Connected WiFi!");
-    // myDisplay.refresh();
 }
 
 void connectMQTT()
