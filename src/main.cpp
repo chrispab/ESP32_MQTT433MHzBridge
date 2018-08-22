@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.65 Br:\"master\""
+#define SW_VERSION "V3.66 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -47,7 +47,7 @@ attempt to use numeric values.
 #define TITLE_LINE5 ""
 #define TITLE_LINE6 SW_VERSION
 //#define SYS_FONT u8g2_font_8x13_tf
-#define SYS_FONT u8g2_font_6x12_tf // 7 px high
+#define SYS_FONT u8g2_font_6x12_tf       // 7 px high
 #define BIG_TEMP_FONT u8g2_font_fub30_tf //30px hieght
 // 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 
@@ -141,6 +141,8 @@ void resetWatchdog(void);
 boolean processTouchPads(void);
 void connectRF24(void);
 
+void WiFiLocalWebPageCtrl(void);
+
 // DHT22 stuff
 TempSensor DHT22Sensor;
 
@@ -201,6 +203,8 @@ ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(2, 15, "SHD", "SSS")};
 // display vars
 boolean bigTempDisplayEnabled = true;
+
+WiFiServer server(80);
 
 enum displayModes
 {
@@ -326,6 +330,8 @@ void setup()
     timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
     myDisplay.wipe();
+
+    //connectWiFi();
 }
 
 boolean touchedFlag = false;
@@ -372,7 +378,112 @@ void loop()
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
     resetI2C();         // not sure if this is reqd. maybe display at fault
+
+    WiFiLocalWebPageCtrl();
 }
+
+/***************************************************
+* Send and receive data from Local Page
+****************************************************/
+void WiFiLocalWebPageCtrl(void)
+{
+    static char tempDisplayString[20];
+    static char humiDisplayString[20];
+    static char zone1DisplayString[20];
+    static char zone3DisplayString[20];
+    static char MQTTDisplayString[20];
+
+    WiFiClient client = server.available(); // listen for incoming clients
+    //client = server.available();
+    if (client)
+    {                                  // if you get a client,
+        Serial.println("New Client."); // print a message out the serial port
+        String currentLine = "";       // make a String to hold incoming data from the client
+        while (client.connected())
+        { // loop while the client's connected
+            if (client.available())
+            {                           // if there's bytes to read from the client,
+                char c = client.read(); // read a byte, then
+                Serial.write(c);        // print it out the serial monitor
+                if (c == '\n')
+                { // if the byte is a newline character
+
+                    // if the current line is blank, you got two newline characters in a row.
+                    // that's the end of the client HTTP request, so send a response:
+                    if (currentLine.length() == 0)
+                    {
+                        // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+                        // and a content-type so the client knows what's coming, then a blank line:
+                        client.println("HTTP/1.1 200 OK");
+                        client.println("Content-type:text/html");
+                        client.println();
+                        client.println(timeClient.getFormattedTime());
+                        client.print("<br>");
+
+                        // the content of the HTTP response follows the header:
+                        //WiFiLocalWebPageCtrl();
+                        //client.print("Temperature now is: ");
+                        //client.print(localTemp);
+                        // client.print("  oC<br>");
+                        // client.print("Humidity now is:     ");
+                        //client.print(localHum);
+                        // client.print(" % <br>");
+                        // client.print("<br>");
+                        // client.print("Analog Data:     ");
+                        //client.print(analog_value);
+                        // client.print("<br>");
+                        // client.print("<br>");
+
+                        // client.print("Click <a href=\"/H\">here</a> to turn the LED on.<br>");
+                        // client.print("Click <a href=\"/L\">here</a> to turn the LED off.<br>");
+
+                        //Serial.println("!----------! BIG_TEMP Display Refresh");
+                        client.print(DHT22Sensor.getTempDisplayString(tempDisplayString));
+                        client.print("<br>");
+                        client.print(DHT22Sensor.getHumiDisplayString(humiDisplayString));
+                        client.print("<br>");
+                        client.print(getMQTTDisplayString(MQTTDisplayString));
+                        client.print("<br>");
+
+                        client.print(ZCs[0].getDisplayString(zone1DisplayString));
+                        client.print("<br>");
+                        client.print(ZCs[2].getDisplayString(zone3DisplayString));
+                        client.print("<br>");
+                        // Serial.println(zone3DisplayString);
+                        //Serial.println("^----------^");
+
+                        // The HTTP response ends with another blank line:
+                        client.println();
+                        // break out of the while loop:
+                        break;
+                    }
+                    else
+                    { // if you got a newline, then clear currentLine:
+                        currentLine = "";
+                    }
+                }
+                else if (c != '\r')
+                {                     // if you got anything else but a carriage return character,
+                    currentLine += c; // add it to the end of the currentLine
+                }
+
+                // Check to see if the client request was "GET /H" or "GET /L":
+                if (currentLine.endsWith("GET /H"))
+                {
+                    //digitalWrite(LED_PIN, HIGH);               // GET /H turns the LED on
+                }
+                if (currentLine.endsWith("GET /L"))
+                {
+                    //digitalWrite(LED_PIN, LOW);                // GET /L turns the LED off
+                }
+            }
+        }
+        // close the connection:
+        client.stop();
+        Serial.println("Client Disconnected.");
+    }
+}
+
 boolean processTouchPads(void)
 {
     static int lastFilteredVal = 54;
@@ -681,6 +792,8 @@ void connectWiFi()
     }
     (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
                          : Serial.println("Wifi Connection made!");
+
+    server.begin();
 }
 
 void connectMQTT()
