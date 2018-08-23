@@ -228,6 +228,8 @@ LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 // socket function
 const char *socketIDFunctionStrings[16];
 
+char consoleBuffer[256]; //255 max chars in buffer plus eol \0
+
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
 
@@ -451,6 +453,8 @@ void WiFiLocalWebPageCtrl(void)
                         client.print("<br>");
                         // Serial.println(zone3DisplayString);
                         //Serial.println("^----------^");
+                        //! now push out the buffer
+                        client.print(consoleBuffer);
 
                         // The HTTP response ends with another blank line:
                         client.println();
