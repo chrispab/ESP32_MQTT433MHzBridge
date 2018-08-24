@@ -1,0 +1,25 @@
+
+class myMenu
+{
+  private:
+    Stream &port_;
+
+  public:
+    myMenu(Stream &port) : port_(port) {}
+    void begin();
+};
+
+void myMenu::begin()
+{
+    port_.println("Menu initialized.");
+}
+
+myMenu menu(Serial);
+
+void setup()
+{
+    Serial.begin(115200);
+    menu.begin();
+} // end of setup
+
+void loop() {}

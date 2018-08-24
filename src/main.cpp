@@ -228,10 +228,13 @@ LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 // socket function
 const char *socketIDFunctionStrings[16];
 
-char consoleBuffer[256]; //255 max chars in buffer plus eol \0
+//char consoleBuffer[256]; //255 max chars in buffer plus eol \0
 
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
+
+#include <WebSerial.h>
+WebSerial myWebSerial;
 
 void IRAM_ATTR resetModule()
 {
@@ -268,6 +271,7 @@ void setup()
 
     Serial.begin(115200);
     Serial.println("==========running setup==========");
+    myWebSerial.println("==========running setup==========");
 
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
     displayMode = NORMAL;
@@ -454,7 +458,7 @@ void WiFiLocalWebPageCtrl(void)
                         // Serial.println(zone3DisplayString);
                         //Serial.println("^----------^");
                         //! now push out the buffer
-                        client.print(consoleBuffer);
+                        client.print("buffer op");
 
                         // The HTTP response ends with another blank line:
                         client.println();
