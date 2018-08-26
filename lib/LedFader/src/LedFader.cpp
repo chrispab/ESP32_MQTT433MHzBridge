@@ -69,7 +69,6 @@ LedFader::LedFader (const byte pin,
    forwards_ = true;
    }  // end of  LedFader::LedFader
 
-
 // set pin to output, get current time
 void LedFader::begin ()
   {
@@ -86,6 +85,39 @@ void LedFader::begin ()
 
   startTime_ = millis ();
   }  // end of LedFader::begin
+
+// set pin to output, get current time
+void LedFader::fullOn ()
+  {
+  //pinMode (pin_, OUTPUT);
+  //digitalWrite (pin_, LOW);
+//      ledcAttachPin(pin_, pwmChannel_); // assign  led pins to channels
+          // Initialize channels
+    // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
+    // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
+//    ledcSetup(pwmChannel_, 12000, 8); // 12 kHz PWM, 8-bit resolution
+    ledcWrite(pwmChannel_, 255);      // test high output of all leds in sequence
+//    delay(1000);
+//    ledcWrite(pwmChannel_, 0);
+
+//  startTime_ = millis ();
+  }  // end of LedFader::begin
+void LedFader::fullOff ()
+  {
+  //pinMode (pin_, OUTPUT);
+  //digitalWrite (pin_, LOW);
+//      ledcAttachPin(pin_, pwmChannel_); // assign  led pins to channels
+          // Initialize channels
+    // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
+    // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
+//    ledcSetup(pwmChannel_, 12000, 8); // 12 kHz PWM, 8-bit resolution
+    ledcWrite(pwmChannel_, 0);      // test high output of all leds in sequence
+//    delay(1000);
+//    ledcWrite(pwmChannel_, 0);
+
+//  startTime_ = millis ();
+  }  // end of LedFader::begin
+
 
 // call from loop to flash the LED
 void LedFader::update ()

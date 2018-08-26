@@ -7,7 +7,20 @@
 WebSerial::WebSerial()
 {
 }
-
+// redraw the display with contents of displayLine array
+char *WebSerial::getBuffer(void)
+{
+    // u8g2.begin();
+    // clearBuffer();
+    // // setFont(u8g2_font_8x13_tf);
+    // for (int i = 0; i < DISPLAY_LINES; i++) {
+    //     drawStr(0, ((i + 1) * 9) + (i * 1), displayLine[i]);
+    // }
+    // //delay(50);
+    // sendBuffer();
+    //delay(50);
+    return consoleBuffer;
+}
 // redraw the display with contents of displayLine array
 void WebSerial::refresh(void)
 {
@@ -43,16 +56,21 @@ void WebSerial::println(const char *lineText)
     //will adding it overflow the buffer?
     int newLineLen = strlen(lineText);
 
-    if ((strlen(consoleBuffer) + newLineLen) > (BUFF_SIZE - 1))
+    //! do whole lines
+    if ((strlen(consoleBuffer) + newLineLen + 5) > (BUFF_SIZE - 1))
     {
-        memmove(&consoleBuffer, (&consoleBuffer[newLineLen]), BUFF_SIZE - newLineLen);
+        memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 5), BUFF_SIZE - newLineLen - 5);
         //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
         //items[k] = value;
+        strcat(consoleBuffer, lineText);
+        strcat(consoleBuffer, "<br>");
     }
     else
     {
         //if not - add the string
         strcat(consoleBuffer, lineText);
+        strcat(consoleBuffer, "<br>");
+
         //else remove
     }
 }

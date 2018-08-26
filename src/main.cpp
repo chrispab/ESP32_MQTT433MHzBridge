@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.66 Br:\"master\""
+#define SW_VERSION "V3.69 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -53,6 +53,7 @@ attempt to use numeric values.
 
 //! Pin GPIO usage
 //Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only
+//refer to fritzing cct for extra info
 #define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
 #define GREEN_LED_PIN GPIO_NUM_33             //LHS_P_9
 #define DHTPIN GPIO_NUM_25                    // LHS_P_8 what digital pin we're connected to
@@ -162,7 +163,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 5);
+NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
 // last param is num times control message  is txed
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
@@ -346,7 +347,7 @@ void loop()
 {
     resetWatchdog();
     heartBeatLED.update(); // initialize
-    warnLED.update();      // initialize
+    //warnLED.update();      // initialize
 
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
@@ -383,7 +384,7 @@ void loop()
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
-    resetI2C();         // not sure if this is reqd. maybe display at fault
+    //resetI2C();         // not sure if this is reqd. maybe display at fault
 
     WiFiLocalWebPageCtrl();
 }
@@ -423,25 +424,9 @@ void WiFiLocalWebPageCtrl(void)
                         client.println("HTTP/1.1 200 OK");
                         client.println("Content-type:text/html");
                         client.println();
+                        client.println("<meta http-equiv='refresh' content='5'>");
                         client.println(timeClient.getFormattedTime());
                         client.print("<br>");
-
-                        // the content of the HTTP response follows the header:
-                        //WiFiLocalWebPageCtrl();
-                        //client.print("Temperature now is: ");
-                        //client.print(localTemp);
-                        // client.print("  oC<br>");
-                        // client.print("Humidity now is:     ");
-                        //client.print(localHum);
-                        // client.print(" % <br>");
-                        // client.print("<br>");
-                        // client.print("Analog Data:     ");
-                        //client.print(analog_value);
-                        // client.print("<br>");
-                        // client.print("<br>");
-
-                        // client.print("Click <a href=\"/H\">here</a> to turn the LED on.<br>");
-                        // client.print("Click <a href=\"/L\">here</a> to turn the LED off.<br>");
 
                         //Serial.println("!----------! BIG_TEMP Display Refresh");
                         client.print(DHT22Sensor.getTempDisplayString(tempDisplayString));
@@ -458,7 +443,8 @@ void WiFiLocalWebPageCtrl(void)
                         // Serial.println(zone3DisplayString);
                         //Serial.println("^----------^");
                         //! now push out the buffer
-                        client.print("buffer op");
+                        client.print("buffer op<br><br>");
+                        client.print(myWebSerial.getBuffer());
 
                         // The HTTP response ends with another blank line:
                         client.println();
@@ -601,7 +587,26 @@ void processMQTTMessage(void)
         MQTTNewData = false; // indicate not new data now, processed
     }
 }
+char *getElapsedTimeStr()
+{
+    static char elapsedTimeStr[20] = "Test Time";
+    static unsigned long startMillis = millis();
 
+    unsigned long rawTime = (millis()-startMillis)/1000;
+    
+    unsigned long hours = (rawTime ) / 3600;
+    String hoursStr = hours < 10 ? "0" + String(hours) : String(hours);
+
+    unsigned long minutes = (rawTime % 3600) / 60;
+    String minuteStr = minutes < 10 ? "0" + String(minutes) : String(minutes);
+
+    unsigned long seconds = rawTime % 60;
+    String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
+
+    strcpy(  elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
+
+    return elapsedTimeStr;
+}
 void updateDisplayData()
 {
     // static unsigned long lastDisplayUpdateMillis = 0;
@@ -661,17 +666,30 @@ void updateDisplayData()
             //Serial.println(timeClient.getFormattedTime());
 
             myDisplay.drawStr(0, 55, zone1DisplayString);
+            myDisplay.drawStr(80, 55, getElapsedTimeStr());
+
             myDisplay.drawStr(0, 63, zone3DisplayString);
             myDisplay.drawStr(80, 63, timeClient.getFormattedTime().c_str());
 
             myDisplay.sendBuffer();
             Serial.println("!----------! BIG_TEMP Display Refresh");
+            myWebSerial.println("!----------! BIG_TEMP Display Refresh");
+
             Serial.println(tempDisplayString);
+            myWebSerial.println(tempDisplayString);
+
             Serial.println(MQTTDisplayString);
+            myWebSerial.println(MQTTDisplayString);
+                        Serial.println(getElapsedTimeStr());
+            myWebSerial.println(getElapsedTimeStr());
             Serial.println(timeClient.getFormattedTime().c_str());
+            myWebSerial.println(timeClient.getFormattedTime().c_str());
             Serial.println(zone1DisplayString);
+            myWebSerial.println(zone1DisplayString);
             Serial.println(zone3DisplayString);
+            myWebSerial.println(zone3DisplayString);
             Serial.println("^----------^");
+            myWebSerial.println("^----------^");
         }
         else if (displayMode == MULTI)
         {
@@ -935,8 +953,9 @@ void operateSocket(uint8_t socketID, uint8_t state)
         strcat(msg, " - ON");
     }
     Serial.println(msg);
+    warnLED.fullOn();
     transmitter.sendUnit(socketID, state);
-    //}
+    warnLED.fullOff(); //}
 
     // Serial.println("OK - TX socket state updated");
 }
