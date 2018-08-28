@@ -1,0 +1,18 @@
+<script>
+    var ws, form;
+
+    function msg(a) {
+        console.log(a);
+    }
+    window.onload = function() {
+        form = document.getElementById('form'); // change 
+        ws = new WebSocket('ws://IPNUMBER:PORT'); // change 
+        ws.onopen = function() {
+            ws.send('0');
+        };
+        ws.onmessage = msg;
+        form.addEventListener('input', function() {
+            ws.send(this.firstChild.value) // firstchild is the range 
+        }, false);
+    }
+</script>

@@ -718,11 +718,8 @@ char *getMQTTDisplayString(char *MQTTStatus)
     char buff[10];
 
     sprintf(buff, "%d", (MQTTSocketNumber));
-
-    // strcpy()
     strcpy(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
     strcat(msg, "(");
-
     strcat(msg, buff);
     strcat(msg, "):");
 
@@ -736,7 +733,6 @@ char *getMQTTDisplayString(char *MQTTStatus)
     }
     // Serial.println(msg);
     strcpy(MQTTStatus, msg);
-
     return MQTTStatus;
 }
 
@@ -745,7 +741,6 @@ void checkConnections()
     currentMillis = millis();
     if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis)
     {
-
         if (!WiFi.isConnected())
         { //!= WL_CONNECTED)
             Serial.println("Wifi Needs reconnecting");
