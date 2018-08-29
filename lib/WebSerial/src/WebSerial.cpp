@@ -21,6 +21,12 @@ char *WebSerial::getBuffer(void)
     //delay(50);
     return consoleBuffer;
 }
+String WebSerial::getString(void)
+{
+    String str(consoleBuffer);
+    return str;
+}
+
 // redraw the display with contents of displayLine array
 void WebSerial::refresh(void)
 {

@@ -237,12 +237,76 @@ hw_timer_t *timer = NULL;
 #include <WebSerial.h>
 WebSerial myWebSerial;
 
+#include <WiFiMulti.h>
+
+#include <WebSocketsServer.h>
+WiFiMulti WiFiMulti;
+WebSocketsServer webSocket = WebSocketsServer(81);
+
 void IRAM_ATTR resetModule()
 {
     ets_printf("ESP32 Rebooted by Internal Watchdog\n");
     esp_restart_noos();
 }
 
+void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
+{
+    const uint8_t *src = (const uint8_t *)mem;
+    Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
+    for (uint32_t i = 0; i < len; i++)
+    {
+        if (i % cols == 0)
+        {
+            Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
+        }
+        Serial.printf("%02X ", *src);
+        src++;
+    }
+    Serial.printf("\n");
+}
+uint8_t sktNum;
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
+{
+    sktNum = num;
+
+    switch (type)
+    {
+    case WStype_DISCONNECTED:
+        Serial.printf("[%u] Disconnected!\n", num);
+        break;
+    case WStype_CONNECTED:
+    {
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+
+        // send message to client
+        webSocket.sendTXT(num, "Connected");
+    }
+    break;
+    case WStype_TEXT:
+        Serial.printf("[%u] get Text: %s\n", num, payload);
+
+        //send message to client
+        //webSocket.sendTXT(num, "from ESP32 - got your message");
+
+        // send data to all connected clients
+        // webSocket.broadcastTXT("message here");
+        break;
+    case WStype_BIN:
+        Serial.printf("[%u] get binary length: %u\n", num, length);
+        hexdump(payload, length);
+
+        // send message to client
+        // webSocket.sendBIN(num, payload, length);
+        break;
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+        break;
+    }
+}
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
 
@@ -306,9 +370,19 @@ void setup()
     // attempt to connect to Wifi network:
     myDisplay.writeLine(3, "Connecting to WiFi..");
     myDisplay.refresh();
+
+    // WiFiMulti.addAP("notwork", "a new router can solve many problems");
+
+    // while (WiFiMulti.run() != WL_CONNECTED)
+    // {
+    //     delay(100);
+    // }
+
     connectWiFi();
     // you're connected now, so print out the status:
     printWifiStatus();
+    //server.begin();
+
     CR;
     myDisplay.writeLine(4, "Connecting to MQTT..");
     myDisplay.refresh();
@@ -339,19 +413,46 @@ void setup()
     myDisplay.wipe();
 
     //connectWiFi();
-}
 
+    webSocket.begin();
+    webSocket.onEvent(webSocketEvent);
+}
+void sendTextViaWS(void)
+{
+    static unsigned long lastResetMillis = millis();
+    unsigned long resetInterval = 10000;
+
+    if ((millis() - lastResetMillis) >= resetInterval)
+    {
+
+        //merWrite(timer, 0); // reset timer (feed watchdog)
+        Serial.println("+++from ESP32 - sending via web socket+++");
+        Serial.println(myWebSerial.getBuffer());
+
+        //send message to client
+        //webSocket.broadcastTXT("from ESP32 - got your message");
+        webSocket.sendTXT(sktNum, "from ESP32 -  message");
+        static char mybuff[512];
+        //strcpy(mybuff,"C<br>D Lights(4): ON<br>00:00:09<br>00:02:15<br>GRG:OK (0)<br>SHD: OK (0)<br>^----------^<br>!----------! BIG_TEMP Display Refresh<br>Temp: 20.6�C<br>L Lights(3): ON<br>00:00:10<br>00:02:17<br>GRG: OK (0)<br>SHD: OK (0)<br>^----------^<br>");
+        //strcpy(mybuff, myWebSerial.getBuffer());
+        //webSocket.sendTXT(sktNum, mybuff);
+
+        lastResetMillis = millis();
+    }
+}
 boolean touchedFlag = false;
 
 void loop()
 {
     resetWatchdog();
     heartBeatLED.update(); // initialize
-    //warnLED.update();      // initialize
+                           //warnLED.update();      // initialize
+    webSocket.loop();
 
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
     DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic);
+    webSocket.loop();
 
     // myDisplay.refresh();
     // capture new sensor readings
@@ -362,6 +463,7 @@ void loop()
     processMQTTMessage(); // check flags set above and act on
     touchedFlag = processTouchPads();
     updateDisplayData();
+    webSocket.loop();
 
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
@@ -385,8 +487,13 @@ void loop()
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
     //resetI2C();         // not sure if this is reqd. maybe display at fault
+    webSocket.loop();
 
     WiFiLocalWebPageCtrl();
+    //webSocket.loop();
+
+    sendTextViaWS();
+    webSocket.loop();
 }
 
 /***************************************************
@@ -592,9 +699,9 @@ char *getElapsedTimeStr()
     static char elapsedTimeStr[20] = "Test Time";
     static unsigned long startMillis = millis();
 
-    unsigned long rawTime = (millis()-startMillis)/1000;
-    
-    unsigned long hours = (rawTime ) / 3600;
+    unsigned long rawTime = (millis() - startMillis) / 1000;
+
+    unsigned long hours = (rawTime) / 3600;
     String hoursStr = hours < 10 ? "0" + String(hours) : String(hours);
 
     unsigned long minutes = (rawTime % 3600) / 60;
@@ -603,7 +710,7 @@ char *getElapsedTimeStr()
     unsigned long seconds = rawTime % 60;
     String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
 
-    strcpy(  elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
+    strcpy(elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
 
     return elapsedTimeStr;
 }
@@ -680,7 +787,7 @@ void updateDisplayData()
 
             Serial.println(MQTTDisplayString);
             myWebSerial.println(MQTTDisplayString);
-                        Serial.println(getElapsedTimeStr());
+            Serial.println(getElapsedTimeStr());
             myWebSerial.println(getElapsedTimeStr());
             Serial.println(timeClient.getFormattedTime().c_str());
             myWebSerial.println(timeClient.getFormattedTime().c_str());
@@ -690,6 +797,8 @@ void updateDisplayData()
             myWebSerial.println(zone3DisplayString);
             Serial.println("^----------^");
             myWebSerial.println("^----------^");
+            webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
+            //webSocket.broadcastTXT(myWebSerial.getBuffer());
         }
         else if (displayMode == MULTI)
         {

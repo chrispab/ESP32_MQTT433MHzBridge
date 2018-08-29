@@ -100,7 +100,8 @@ char *TempSensor::getTempDisplayString(char *displayString)
     else
     {
         strcat(displayString, temperatureString); // is a number
-        strcat(displayString, "\xb0");            // degree symbol
+//        strcat(displayString, "\xb0");            // degree symbol
+        strcat(displayString, "o");            // degree symbol
         strcat(displayString, "C");               // add suffix degrees C
     }
 
