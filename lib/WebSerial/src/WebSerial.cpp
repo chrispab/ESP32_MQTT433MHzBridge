@@ -26,6 +26,21 @@ String WebSerial::getString(void)
     String str(consoleBuffer);
     return str;
 }
+boolean WebSerial::hasData(void)
+{
+    if (strlen(consoleBuffer)) //returns len
+    {
+        return true; //non zero so has a length
+    }
+
+    return false; //else return 'string has no data'
+}
+
+void WebSerial::clearBuffer(void)
+{
+    consoleBuffer[0] = '\0';//ste null at pos 1 to indicate end of string
+    return;
+}
 
 // redraw the display with contents of displayLine array
 void WebSerial::refresh(void)
@@ -63,9 +78,9 @@ void WebSerial::println(const char *lineText)
     int newLineLen = strlen(lineText);
 
     //! do whole lines
-    if ((strlen(consoleBuffer) + newLineLen + 5) > (BUFF_SIZE - 1))
+    if ((strlen(consoleBuffer) + newLineLen + 20) > (BUFF_SIZE - 1))
     {
-        memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 5), BUFF_SIZE - newLineLen - 5);
+        memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
         //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
         //items[k] = value;
         strcat(consoleBuffer, lineText);

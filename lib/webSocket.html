@@ -32,8 +32,7 @@
 
             //var x = document.getElementById("myTextarea").value;
             //document.getElementById("myTextarea").value = document.getElementById("myTextarea").value + new Date();
-            document.getElementById("mybody").innerHTML = document.getElementById("mybody").innerHTML + new Date() + e.data +
-                "<br>";
+            document.getElementById("mybody").innerHTML = document.getElementById("mybody").innerHTML  + e.data ;
             //document.getElementById("demo").innerHTML = x;
 
             var element = document.getElementById("mybody");
@@ -68,18 +67,18 @@
 
 </head>
 
-<body>
+<body style="background-color:black;">
     LED Control:
-    <br/>
-    <br/> R:
+    <br />
+    <br /> R:
     <input id="r" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br/> G:
+    <br /> G:
     <input id="g" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br/> B:
+    <br /> B:
     <input id="b" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br/>
+    <br />
     <div>
-        <p id="mybody">
+        <p style="font-family:courier; font-size:14px; color:white;" id="mybody">
         </p>
     </div>
     <!-- Address:

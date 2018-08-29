@@ -8,7 +8,7 @@
 #include <Arduino.h>
 //#include <U8g2lib.h>
 
-#define BUFF_SIZE 250
+#define BUFF_SIZE 1024
 
 /**
  */
@@ -19,6 +19,8 @@ class WebSerial {
 
     void println(const char *text);
     char* getBuffer(void);
+    boolean hasData(void);
+    void clearBuffer(void);
     String getString(void);
 
     void refresh(void);

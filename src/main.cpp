@@ -243,6 +243,8 @@ WebSerial myWebSerial;
 WiFiMulti WiFiMulti;
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+#define EMAIL_SUBJECT "ESP32 - REBOOTED"
+
 void IRAM_ATTR resetModule()
 {
     ets_printf("ESP32 Rebooted by Internal Watchdog\n");
@@ -284,7 +286,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     }
     break;
     case WStype_TEXT:
-        Serial.printf("[%u] get Text: %s\n", num, payload);
+        //Serial.printf("[%u] get Text: %s\n", num, payload);
 
         //send message to client
         //webSocket.sendTXT(num, "from ESP32 - got your message");
@@ -401,7 +403,7 @@ void setup()
     // checkConnections();
 
     // Send Email
-    e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", "ESP32 Started",
+    e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", EMAIL_SUBJECT,
            "programm started/restarted");
 
     //! watchdog setup
@@ -422,17 +424,23 @@ void sendTextViaWS(void)
     static unsigned long lastResetMillis = millis();
     unsigned long resetInterval = 10000;
 
+//!if websockets buffer has content then send to client and empty the buffer 
+    if (myWebSerial.hasData()){
+        webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
+        myWebSerial.clearBuffer();
+    }
+    
     if ((millis() - lastResetMillis) >= resetInterval)
     {
 
         //merWrite(timer, 0); // reset timer (feed watchdog)
-        Serial.println("+++from ESP32 - sending via web socket+++");
-        Serial.println(myWebSerial.getBuffer());
+        //Serial.println("+++from ESP32 - sending via web socket+++");
+        //Serial.println(myWebSerial.getBuffer());
 
         //send message to client
         //webSocket.broadcastTXT("from ESP32 - got your message");
-        webSocket.sendTXT(sktNum, "from ESP32 -  message");
-        static char mybuff[512];
+        //webSocket.sendTXT(sktNum, "from ESP32 -  message");
+        //static char mybuff[512];
         //strcpy(mybuff,"C<br>D Lights(4): ON<br>00:00:09<br>00:02:15<br>GRG:OK (0)<br>SHD: OK (0)<br>^----------^<br>!----------! BIG_TEMP Display Refresh<br>Temp: 20.6�C<br>L Lights(3): ON<br>00:00:10<br>00:02:17<br>GRG: OK (0)<br>SHD: OK (0)<br>^----------^<br>");
         //strcpy(mybuff, myWebSerial.getBuffer());
         //webSocket.sendTXT(sktNum, mybuff);
@@ -780,6 +788,8 @@ void updateDisplayData()
 
             myDisplay.sendBuffer();
             Serial.println("!----------! BIG_TEMP Display Refresh");
+                        //myWebSerial.println("<br>");
+
             myWebSerial.println("!----------! BIG_TEMP Display Refresh");
 
             Serial.println(tempDisplayString);
@@ -791,13 +801,18 @@ void updateDisplayData()
             myWebSerial.println(getElapsedTimeStr());
             Serial.println(timeClient.getFormattedTime().c_str());
             myWebSerial.println(timeClient.getFormattedTime().c_str());
+
             Serial.println(zone1DisplayString);
             myWebSerial.println(zone1DisplayString);
             Serial.println(zone3DisplayString);
             myWebSerial.println(zone3DisplayString);
             Serial.println("^----------^");
             myWebSerial.println("^----------^");
-            webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
+
+            //webSocket.sendTXT(sktNum, "<br><br>");
+
+            //webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
+            //Serial.println(myWebSerial.getBuffer());
             //webSocket.broadcastTXT(myWebSerial.getBuffer());
         }
         else if (displayMode == MULTI)
@@ -805,7 +820,6 @@ void updateDisplayData()
             myDisplay.setFont(SYS_FONT);
             myDisplay.writeLine(1, tempDisplayString);
             myDisplay.writeLine(2, humiDisplayString);
-
             myDisplay.writeLine(3, MQTTDisplayString);
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
