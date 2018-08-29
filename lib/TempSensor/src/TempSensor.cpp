@@ -26,7 +26,7 @@ boolean TempSensor::takeReadings(void)
     // throttle here and only read if passed read interval
     if (currentMillis - previousSensorReadMillis > intervalSensorReadMillis)
     {
-        Serial.println("Taking New sensor readings......");
+        //Serial.println("Taking New sensor readings......");
 
         prevTemperature = temperature; //get last temp
         prevHumidity = humidity;       //get last temp
@@ -63,26 +63,29 @@ char *TempSensor::getTemperatureString() { return temperatureString; }
 
 char *TempSensor::getHumidityString() { return humidityString; }
 
-void TempSensor::publishReadings(PubSubClient MQTTclient,
+//return true if new reading taken and published
+//return false if not done
+boolean TempSensor::publishReadings(PubSubClient MQTTclient,
                                  char *publishTempTopic,
                                  char *publishHumiTopic)
 {
     // get current readings and pub via mqtt
-    if (takeReadings())
+    if (takeReadings())//new readings taken?
     {
-
-        char messageString[20];
+        //char messageString[20];
         MQTTclient.publish(publishTempTopic, temperatureString);
         MQTTclient.publish(publishHumiTopic, humidityString);
         // format for serial print
-        strcpy(messageString, getTemperatureString());
-        strcat(messageString, "\xb0"); // degree symbol
-        strcat(messageString, "C");    // suffix
-        Serial.print("MQTT published Temperature: ");
-        Serial.println(getTemperatureString());
-        Serial.print("MQTT published Humidity: ");
-        Serial.println(getHumidityString());
+        // strcpy(messageString, getTemperatureString());
+        // strcat(messageString, "\xb0"); // degree symbol
+        // strcat(messageString, "C");    // suffix
+        // Serial.print("MQTT published Temperature: ");
+        // Serial.println(getTemperatureString());
+        // Serial.print("MQTT published Humidity: ");
+        // Serial.println(getHumidityString());
+        return true;
     }
+    return false;
 }
 
 //! check for nan and use previous temp val

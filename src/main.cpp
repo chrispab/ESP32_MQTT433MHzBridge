@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.69 Br:\"master\""
+#define SW_VERSION "V3.70 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -282,7 +282,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
         // send message to client
-        webSocket.sendTXT(num, "Connected");
+        webSocket.sendTXT(num, "Connected to webSocket server<br>");
     }
     break;
     case WStype_TEXT:
@@ -337,7 +337,7 @@ void setup()
     periph_module_reset(PERIPH_I2C0_MODULE);
 
     Serial.begin(115200);
-    Serial.println("==========running setup==========");
+    //Serial.println("==========running setup==========");
     myWebSerial.println("==========running setup==========");
 
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
@@ -424,12 +424,13 @@ void sendTextViaWS(void)
     static unsigned long lastResetMillis = millis();
     unsigned long resetInterval = 10000;
 
-//!if websockets buffer has content then send to client and empty the buffer 
-    if (myWebSerial.hasData()){
+    //!if websockets buffer has content then send to client and empty the buffer
+    if (myWebSerial.hasData())
+    {
         webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
         myWebSerial.clearBuffer();
     }
-    
+
     if ((millis() - lastResetMillis) >= resetInterval)
     {
 
@@ -459,7 +460,14 @@ void loop()
 
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
-    DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic);
+    //if new readings taken, op to serial etc
+    if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
+    {
+        //Serial.println("New Sensor Readings-MQTT published");
+        myWebSerial.println("New Sensor Readings-MQTT published");
+        // ideally : 
+    }
+
     webSocket.loop();
 
     // myDisplay.refresh();
@@ -670,7 +678,8 @@ void resetWatchdog(void)
     {
 
         timerWrite(timer, 0); // reset timer (feed watchdog)
-        Serial.println("Reset Module Watchdog......");
+        //Serial.println("Reset Module Watchdog......");
+        myWebSerial.println("Reset Module Watchdog......");
         lastResetWatchdogMillis = millis();
     }
 }
@@ -768,10 +777,14 @@ void updateDisplayData()
         {
             myDisplay.clearBuffer();
             myDisplay.setFont(BIG_TEMP_FONT);
+
             //just get the temp bit of displaystring
             //end of string is 'C', need to get string from that pos
             strcpy(justTempString, &tempDisplayString[6]);
             //myDisplay.writeLine(4, justTempString);
+            //change the 'o'C to a proper 'degrees C' character
+            // strcat(messageString, "\xb0"); // degree symbol
+            justTempString[4] = '\xb0';
             myDisplay.drawStr(0, 38, justTempString);
             //myDisplay.refresh();
 
@@ -787,26 +800,26 @@ void updateDisplayData()
             myDisplay.drawStr(80, 63, timeClient.getFormattedTime().c_str());
 
             myDisplay.sendBuffer();
-            Serial.println("!----------! BIG_TEMP Display Refresh");
-                        //myWebSerial.println("<br>");
+            //Serial.println("!----------! BIG_TEMP Display Refresh");
+            //myWebSerial.println("<br>");
 
             myWebSerial.println("!----------! BIG_TEMP Display Refresh");
 
-            Serial.println(tempDisplayString);
+            //Serial.println(tempDisplayString);
             myWebSerial.println(tempDisplayString);
 
-            Serial.println(MQTTDisplayString);
+            //Serial.println(MQTTDisplayString);
             myWebSerial.println(MQTTDisplayString);
-            Serial.println(getElapsedTimeStr());
+            //Serial.println(getElapsedTimeStr());
             myWebSerial.println(getElapsedTimeStr());
-            Serial.println(timeClient.getFormattedTime().c_str());
+            //Serial.println(timeClient.getFormattedTime().c_str());
             myWebSerial.println(timeClient.getFormattedTime().c_str());
 
-            Serial.println(zone1DisplayString);
+            //Serial.println(zone1DisplayString);
             myWebSerial.println(zone1DisplayString);
-            Serial.println(zone3DisplayString);
+            //Serial.println(zone3DisplayString);
             myWebSerial.println(zone3DisplayString);
-            Serial.println("^----------^");
+            //Serial.println("^----------^");
             myWebSerial.println("^----------^");
 
             //webSocket.sendTXT(sktNum, "<br><br>");
@@ -837,14 +850,14 @@ void updateDisplayData()
 
 char *getMQTTDisplayString(char *MQTTStatus)
 {
-    char msg[20] = "Socket:";
-    char buff[10];
+    char msg[] = "This is a message placeholder";
+    char socketNumber[10];
 
-    sprintf(buff, "%d", (MQTTSocketNumber));
-    strcpy(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
-    strcat(msg, "(");
-    strcat(msg, buff);
-    strcat(msg, "):");
+    sprintf(socketNumber, "%d", (MQTTSocketNumber));
+    strcpy(msg, socketNumber);
+    strcat(msg, "-");
+    strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
+    strcat(msg, ":");
 
     if (MQTTNewState == 0)
     {
@@ -866,22 +879,22 @@ void checkConnections()
     {
         if (!WiFi.isConnected())
         { //!= WL_CONNECTED)
-            Serial.println("Wifi Needs reconnecting");
+            myWebSerial.println("Wifi Needs reconnecting");
             connectWiFi();
         }
         else
         {
-            Serial.println("OK - WiFi is connected");
+            myWebSerial.println("OK - WiFi is connected");
         }
 
         if (!MQTTclient.connected())
         {
-            Serial.println("MQTTClient Needs reconnecting");
+            myWebSerial.println("MQTTClient Needs reconnecting");
             connectMQTT();
         }
         else
         {
-            Serial.println("OK - MQTT is connected");
+            myWebSerial.println("OK - MQTT is connected");
         }
         previousConnCheckMillis = currentMillis;
     }
@@ -922,8 +935,8 @@ void connectWiFi()
     startMillis = millis();
     while (!WiFi.isConnected() && !wifiConnectTimeout)
     {
-        Serial.print("Attempting to connect to SSID: ");
-        Serial.println(ssid);
+        myWebSerial.println("Attempting to connect to SSID: ");
+        myWebSerial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open
         // or WEP network:
         WiFi.begin(ssid, pass);
@@ -934,8 +947,8 @@ void connectWiFi()
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
-    (wifiConnectTimeout) ? Serial.println("WiFi Connection attempt Timed Out!")
-                         : Serial.println("Wifi Connection made!");
+    (wifiConnectTimeout) ? myWebSerial.println("WiFi Connection attempt Timed Out!")
+                         : myWebSerial.println("Wifi Connection made!");
 
     server.begin();
 }
@@ -954,12 +967,12 @@ void connectMQTT()
     {
         // printO(1, 20, "Connect MQTT..");
 
-        Serial.println(F("Attempting MQTT connection..."));
+        myWebSerial.println("Attempting MQTT connection...");
         // Attempt to connect
         //        if (MQTTclient.connect("ESP32Client","",""))
         if (MQTTclient.connect("ESP32Client"))
         {
-            Serial.println(F("connected to MQTT server"));
+            myWebSerial.println("connected to MQTT server");
             // Once connected, publish an announcement...
             // MQTTclient.publish("outTopic", "hello world");
             // ... and resubscribe
@@ -968,17 +981,17 @@ void connectMQTT()
         }
         else
         {
-            Serial.print("failed, rc=");
-            Serial.print(MQTTclient.state());
-            Serial.println(" try again ..");
+            myWebSerial.println("failed, rc=");
+            Serial.println(MQTTclient.state());
+            myWebSerial.println(" try again ..");
             // Wait 5 seconds before retrying
             // delay(5000);
         }
         MQTTConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
-    (!MQTTConnectTimeout) ? Serial.println("MQTT Connection made!")
-                          : Serial.println("MQTT Connection attempt Time Out!");
+    (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
+                          : myWebSerial.println("MQTT Connection attempt Time Out!");
 }
 
 // MQTTclient call back if mqtt messsage rxed
@@ -990,25 +1003,19 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
     // pubsub
-
     // Serial.println("Rxed a mesage from broker : ");
-
     // do some extra checking on rxed topic and payload
     payload[length] = '\0';
-    // String s = String((char *)payload);
-    // //float f = s.toFloat();
-    // Serial.print(s);
-    // Serial.println("--EOP");
 
-    // CR;
-    Serial.print("MQTT rxed [");
-    Serial.print(topic);
-    Serial.print("] : ");
-    for (uint8_t i = 0; i < length; i++)
-    {
-        Serial.print((char)payload[i]);
-    }
-    CR;
+    char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
+    strcpy(message, "MQTT Recieved [");
+    strcat(message, topic);
+    strcat(message, "] : ");
+    //copy on payload and add \o terminator
+    strncat(message, (char *)payload, length);
+    //Serial.println(message);
+    myWebSerial.println(message);
+
     // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
     // either match whole topic string or trim off last 1or 2 chars and
     // convert to a number, convert last 1-2 chars to socket number
@@ -1070,12 +1077,12 @@ void operateSocket(uint8_t socketID, uint8_t state)
     {
         strcat(msg, " - ON");
     }
-    Serial.println(msg);
+    //Serial.println(msg);
+    myWebSerial.println(msg);
+
     warnLED.fullOn();
     transmitter.sendUnit(socketID, state);
     warnLED.fullOff(); //}
-
-    // Serial.println("OK - TX socket state updated");
 }
 
 void LEDBlink(int LPin, int repeatNum)
@@ -1141,19 +1148,25 @@ void processZoneRF24Message(void)
         if (equalID(receive_payload, ZCs[0].heartBeatText))
         {
             ZCs[0].resetZoneDevice();
-            Serial.println("RESET G Watchdog");
+            //Serial.println("RESET G Watchdog");
+            myWebSerial.println("RESET G Watchdog");
+
             strcpy(messageText, ZCs[0].heartBeatText);
         }
         else if (equalID(receive_payload, ZCs[1].heartBeatText))
         {
             ZCs[1].resetZoneDevice();
-            Serial.println("RESET C Watchdog");
+            //Serial.println("RESET C Watchdog");
+            myWebSerial.println("RESET C Watchdog");
+
             strcpy(messageText, ZCs[1].heartBeatText);
         }
         else if (equalID(receive_payload, ZCs[2].heartBeatText))
         {
             ZCs[2].resetZoneDevice();
-            Serial.println("RESET S Watchdog");
+            //Serial.println("RESET S Watchdog");
+            myWebSerial.println("RESET S Watchdog");
+
             strcpy(messageText, ZCs[2].heartBeatText);
         }
         else
