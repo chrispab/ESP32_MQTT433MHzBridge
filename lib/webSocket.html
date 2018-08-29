@@ -37,7 +37,14 @@
             //document.getElementById("demo").innerHTML = x;
 
             var element = document.getElementById("mybody");
-            element.scrollIntoView(false);
+            // element.scrollIntoView(false);
+            element.scrollIntoView({
+                behavior: "smooth",
+                block: "end",
+                inline: "nearest"
+            });
+
+
         };
 
         function sendRGB() {
