@@ -275,6 +275,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     {
     case WStype_DISCONNECTED:
         Serial.printf("[%u] Disconnected!\n", num);
+        //try reconnecting here
+        // webSocket.begin();
+        // webSocket.onEvent(webSocketEvent);
+
         break;
     case WStype_CONNECTED:
     {
@@ -465,7 +469,7 @@ void loop()
     {
         //Serial.println("New Sensor Readings-MQTT published");
         myWebSerial.println("New Sensor Readings-MQTT published");
-        // ideally : 
+        // ideally :
     }
 
     webSocket.loop();
