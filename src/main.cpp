@@ -752,9 +752,9 @@ void updateDisplayData()
 
     char justTempString[20];
 
-    // only update screen if status messages has changed
-    // compare new display data to new data
-    // if different - update the actual OLED display
+    // only update screen if status messages or touch sensor is active/has changed
+    // compare new display data to previous display data
+    // if different - update the actual OLED display and previous
     // if any non zero then data has changed
     if (strcmp(tempDisplayString,
                DHT22Sensor.getTempDisplayString(newTempDisplayString)) ||
