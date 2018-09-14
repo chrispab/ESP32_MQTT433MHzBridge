@@ -28,7 +28,7 @@ boolean WebSerial::hasData(void)
 
 void WebSerial::clearBuffer(void)
 {
-    consoleBuffer[0] = '\0';//ste null at pos 1 to indicate end of string
+    consoleBuffer[0] = '\0'; //ste null at pos 1 to indicate end of string
     return;
 }
 
@@ -53,18 +53,23 @@ void WebSerial::println(const char *lineText)
         memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
         //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
         //items[k] = value;
-        strcat(consoleBuffer, lineText);
-        strcat(consoleBuffer, "<br>");
     }
-    else
+    strcat(consoleBuffer, lineText);
+    strcat(consoleBuffer, "<br>");
+}
+void WebSerial::print(const char *lineText)
+{
+    Serial.println(lineText);
+
+    int newLineLen = strlen(lineText);
+
+    //! do whole lines
+    if ((strlen(consoleBuffer) + newLineLen + 20) > (BUFF_SIZE - 1))
     {
-        //if not - add the string
-        //add timestamp
-        //strcat(consoleBuffer,timeClient.getFormattedTime());
-
-        strcat(consoleBuffer, lineText);
-        strcat(consoleBuffer, "<br>");
-
-        //else remove
+        memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
+        //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
+        //items[k] = value;
     }
+    strcat(consoleBuffer, lineText);
+    //strcat(consoleBuffer, "<br>");
 }

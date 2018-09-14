@@ -30,10 +30,22 @@
             console.log('Server: ', e.data);
             connection.send('Time: ' + new Date());
 
+            // str = document.getElementById("mybody").innerHTML
+            // str = str.replace(/('<br>')/g, "\n\r");
             //var x = document.getElementById("myTextarea").value;
             //document.getElementById("myTextarea").value = document.getElementById("myTextarea").value + new Date();
-            document.getElementById("mybody").innerHTML = document.getElementById("mybody").innerHTML + e.data;
+
+
+            var message = e.data;
+            //str = str.replace(/('<br>')/g, "\n\r");
+
+            document.getElementById("mybody").innerHTML = document.getElementById("mybody").innerHTML + message;
             //document.getElementById("demo").innerHTML = x;
+            var str = document.getElementById('mybody').innerHTML;
+            //document.getElementById('mybody').innerHTML = str.replace(/<br\s*[\/]?>/gi, "\n");
+
+            // str = document.getElementById("mybody").innerHTML
+            // document.getElementById("mybody").innerHTML = str;
 
             var element = document.getElementById("mybody");
             // element.scrollIntoView(false);
@@ -42,53 +54,104 @@
                 block: "end",
                 inline: "nearest"
             });
-
-
         };
-
-        function sendRGB() {
-            var r = parseInt(document.getElementById('r').value).toString(16);
-            var g = parseInt(document.getElementById('g').value).toString(16);
-            var b = parseInt(document.getElementById('b').value).toString(16);
-            if (r.length < 2) {
-                r = '0' + r;
-            }
-            if (g.length < 2) {
-                g = '0' + g;
-            }
-            if (b.length < 2) {
-                b = '0' + b;
-            }
-            var rgb = '#' + r + g + b;
-            console.log('RGB: ' + rgb);
-            connection.send(rgb);
-        }
     </script>
-
+    <style>
+        div,
+        fieldset,
+        input,
+        select {
+            padding: 5px;
+            font-size: 1em;
+        }
+        
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+        
+        select {
+            width: 100%;
+        }
+        
+        textarea {
+            resize: none;
+            width: 98%;
+            height: 318px;
+            padding: 5px;
+            overflow: auto;
+        }
+        
+        body {
+            text-align: left;
+            font-family: verdana;
+            font-size: 13px
+        }
+        
+        td {
+            padding: 0px;
+        }
+        
+        button {
+            border: 0;
+            border-radius: 0.3rem;
+            background-color: #1fa3ec;
+            color: #fff;
+            line-height: 2.4rem;
+            font-size: 1.2rem;
+            width: 100%;
+            -webkit-transition-duration: 0.4s;
+            transition-duration: 0.4s;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0e70a4;
+        }
+        
+        .bred {
+            background-color: #d43535;
+        }
+        
+        .bred:hover {
+            background-color: #931f1f;
+        }
+        
+        .bgrn {
+            background-color: #47c266;
+        }
+        
+        .bgrn:hover {
+            background-color: #5aaf6f;
+        }
+        
+        a {
+            text-decoration: none;
+        }
+        
+        .p {
+            float: left;
+            text-align: left;
+        }
+        
+        .q {
+            float: right;
+            text-align: right;
+        }
+    </style>
 </head>
 
 <body style="background-color:black;">
-    <!-- LED Control:
-    <br />
-    <br /> R:
-    <input id="r" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br /> G:
-    <input id="g" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br /> B:
-    <input id="b" type="range" min="0" max="255" step="1" onchange="sendRGB();" />
-    <br /> -->
+
     <div>
-        <p style="font-family:courier; font-size:14px; color:white;" id="mybody">
+        <p style="color:white;" id="mybody">
         </p>
     </div>
-    <!-- Address:
-
-    <br> -->
-    <!-- <textarea rows="20" cols="40" id="myTextarea">
-342 Alvin Road
-Ducksburg</textarea> -->
-
-
+    </div><br />
+    <!-- <textarea readonly id='mybodyx' name=' t1 ' cols='340 ' wrap='off '>
+    </textarea><br /><br /> -->
 </body>
 
 </html>

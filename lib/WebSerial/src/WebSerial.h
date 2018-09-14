@@ -12,21 +12,23 @@
 
 /**
  */
-class WebSerial {
-  public:
+class WebSerial
+{
+public:
+  WebSerial();
 
-    WebSerial();
+  void println(const char *text);
+  void print(const char *text);
 
-    void println(const char *text);
-    char* getBuffer(void);
-    boolean hasData(void);
-    void clearBuffer(void);
-    String getString(void);
+  char *getBuffer(void);
+  boolean hasData(void);
+  void clearBuffer(void);
+  String getString(void);
 
-    void refresh(void);
-    void wipe(void);
+  void refresh(void);
+  void wipe(void);
 
-    char consoleBuffer[BUFF_SIZE];
+  char consoleBuffer[BUFF_SIZE];
 };
 
 #endif

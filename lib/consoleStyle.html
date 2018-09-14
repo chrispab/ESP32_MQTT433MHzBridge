@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+
+<head>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+    <title>Outside Sensor - Console</title>
+    <script>
+        var cn, x, lt;
+        cn = 180;
+        x = null;
+
+        function eb(s) {
+            return document.getElementById(s);
+        }
+
+        function u() {
+            if (cn >= 0) {
+                eb('t').innerHTML = 'Restart in ' + cn + ' seconds';
+                cn--;
+                setTimeout(u, 1000);
+            }
+        }
+
+        function c(l) {
+            eb('s1').value = l.innerText || l.textContent;
+            eb('p1').focus();
+        }
+
+        function la(p) {
+            var a = '';
+            if (la.arguments.length == 1) {
+                a = p;
+                clearTimeout(lt);
+            }
+            if (x != null) {
+                x.abort();
+            }
+            x = new XMLHttpRequest();
+            x.onreadystatechange = function() {
+                if (x.readyState == 4 && x.status == 200) {
+                    var s = x.responseText.replace(/{t}/g, "<table style='width:100%'>").replace(/{s}/g, "<tr><th>")
+                        .replace(/{m}/g, "</th><td>").replace(/{e}/g, "</td></tr>").replace(/{c}/g,
+                            "%'><div style='text-align:center;font-weight:");
+                    eb('l1').innerHTML = s;
+                }
+            };
+            x.open('GET', 'ay' + a, true);
+            x.send();
+            lt = setTimeout(la, 2345);
+        }
+
+        function lb(p) {
+            la('?d=' + p);
+        }
+
+        function lc(p) {
+            la('?t=' + p);
+        }
+        var sn = 0;
+        var id = 0;
+
+        function l(p) {
+            var c, o, t;
+            clearTimeout(lt);
+            o = '';
+            t = eb('t1');
+            if (p == 1) {
+                c = eb('c1');
+                o = '&c1=' + encodeURIComponent(c.value);
+                c.value = '';
+                t.scrollTop = sn;
+            }
+            if (t.scrollTop >= sn) {
+                if (x != null) {
+                    x.abort();
+                }
+                x = new XMLHttpRequest();
+                x.onreadystatechange = function() {
+                    if (x.readyState == 4 && x.status == 200) {
+                        var z, d;
+                        d = x.responseXML;
+                        id = d.getElementsByTagName('i')[0].childNodes[0].nodeValue;
+                        if (d.getElementsByTagName('j')[0].childNodes[0].nodeValue == 0) {
+                            t.value = '';
+                        }
+                        z = d.getElementsByTagName('l')[0].childNodes;
+                        if (z.length > 0) {
+                            t.value += decodeURIComponent(z[0].nodeValue);
+                        }
+                        t.scrollTop = 99999;
+                        sn = t.scrollTop;
+                    }
+                };
+                x.open('GET', 'ax?c2=' + id + o, true);
+                x.send();
+            }
+            lt = setTimeout(l, 2345);
+            return false;
+        }
+    </script>
+    <style>
+        div,
+        fieldset,
+        input,
+        select {
+            padding: 5px;
+            font-size: 1em;
+        }
+        
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+        
+        select {
+            width: 100%;
+        }
+        
+        textarea {
+            resize: none;
+            width: 98%;
+            height: 318px;
+            padding: 5px;
+            overflow: auto;
+        }
+        
+        body {
+            text-align: center;
+            font-family: verdana;
+        }
+        
+        td {
+            padding: 0px;
+        }
+        
+        button {
+            border: 0;
+            border-radius: 0.3rem;
+            background-color: #1fa3ec;
+            color: #fff;
+            line-height: 2.4rem;
+            font-size: 1.2rem;
+            width: 100%;
+            -webkit-transition-duration: 0.4s;
+            transition-duration: 0.4s;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0e70a4;
+        }
+        
+        .bred {
+            background-color: #d43535;
+        }
+        
+        .bred:hover {
+            background-color: #931f1f;
+        }
+        
+        .bgrn {
+            background-color: #47c266;
+        }
+        
+        .bgrn:hover {
+            background-color: #5aaf6f;
+        }
+        
+        a {
+            text-decoration: none;
+        }
+        
+        .p {
+            float: left;
+            text-align: left;
+        }
+        
+        .q {
+            float: right;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body onload='l()'>
+    <div style='text-align:left;display:inline-block;min-width:340px;'>
+        <div style='text-align:center;'>
+            <h3>Generic Module</h3>
+            <h2>Outside Sensor</h2>
+        </div><br /><textarea readonly id='t1' name='t1' cols='340' wrap='off'></textarea><br /><br />
+        <form method='get' onsubmit='return l(1);'><input id='c1' name='c1' placeholder='Enter command' autofocus><br /></form><br /><br />
+        <form action='.' method='get'><button>Main Menu</button></form><br />
+        <div style='text-align:right;font-size:11px;'>
+            <hr /><a href='https://bit.ly/tasmota' target='_blank' style='color:#aaa;'>Sonoff-Tasmota 6.1.1 by Theo
+                Arends</a></div>
+    </div>
+</body>
+
+</html>
