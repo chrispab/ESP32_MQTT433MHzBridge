@@ -431,7 +431,19 @@ void sendTextViaWS(void)
     //!if websockets buffer has content then send to client and empty the buffer
     if (myWebSerial.hasData())
     {
-        webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
+        String statusString;
+        statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
+        // strcpy(statusString, timeClient.getFormattedTime());
+        // strcat(statusString, ": ");
+        // strcat(statusString,myWebSerial.getBuffer())
+ 
+        // strcpy(statusString, timeClient.getFormattedTime());
+        // strcat(statusString, ": ");
+        // strcat(statusString,myWebSerial.getBuffer())
+ 
+ 
+ 
+        webSocket.sendTXT(sktNum, statusString);
         myWebSerial.clearBuffer();
     }
 
