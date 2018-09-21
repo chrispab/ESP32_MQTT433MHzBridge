@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.71 Br:\"master\""
+#define SW_VERSION "V3.74 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -266,19 +266,14 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
     }
     Serial.printf("\n");
 }
-uint8_t sktNum;
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
-    sktNum = num;
 
     switch (type)
     {
     case WStype_DISCONNECTED:
         Serial.printf("[%u] Disconnected!\n", num);
-        //try reconnecting here
-        // webSocket.begin();
-        // webSocket.onEvent(webSocketEvent);
-
         break;
     case WStype_CONNECTED:
     {
@@ -423,7 +418,8 @@ void setup()
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
 }
-void sendTextViaWS(void)
+
+void broadcastWS()
 {
     static unsigned long lastResetMillis = millis();
     unsigned long resetInterval = 10000;
@@ -433,17 +429,8 @@ void sendTextViaWS(void)
     {
         String statusString;
         statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
-        // strcpy(statusString, timeClient.getFormattedTime());
-        // strcat(statusString, ": ");
-        // strcat(statusString,myWebSerial.getBuffer())
- 
-        // strcpy(statusString, timeClient.getFormattedTime());
-        // strcat(statusString, ": ");
-        // strcat(statusString,myWebSerial.getBuffer())
- 
- 
- 
-        webSocket.sendTXT(sktNum, statusString);
+        //broadcast to all clients
+        webSocket.broadcastTXT(statusString);
         myWebSerial.clearBuffer();
     }
 
@@ -469,10 +456,13 @@ boolean touchedFlag = false;
 
 void loop()
 {
+
     resetWatchdog();
     heartBeatLED.update(); // initialize
                            //warnLED.update();      // initialize
     webSocket.loop();
+    timeClient.update();
+    broadcastWS();
 
     // updateDisplayData();
     // DHT22Sensor.takeReadings();
@@ -485,6 +475,7 @@ void loop()
     }
 
     webSocket.loop();
+    broadcastWS();
 
     // myDisplay.refresh();
     // capture new sensor readings
@@ -496,6 +487,7 @@ void loop()
     touchedFlag = processTouchPads();
     updateDisplayData();
     webSocket.loop();
+    broadcastWS();
 
     // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
@@ -505,6 +497,8 @@ void loop()
                "ESP32 Watchdog: Zone 1 power cycled",
                "ESP32 Watchdog: Zone 1 power cycled");
     }
+    broadcastWS();
+
     // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
@@ -515,6 +509,7 @@ void loop()
                "ESP32 Watchdog: Zone 3 power cycled",
                "ESP32 Watchdog: Zone 3 power cycled");
     }
+    broadcastWS();
 
     // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
@@ -524,8 +519,8 @@ void loop()
     WiFiLocalWebPageCtrl();
     //webSocket.loop();
 
-    sendTextViaWS();
     webSocket.loop();
+    broadcastWS();
 }
 
 /***************************************************
