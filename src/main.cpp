@@ -77,16 +77,12 @@ attempt to use numeric values.
 
 #define CR Serial.println()
 
-// todo add oled power control fet
-
 #include <Arduino.h>
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
-//#include <stdio.h>
-//#include <string.h>
 
 // classes code changes
 #include "Display.h"
@@ -122,18 +118,15 @@ void connectMQTT();
 void connectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
 void checkConnections(void);
-// void updateTempDisplay(void);
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
 
-// void updateZoneDisplayLines(void);
 void updateDisplayData(void);
 
 int freeRam(void);
 void printFreeRam(void);
 
-// char *getsensorDisplayString(char *thistempStr);
 void processMQTTMessage(void);
 char *getMQTTDisplayString(char *MQTTStatus);
 
@@ -213,7 +206,6 @@ enum displayModes
     BIG_TEMP,
     MULTI
 } displayMode;
-// enum displayModes ;
 
 int MQTTNewState = 0;     // 0 or 1
 int MQTTSocketNumber = 0; // 1-16
@@ -228,8 +220,6 @@ LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
 const char *socketIDFunctionStrings[16];
-
-//char consoleBuffer[256]; //255 max chars in buffer plus eol \0
 
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
@@ -281,7 +271,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
         // send message to client
-        webSocket.sendTXT(num, "Connected to webSocket server<br>");
+        webSocket.sendTXT(num, "You are connected to webSocket server");
     }
     break;
     case WStype_TEXT:
@@ -436,19 +426,6 @@ void broadcastWS()
 
     if ((millis() - lastResetMillis) >= resetInterval)
     {
-
-        //merWrite(timer, 0); // reset timer (feed watchdog)
-        //Serial.println("+++from ESP32 - sending via web socket+++");
-        //Serial.println(myWebSerial.getBuffer());
-
-        //send message to client
-        //webSocket.broadcastTXT("from ESP32 - got your message");
-        //webSocket.sendTXT(sktNum, "from ESP32 -  message");
-        //static char mybuff[512];
-        //strcpy(mybuff,"C<br>D Lights(4): ON<br>00:00:09<br>00:02:15<br>GRG:OK (0)<br>SHD: OK (0)<br>^----------^<br>!----------! BIG_TEMP Display Refresh<br>Temp: 20.6�C<br>L Lights(3): ON<br>00:00:10<br>00:02:17<br>GRG: OK (0)<br>SHD: OK (0)<br>^----------^<br>");
-        //strcpy(mybuff, myWebSerial.getBuffer());
-        //webSocket.sendTXT(sktNum, mybuff);
-
         lastResetMillis = millis();
     }
 }
