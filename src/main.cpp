@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.74 Br:\"master\""
+#define SW_VERSION "V3.75 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -271,6 +271,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
         // send message to client
+        
         webSocket.sendTXT(num, "You are connected to webSocket server");
     }
     break;
@@ -420,8 +421,9 @@ void broadcastWS()
         String statusString;
         statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
         //broadcast to all clients
-        webSocket.broadcastTXT(statusString);
-        myWebSerial.clearBuffer();
+        if (webSocket.connectedClients() > 0)
+            webSocket.broadcastTXT(statusString);
+            myWebSerial.clearBuffer();
     }
 
     if ((millis() - lastResetMillis) >= resetInterval)
