@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.75 Br:\"master\""
+#define SW_VERSION "V3.76 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -87,6 +87,7 @@ attempt to use numeric values.
 // classes code changes
 #include "Display.h"
 #include "ZoneController.h"
+#include "secret.h"
 
 //#include
 //"/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
@@ -211,7 +212,7 @@ int MQTTNewState = 0;     // 0 or 1
 int MQTTSocketNumber = 0; // 1-16
 boolean MQTTNewData = false;
 // create object
-SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", "fbmfbmqluzaakvso",
+SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", APP_PASSWORD,
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
@@ -259,22 +260,18 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
-
     switch (type)
     {
     case WStype_DISCONNECTED:
-        Serial.printf("[%u] Disconnected!\n", num);
+        Serial.printf("[%u] client ws Disconnected!\n", num);
         break;
     case WStype_CONNECTED:
     {
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-
-        // send message to client
-        
-        webSocket.sendTXT(num, "You are connected to webSocket server");
+        webSocket.sendTXT(num, "You are connected to esp32 webSocket server");
+        break;
     }
-    break;
     case WStype_TEXT:
         //Serial.printf("[%u] get Text: %s\n", num, payload);
 
@@ -423,7 +420,7 @@ void broadcastWS()
         //broadcast to all clients
         if (webSocket.connectedClients() > 0)
             webSocket.broadcastTXT(statusString);
-            myWebSerial.clearBuffer();
+        myWebSerial.clearBuffer();
     }
 
     if ((millis() - lastResetMillis) >= resetInterval)
