@@ -212,7 +212,7 @@ int MQTTNewState = 0;     // 0 or 1
 int MQTTSocketNumber = 0; // 1-16
 boolean MQTTNewData = false;
 // create object
-SendEmail e("smtp.gmail.com", 465, "cbattisson@gmail.com", APP_PASSWORD,
+SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
