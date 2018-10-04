@@ -38,7 +38,7 @@ attempt to use numeric values.
 
 // startup screen text
 */
-#define SW_VERSION "V3.76 Br:\"master\""
+#define SW_VERSION "V3.78 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -87,7 +87,7 @@ attempt to use numeric values.
 // classes code changes
 #include "Display.h"
 #include "ZoneController.h"
-#include "secret.h"
+#include "../lib/secret.h"
 
 //#include
 //"/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
@@ -215,7 +215,7 @@ boolean MQTTNewData = false;
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 255, 700, true);
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, 700, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 // array to enable translation from socket ID (0-15) to string representing
@@ -293,6 +293,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     case WStype_FRAGMENT_BIN_START:
     case WStype_FRAGMENT:
     case WStype_FRAGMENT_FIN:
+            Serial.printf("UUUUUUU Unhandled WS message in handler UUUUU");
+
         break;
     }
 }
@@ -399,6 +401,7 @@ void setup()
     // 40 secs
     timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
+   
     myDisplay.wipe();
 
     //connectWiFi();
@@ -663,7 +666,6 @@ void resetWatchdog(void)
 
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval)
     {
-
         timerWrite(timer, 0); // reset timer (feed watchdog)
         //Serial.println("Reset Module Watchdog......");
         myWebSerial.println("Reset Module Watchdog......");

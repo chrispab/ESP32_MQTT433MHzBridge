@@ -1,4 +1,3 @@
-// #include <Arduino.h>
 #include <WebSerial.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
@@ -43,6 +42,11 @@ void WebSerial::wipe(void)
 // add-update a line of text in the display text buffer
 void WebSerial::println(const char *lineText)
 {
+
+    // String statusString;
+    // statusString = timeClient.getFormattedTime() + ": " + this.getBuffer();
+    // Serial.print(statusString);
+
     Serial.println(lineText);
 
     int newLineLen = strlen(lineText);
