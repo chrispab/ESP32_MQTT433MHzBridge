@@ -22,8 +22,7 @@ for 3.3V bus
  * Connect a 2.4k resistor between SCL and Vcc
 
 A resistor value of 4.7KΩ is recommended
-It is strongly recommended that you place a 10 micro farad capacitor
-between +ve and -ve as close to your ESP32 as you can
+It is strongly recommended that you place a 10 micro farad capacitor between +ve and -ve as close to your ESP32 as you can
 
 Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only. You can not use these pins
 for signal output. Also, pins 6 (SD_CLK), 7 (SD_DATA0), 8 (SD_DATA1), 9
@@ -32,13 +31,10 @@ with the SPI flash chip ... you can not use those for other purposes.
 When using pSRAM,
 Strapping pins are GPIO0, GPIO2 and GPIO12.
 TX and RX (as used for flash) are GPIO1 and GPIO3.
-The data type called gpio_num_t is a C language enumeration with values
-corresponding to these names. It is recommended to use these values rather than
+The data type called gpio_num_t is a C language enumeration with values corresponding to these names. It is recommended to use these values rather than
 attempt to use numeric values.
-
-// startup screen text
 */
-#define SW_VERSION "V3.78 Br:\"master\""
+#define SW_VERSION "V3.80 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -105,6 +101,7 @@ attempt to use numeric values.
 #define NTP_ADDRESS "europe.pool.ntp.org"
 
 WiFiUDP ntpUDP;
+//make unique so can be used in other classes
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 //NTPClient timeClient(ntpUDP);
 
@@ -185,12 +182,9 @@ unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
 char tempStr[17]; // buffer for 16 chars and eos
-// static unsigned long UpdateInterval = 250; // 1000ms
-// static unsigned long displayUpdateInterval = 250; // ms
 
 // create system objects
 // create the display object
-
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
                   /* data=*/OLED_DATA_PIN);
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
@@ -362,13 +356,6 @@ void setup()
     myDisplay.writeLine(3, "Connecting to WiFi..");
     myDisplay.refresh();
 
-    // WiFiMulti.addAP("notwork", "a new router can solve many problems");
-
-    // while (WiFiMulti.run() != WL_CONNECTED)
-    // {
-    //     delay(100);
-    // }
-
     connectWiFi();
     // you're connected now, so print out the status:
     printWifiStatus();
@@ -435,16 +422,11 @@ boolean touchedFlag = false;
 
 void loop()
 {
-
     resetWatchdog();
     heartBeatLED.update(); // initialize
-                           //warnLED.update();      // initialize
     webSocket.loop();
     timeClient.update();
     broadcastWS();
-
-    // updateDisplayData();
-    // DHT22Sensor.takeReadings();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
@@ -455,20 +437,12 @@ void loop()
 
     webSocket.loop();
     broadcastWS();
-
-    // myDisplay.refresh();
-    // capture new sensor readings
-
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    //updateDisplayData();
-
+    updateDisplayData();
     processMQTTMessage(); // check flags set above and act on
     touchedFlag = processTouchPads();
-    updateDisplayData();
     webSocket.loop();
     broadcastWS();
-
-    // updateDisplayData();
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
@@ -489,15 +463,9 @@ void loop()
                "ESP32 Watchdog: Zone 3 power cycled");
     }
     broadcastWS();
-
-    // myDisplay.refresh();
     checkConnections(); // reconnect if reqd
-    //resetI2C();         // not sure if this is reqd. maybe display at fault
     webSocket.loop();
-
     WiFiLocalWebPageCtrl();
-    //webSocket.loop();
-
     webSocket.loop();
     broadcastWS();
 }
@@ -685,9 +653,6 @@ void resetI2C(void)
         periph_module_reset(PERIPH_I2C0_MODULE);
         // delay(100);
         lastResetI2CMillis = millis();
-        Serial.println("I2C RESET.......");
-
-        // ESP.restart();
     }
 }
 void processMQTTMessage(void)
