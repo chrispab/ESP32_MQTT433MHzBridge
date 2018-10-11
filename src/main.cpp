@@ -34,7 +34,7 @@ TX and RX (as used for flash) are GPIO1 and GPIO3.
 The data type called gpio_num_t is a C language enumeration with values corresponding to these names. It is recommended to use these values rather than
 attempt to use numeric values.
 */
-#define SW_VERSION "V3.80 Br:\"master\""
+#define SW_VERSION "V3.82 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -154,7 +154,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
+NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 5);
 // last param is num times control message  is txed
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
@@ -287,7 +287,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     case WStype_FRAGMENT_BIN_START:
     case WStype_FRAGMENT:
     case WStype_FRAGMENT_FIN:
-            Serial.printf("UUUUUUU Unhandled WS message in handler UUUUU");
+        Serial.printf("UUUUUUU Unhandled WS message in handler UUUUU");
 
         break;
     }
@@ -388,7 +388,7 @@ void setup()
     // 40 secs
     timerAlarmWrite(timer, 40000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
-   
+
     myDisplay.wipe();
 
     //connectWiFi();
@@ -876,27 +876,21 @@ void connectWiFi()
     u16_t startMillis;
     u16_t timeOutMillis = 20000;
 
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
-    // attempt to connect to Wifi network:
-    // printO(1, 20, "Connect WiFi..");
-
-    // IMPLEMNT TIME OUT TO ALLOW RF24 WIRLESS DOG FUNC TO CONTINUE
-    // while (!WiFiEClient.connected())
-    // while (status != WL_CONNECTED)
     wifiConnectTimeout = false;
 
     startMillis = millis();
+    WiFi.begin(ssid, pass);
+    myWebSerial.println("Attempting to connect to SSID: ");
+    myWebSerial.println(ssid);
     while (!WiFi.isConnected() && !wifiConnectTimeout)
     {
-        myWebSerial.println("Attempting to connect to SSID: ");
-        myWebSerial.println(ssid);
+
         // Connect to WPA/WPA2 network. Change this line if using open
         // or WEP network:
-        WiFi.begin(ssid, pass);
+        // WiFi.begin(ssid, pass);
 
         // wait 10 seconds for connection:
-        delay(5000);
+        //delay(5000);
         // enable jump out if connection attempt has timed out
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
@@ -927,10 +921,6 @@ void connectMQTT()
         if (MQTTclient.connect("ESP32Client"))
         {
             myWebSerial.println("connected to MQTT server");
-            // Once connected, publish an announcement...
-            // MQTTclient.publish("outTopic", "hello world");
-            // ... and resubscribe
-            // MQTTclient.subscribe("inTopic");
             MQTTclient.subscribe(subscribeTopic);
         }
         else
@@ -956,9 +946,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // Power<x> 		Show current power state of relay<x> as On or
     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-    // pubsub
-    // Serial.println("Rxed a mesage from broker : ");
-    // do some extra checking on rxed topic and payload
+    // do some extra checking on rxed topic and payload?
     payload[length] = '\0';
 
     char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
@@ -975,8 +963,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // convert to a number, convert last 1-2 chars to socket number
     char lastChar =
         topic[strlen(topic) - 1]; // lst char will always be a digit char
-    // see if last but 1 is also a digit char - ie number has two digits -
-    // 10 to 16
+    // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
     char lastButOneChar = topic[strlen(topic) - 2];
 
     if ((lastButOneChar >= '0') &&
@@ -996,17 +983,11 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     {
         newState = 1;
     }
-    // signal a new command has been rxed
-    // and
+    // signal a new command has been rxed and
     // topic and payload also available
     MQTTNewState = newState;         // 0 or 1
     MQTTSocketNumber = socketNumber; // 1-16
     MQTTNewData = true;
-    // then leave main control loop to turn of/onn sockets
-    // and reset sigmals
-
-    // digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, newState);
-    // operateSocket(socketID, newState);
 }
 
 // 0-15, 0,1
