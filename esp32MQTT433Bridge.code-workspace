@@ -2,14 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "/home/chris/Projects/git/ESP32-IDF-MQTT1",
-			"name": "ESP32-IDF-MQTT1"
-		},
-		{
-			"path": "/home/chris/Projects/git/ESP32-DS18B20",
-			"name": "ESP32-DS18B20"
 		}
 	],
 	"settings": {

@@ -34,7 +34,7 @@ TX and RX (as used for flash) are GPIO1 and GPIO3.
 The data type called gpio_num_t is a C language enumeration with values corresponding to these names. It is recommended to use these values rather than
 attempt to use numeric values.
 */
-#define SW_VERSION "V3.82 Br:\"master\""
+#define SW_VERSION "V3.83 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
@@ -154,7 +154,7 @@ PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 5);
+NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
 // last param is num times control message  is txed
 
 //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
@@ -996,12 +996,16 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[30] = "Operate Socket:";
+    char msg[40] = "SSS== Operate Socket: ";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
     sprintf(buff, "%d", (socketID + 1));
     strcat(msg, buff);
+    strcat(msg,"-");
+
+    //add socket item name
+    strcat(msg,socketIDFunctionStrings[socketID]);
 
     // u8g2.setCursor(55, 40);
     if (state == 0)
