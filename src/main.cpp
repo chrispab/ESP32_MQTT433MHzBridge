@@ -81,6 +81,11 @@ attempt to use numeric values.
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
 // classes code changes
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include "MyOTA.h"
+
 #include "Display.h"
 #include "ZoneController.h"
 #include "../lib/secret.h"
@@ -294,7 +299,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 }
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
-
     // strcpy(socketIDFunctionStrings[0], "blah");
     socketIDFunctionStrings[0] = "blah";
     socketIDFunctionStrings[1] = "blah";
@@ -310,8 +314,8 @@ void setup()
     socketIDFunctionStrings[11] = "blah";
     socketIDFunctionStrings[12] = "blah";
     socketIDFunctionStrings[13] = "blah";
-    socketIDFunctionStrings[14] = "blah";
-    socketIDFunctionStrings[15] = "blah";
+    socketIDFunctionStrings[14] = "Zone 1";
+    socketIDFunctionStrings[15] = "Zone 2";
 
     heartBeatLED.begin(); // initialize
     warnLED.begin();      // initialize
@@ -395,6 +399,8 @@ void setup()
 
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
+        setupOTA();
+
 }
 
 void broadcastWS()
@@ -422,6 +428,8 @@ boolean touchedFlag = false;
 
 void loop()
 {
+    ArduinoOTA.handle();
+
     resetWatchdog();
     heartBeatLED.update(); // initialize
     webSocket.loop();
@@ -1002,10 +1010,10 @@ void operateSocket(uint8_t socketID, uint8_t state)
     // strcpy(buff, "Socket : ");
     sprintf(buff, "%d", (socketID + 1));
     strcat(msg, buff);
-    strcat(msg,"-");
+    strcat(msg, "-");
 
     //add socket item name
-    strcat(msg,socketIDFunctionStrings[socketID]);
+    strcat(msg, socketIDFunctionStrings[socketID]);
 
     // u8g2.setCursor(55, 40);
     if (state == 0)
