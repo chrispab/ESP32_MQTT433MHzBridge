@@ -31,6 +31,15 @@ void setupOTA(void)
   so we can use it to calculate the progress of flashing */
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
         Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+   
+        // myDisplay.wipe();
+        // myDisplay.writeLine(1, "OTA updating");
+        // char str[12];
+        // sprintf(str, "%d", (progress / (total / 100)));
+        // myDisplay.writeLine(3, str);
+
+        // myDisplay.refresh();
+   
     });
 
     /* this callback function will be invoked when updating error */
