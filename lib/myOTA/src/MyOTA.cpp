@@ -16,30 +16,33 @@ void setupOTA(void)
     ArduinoOTA.onStart([]() {
         Serial.println("Start updating");
         myDisplay.wipe();
-        myDisplay.writeLine(1, "Start updating");
+        myDisplay.writeLine(1, "Start OTA update");
         myDisplay.refresh();
     });
     /* this callback function will be invoked when updating end */
     ArduinoOTA.onEnd([]() {
         Serial.println("\nEnd updating");
         myDisplay.wipe();
-        myDisplay.writeLine(1, "DONE OTA updating");
+        myDisplay.writeLine(1, "Done OTA update");
+        myDisplay.writeLine(3, "Reboot ESP");
         myDisplay.refresh();
-        delay(2000);
+        delay(200);
     });
     /* this callback function will be invoked when a number of chunks of software was flashed
   so we can use it to calculate the progress of flashing */
+    //char str[12];
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
         Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-   
+
         // myDisplay.wipe();
         // myDisplay.writeLine(1, "OTA updating");
-        // char str[12];
+        // char str[5];
         // sprintf(str, "%d", (progress / (total / 100)));
+        // myDisplay.drawStr(0, 24, str);
+        //myDisplay.sendBuffer();
         // myDisplay.writeLine(3, str);
 
         // myDisplay.refresh();
-   
     });
 
     /* this callback function will be invoked when updating error */

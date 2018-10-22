@@ -34,13 +34,13 @@ TX and RX (as used for flash) are GPIO1 and GPIO3.
 The data type called gpio_num_t is a C language enumeration with values corresponding to these names. It is recommended to use these values rather than
 attempt to use numeric values.
 */
-#define SW_VERSION "V3.83 Br:\"master\""
+#define SW_VERSION "V3.85 Br:\"master\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
 #define TITLE_LINE3 "Zone Wireless Dog"
 #define TITLE_LINE4 "MQTT Temp Sensor"
-#define TITLE_LINE5 ""
+#define TITLE_LINE5 "OTA enabled"
 #define TITLE_LINE6 SW_VERSION
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf       // 7 px high
@@ -300,8 +300,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
     // strcpy(socketIDFunctionStrings[0], "blah");
-    socketIDFunctionStrings[0] = "blah";
-    socketIDFunctionStrings[1] = "blah";
+    socketIDFunctionStrings[0] = "SKT 1";
+    socketIDFunctionStrings[1] = "SKT 2";
     socketIDFunctionStrings[2] = "L Lights";
     socketIDFunctionStrings[3] = "D Lights";
     socketIDFunctionStrings[4] = "C Lights";
@@ -310,10 +310,10 @@ void setup()
     socketIDFunctionStrings[7] = "TV";
     socketIDFunctionStrings[8] = "CSV Rads";
     socketIDFunctionStrings[9] = "Fan";
-    socketIDFunctionStrings[10] = "blah";
-    socketIDFunctionStrings[11] = "blah";
-    socketIDFunctionStrings[12] = "blah";
-    socketIDFunctionStrings[13] = "blah";
+    socketIDFunctionStrings[10] = "SKT 11";
+    socketIDFunctionStrings[11] = "SKT 12";
+    socketIDFunctionStrings[12] = "SKT 13";
+    socketIDFunctionStrings[13] = "SKT 14";
     socketIDFunctionStrings[14] = "Zone 1";
     socketIDFunctionStrings[15] = "Zone 2";
 
@@ -321,7 +321,7 @@ void setup()
     warnLED.begin();      // initialize
 
     // reset i2c bus controllerfrom IDF call
-    periph_module_reset(PERIPH_I2C0_MODULE);
+    //periph_module_reset(PERIPH_I2C0_MODULE);
 
     Serial.begin(115200);
     //Serial.println("==========running setup==========");
@@ -377,10 +377,7 @@ void setup()
 
     Serial.println(timeClient.getFormattedTime());
 
-    delay(500);
-
-    // MQTTclient.loop(); //process any MQTT stuff
-    // checkConnections();
+    delay(200);
 
     // Send Email
     e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", EMAIL_SUBJECT,
@@ -389,18 +386,19 @@ void setup()
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
-    // 40 secs
-    timerAlarmWrite(timer, 40000000, false); // set time in us
+    // 60 secs
+    timerAlarmWrite(timer, 60000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 
     myDisplay.wipe();
 
     //connectWiFi();
+    resetWatchdog();
 
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
-        setupOTA();
-
+    setupOTA();
+    resetWatchdog();
 }
 
 void broadcastWS()

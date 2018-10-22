@@ -13,3 +13,6 @@ python /home/chris/.platformio/packages/tool-espotapy/espota.py -i esp32ZC.local
 
 
 python /home/chris/.platformio/packages/tool-espotapy/espota.py -i 192.168.0.12 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f /home/chris/Projects/git/ESP32_MQTT433MHzBridge/.pioenvs/esp32dev/firmware.bin
+
+
+python /home/chris/.platformio/packages/tool-espotapy/espota.py -i 192.168.0.12 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f /home/chris/Projects/git/ESP32_MQTT433MHzBridge/.pioenvs/esp32dev/firmware.bin
