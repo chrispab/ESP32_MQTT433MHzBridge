@@ -1,23 +1,18 @@
 #include "version.h"
-//#include <Arduino.h>
+
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
-
-// classes code changes
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include "MyOTA.h"
 
+#include "MyOTA.h"
 #include "Display.h"
 #include "ZoneController.h"
 #include "secret.h"
-
-//#include
-//"/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
 #include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
 #include "LedFader.h"
 #include "TempSensor.h"
@@ -653,10 +648,18 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
+        myWebSerial.println("!----------! BIG_TEMP Display Refresh");
+        myWebSerial.println(tempDisplayString);
+        myWebSerial.println(MQTTDisplayString);
+        myWebSerial.println(getElapsedTimeStr());
+        myWebSerial.println(timeClient.getFormattedTime().c_str());
+        myWebSerial.println(zone1DisplayString);
+        myWebSerial.println(zone3DisplayString);
+        myWebSerial.println("^----------^");
+
         if (displayMode == NORMAL)
         {
-            // updateTempDisplay(); // get and display temp
-            // updateZoneDisplayLines();
+            // TODO
         }
         else if (displayMode == BIG_TEMP)
         {
@@ -680,32 +683,9 @@ void updateDisplayData()
 
             myDisplay.drawStr(0, 55, zone1DisplayString);
             myDisplay.drawStr(80, 55, getElapsedTimeStr());
-
             myDisplay.drawStr(0, 63, zone3DisplayString);
             myDisplay.drawStr(80, 63, timeClient.getFormattedTime().c_str());
-
             myDisplay.sendBuffer();
-            //Serial.println("!----------! BIG_TEMP Display Refresh");
-            //myWebSerial.println("<br>");
-
-            myWebSerial.println("!----------! BIG_TEMP Display Refresh");
-
-            //Serial.println(tempDisplayString);
-            myWebSerial.println(tempDisplayString);
-
-            //Serial.println(MQTTDisplayString);
-            myWebSerial.println(MQTTDisplayString);
-            //Serial.println(getElapsedTimeStr());
-            myWebSerial.println(getElapsedTimeStr());
-            //Serial.println(timeClient.getFormattedTime().c_str());
-            myWebSerial.println(timeClient.getFormattedTime().c_str());
-
-            //Serial.println(zone1DisplayString);
-            myWebSerial.println(zone1DisplayString);
-            //Serial.println(zone3DisplayString);
-            myWebSerial.println(zone3DisplayString);
-            //Serial.println("^----------^");
-            myWebSerial.println("^----------^");
         }
         else if (displayMode == MULTI)
         {
