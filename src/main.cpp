@@ -1,79 +1,5 @@
-// note : for I2C problem use ;
-// https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/
-//
-// https://github.com/espressif/arduino-esp32/issues/1352
-//
-// also fix for u8g2lib using wire lib
-// https://community.particle.io/t/i2c-lcd-display-getting-corrupted-solved/9767/78
-// edit
-// /home/chris/Projects/git/ESP32_MQTT433MHzBridge/.piolibdeps/U8g2_ID942/src/U8x8lib.cpp
-// and add 2us delays - 3 off, start write, end transmission
-//! for led pwm
-// example here : https://github.com/kriswiner/ESP32/tree/master/PWM
-// use GPIO13 , phys pin 3 up on LHS
-// mod of gammon ledfader
-
-/* I2C slave Address Scanner
-for 5V bus
- * Connect a 4.7k resistor between SDA and Vcc
- * Connect a 4.7k resistor between SCL and Vcc
-for 3.3V bus
- * Connect a 2.4k resistor between SDA and Vcc
- * Connect a 2.4k resistor between SCL and Vcc
-
-A resistor value of 4.7KΩ is recommended
-It is strongly recommended that you place a 10 micro farad capacitor between +ve and -ve as close to your ESP32 as you can
-
-Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only. You can not use these pins
-for signal output. Also, pins 6 (SD_CLK), 7 (SD_DATA0), 8 (SD_DATA1), 9
-(SD_DATA2), 10 (SD_DATA3), 11 (SD_CMD) 16 (CS) and 17(Q) are used to interact
-with the SPI flash chip ... you can not use those for other purposes.
-When using pSRAM,
-Strapping pins are GPIO0, GPIO2 and GPIO12.
-TX and RX (as used for flash) are GPIO1 and GPIO3.
-The data type called gpio_num_t is a C language enumeration with values corresponding to these names. It is recommended to use these values rather than
-attempt to use numeric values.
-*/
-#define SW_VERSION "V3.85 Br:\"master\""
-
-#define TITLE_LINE1 "     ESP32"
-#define TITLE_LINE2 "MQTT 433MhZ Bridge"
-#define TITLE_LINE3 "Zone Wireless Dog"
-#define TITLE_LINE4 "MQTT Temp Sensor"
-#define TITLE_LINE5 "OTA enabled"
-#define TITLE_LINE6 SW_VERSION
-//#define SYS_FONT u8g2_font_8x13_tf
-#define SYS_FONT u8g2_font_6x12_tf       // 7 px high
-#define BIG_TEMP_FONT u8g2_font_fub30_tf //30px hieght
-// 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
-
-//! Pin GPIO usage
-//Note that GPIO_NUM_34 – GPIO_NUM_39 are input mode only
-//refer to fritzing cct for extra info
-#define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
-#define GREEN_LED_PIN GPIO_NUM_33             //LHS_P_9
-#define DHTPIN GPIO_NUM_25                    // LHS_P_8 what digital pin we're connected to
-#define TX433PIN GPIO_NUM_32                  //LHS_P_10
-#define RF24_CE_PIN GPIO_NUM_5                //RHS_P_8
-#define RF24_CS_PIN GPIO_NUM_4                //RHS_P_5
-#define RF24_SPI_CLK GPIO_NUM_18              //RHS_P_9 green wire
-#define RF24_SPI_MISO GPIO_NUM_19             //RHS_P_10 purple wire
-#define RF24_SPI_MOSI GPIO_NUM_23             //RHS_P_15 blue wire
-#define OLED_CLOCK_PIN GPIO_NUM_22            //RHS_P_14 SCL
-#define OLED_DATA_PIN GPIO_NUM_21             //RHS_P_11 SDA
-#define RED_LED_PIN GPIO_NUM_26               //LHS_P_7  ??
-
-#define TOUCH_SENSOR_1 GPIO_NUM_13 //LHS_P_3
-#define TOUCH_SENSOR_2 GPIO_NUM_12 //LHS_P_4
-#define TOUCH_SENSOR_3 GPIO_NUM_14 //LHS_P_5
-#define TOUCH_SENSOR_4 GPIO_NUM_27 //LHS_P_6
-#define TOUCH_SENSOR_5 GPIO_NUM_15 // RHS_P_3  !! also used by 433 Tx??? - resolve
-
-#define TOUCH_PIN T4 // ESP32 Pin gpio13
-
-#define CR Serial.println()
-
-#include <Arduino.h>
+#include "version.h"
+//#include <Arduino.h>
 #include <NewRemoteTransmitter.h>
 #include <PubSubClient.h>
 #include <RF24.h>
@@ -88,7 +14,7 @@ attempt to use numeric values.
 
 #include "Display.h"
 #include "ZoneController.h"
-#include "../lib/secret.h"
+#include "secret.h"
 
 //#include
 //"/home/chris/.platformio/packages/framework-espidf/components/driver/include/driver/periph_ctrl.h"
@@ -188,7 +114,6 @@ unsigned long previousTempDisplayMillis =
 
 char tempStr[17]; // buffer for 16 chars and eos
 
-// create system objects
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
                   /* data=*/OLED_DATA_PIN);
@@ -233,7 +158,7 @@ WebSerial myWebSerial;
 WiFiMulti WiFiMulti;
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-#define EMAIL_SUBJECT "ESP32 - REBOOTED"
+#define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
 
 void IRAM_ATTR resetModule()
 {
@@ -268,7 +193,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     {
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        webSocket.sendTXT(num, "You are connected to esp32 webSocket server");
+        webSocket.sendTXT(num, "You are connected to esp32 webSocket server<br>");
         break;
     }
     case WStype_TEXT:
@@ -344,7 +269,7 @@ void setup()
     myDisplay.writeLine(5, TITLE_LINE5);
     myDisplay.writeLine(6, TITLE_LINE6);
     myDisplay.refresh();
-    delay(3000);
+    delay(1500);
 
     myDisplay.wipe();
     myDisplay.writeLine(1, "Connecting to Sensor..");
@@ -781,12 +706,6 @@ void updateDisplayData()
             myWebSerial.println(zone3DisplayString);
             //Serial.println("^----------^");
             myWebSerial.println("^----------^");
-
-            //webSocket.sendTXT(sktNum, "<br><br>");
-
-            //webSocket.sendTXT(sktNum, myWebSerial.getBuffer());
-            //Serial.println(myWebSerial.getBuffer());
-            //webSocket.broadcastTXT(myWebSerial.getBuffer());
         }
         else if (displayMode == MULTI)
         {
@@ -895,8 +814,6 @@ void connectWiFi()
         // or WEP network:
         // WiFi.begin(ssid, pass);
 
-        // wait 10 seconds for connection:
-        //delay(5000);
         // enable jump out if connection attempt has timed out
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
@@ -1002,7 +919,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[40] = "SSS== Operate Socket: ";
+    char msg[40] = "SSS == Operate Socket: ";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
