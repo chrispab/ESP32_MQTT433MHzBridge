@@ -1,7 +1,7 @@
 #include "version.h"
 
 #include <NewRemoteTransmitter.h>
-#include <PubSubClient.h>
+//#include <PubSubClient.h>
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
@@ -17,6 +17,8 @@
 #include "LedFader.h"
 #include "TempSensor.h"
 #include "sendemail.h"
+
+#include "pins.h"
 
 
 //time stuff
@@ -43,7 +45,7 @@ void connectWiFi();
 void operateSocket(uint8_t socketID, uint8_t state);
 void checkConnections(void);
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
-void processZoneRF24Message(void);
+//void processZoneRF24Message(void);
 int equalID(char *receive_payload, const char *targetID);
 
 void updateDisplayData(void);
@@ -54,7 +56,7 @@ char *getMQTTDisplayString(char *MQTTStatus);
 
 void resetWatchdog(void);
 boolean processTouchPads(void);
-void connectRF24(void);
+//void connectRF24(void);
 
 void WiFiLocalWebPageCtrl(void);
 
@@ -80,7 +82,7 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
 // param 3 is pulse width, last param is num times control message  is txed
 
-#include "RF24Lib.h";//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
+#include "RF24Lib.h"//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 //extern RF24 rf24Radio;
  RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 // uint8_t writePipeLocS[] = "NodeS";
@@ -124,9 +126,9 @@ enum displayModes
     MULTI
 } displayMode;
 
-int MQTTNewState = 0;     // 0 or 1
-int MQTTSocketNumber = 0; // 1-16
-boolean MQTTNewData = false;
+// int MQTTNewState = 0;     // 0 or 1
+// int MQTTSocketNumber = 0; // 1-16
+//boolean MQTTNewData = false;
 // create object
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
@@ -134,9 +136,9 @@ SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, 700, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
-// array to enable translation from socket ID (0-15) to string representing
-// socket function
-const char *socketIDFunctionStrings[16];
+// // array to enable translation from socket ID (0-15) to string representing
+// // socket function
+// const char *socketIDFunctionStrings[16];
 
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
@@ -145,9 +147,10 @@ hw_timer_t *timer = NULL;
 WebSerial myWebSerial;
 
 #include <WiFiMulti.h>
-
-#include <WebSocketsServer.h>
 WiFiMulti WiFiMulti;
+//#include <WebSocketsServer.h>
+#include "WebSocketLib.h"
+
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 #define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
@@ -158,82 +161,31 @@ void IRAM_ATTR resetModule()
     esp_restart_noos();
 }
 
-void hexdump(const void *mem, uint32_t len, uint8_t cols = 16)
-{
-    const uint8_t *src = (const uint8_t *)mem;
-    Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
-    for (uint32_t i = 0; i < len; i++)
-    {
-        if (i % cols == 0)
-        {
-            Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
-        }
-        Serial.printf("%02X ", *src);
-        src++;
-    }
-    Serial.printf("\n");
-}
+#include "WebSocketLib.h"
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
-{
-    switch (type)
-    {
-    case WStype_DISCONNECTED:
-        Serial.printf("[%u] client ws Disconnected!\n", num);
-        break;
-    case WStype_CONNECTED:
-    {
-        IPAddress ip = webSocket.remoteIP(num);
-        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        webSocket.sendTXT(num, "You are connected to esp32 webSocket server<br>");
-        break;
-    }
-    case WStype_TEXT:
-        //Serial.printf("[%u] get Text: %s\n", num, payload);
+extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length); 
 
-        //send message to client
-        //webSocket.sendTXT(num, "from ESP32 - got your message");
-
-        // send data to all connected clients
-        // webSocket.broadcastTXT("message here");
-        break;
-    case WStype_BIN:
-        Serial.printf("[%u] get binary length: %u\n", num, length);
-        hexdump(payload, length);
-
-        // send message to client
-        // webSocket.sendBIN(num, payload, length);
-        break;
-    case WStype_ERROR:
-    case WStype_FRAGMENT_TEXT_START:
-    case WStype_FRAGMENT_BIN_START:
-    case WStype_FRAGMENT:
-    case WStype_FRAGMENT_FIN:
-        Serial.printf("UUUUUUU Unhandled WS message in handler UUUUU");
-
-        break;
-    }
-}
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
-    // strcpy(socketIDFunctionStrings[0], "blah");
-    socketIDFunctionStrings[0] = "SKT 1";
-    socketIDFunctionStrings[1] = "SKT 2";
-    socketIDFunctionStrings[2] = "L Lights";
-    socketIDFunctionStrings[3] = "D Lights";
-    socketIDFunctionStrings[4] = "C Lights";
-    socketIDFunctionStrings[5] = "DAB";
-    socketIDFunctionStrings[6] = "Amp";
-    socketIDFunctionStrings[7] = "TV";
-    socketIDFunctionStrings[8] = "CSV Rads";
-    socketIDFunctionStrings[9] = "Fan";
-    socketIDFunctionStrings[10] = "SKT 11";
-    socketIDFunctionStrings[11] = "SKT 12";
-    socketIDFunctionStrings[12] = "SKT 13";
-    socketIDFunctionStrings[13] = "SKT 14";
-    socketIDFunctionStrings[14] = "Zone 1";
-    socketIDFunctionStrings[15] = "Zone 2";
-
+    // // strcpy(socketIDFunctionStrings[0], "blah");
+    // socketIDFunctionStrings[0] = "SKT 1";
+    // socketIDFunctionStrings[1] = "SKT 2";
+    // socketIDFunctionStrings[2] = "L Lights";
+    // socketIDFunctionStrings[3] = "D Lights";
+    // socketIDFunctionStrings[4] = "C Lights";
+    // socketIDFunctionStrings[5] = "DAB";
+    // socketIDFunctionStrings[6] = "Amp";
+    // socketIDFunctionStrings[7] = "TV";
+    // socketIDFunctionStrings[8] = "CSV Rads";
+    // socketIDFunctionStrings[9] = "Fan";
+    // socketIDFunctionStrings[10] = "SKT 11";
+    // socketIDFunctionStrings[11] = "SKT 12";
+    // socketIDFunctionStrings[12] = "SKT 13";
+    // socketIDFunctionStrings[13] = "SKT 14";
+    // socketIDFunctionStrings[14] = "Zone 1";
+    // socketIDFunctionStrings[15] = "Zone 2";
+    MQTTLibSetup();
+    
     heartBeatLED.begin(); // initialize
     warnLED.begin();      // initialize
 
@@ -257,7 +209,7 @@ void setup()
     myDisplay.writeLine(5, TITLE_LINE5);
     myDisplay.writeLine(6, TITLE_LINE6);
     myDisplay.refresh();
-    delay(1500);
+    delay(1000);
 
     myDisplay.wipe();
     myDisplay.writeLine(1, "Connecting to Sensor..");
@@ -314,27 +266,7 @@ void setup()
     resetWatchdog();
 }
 
-void broadcastWS()
-{
-    static unsigned long lastResetMillis = millis();
-    unsigned long resetInterval = 10000;
 
-    //!if websockets buffer has content then send to client and empty the buffer
-    if (myWebSerial.hasData())
-    {
-        String statusString;
-        statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
-        //broadcast to all clients
-        if (webSocket.connectedClients() > 0)
-            webSocket.broadcastTXT(statusString);
-        myWebSerial.clearBuffer();
-    }
-
-    if ((millis() - lastResetMillis) >= resetInterval)
-    {
-        lastResetMillis = millis();
-    }
-}
 boolean touchedFlag = false;
 
 void loop()
@@ -349,9 +281,7 @@ void loop()
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
-        //Serial.println("New Sensor Readings-MQTT published");
         myWebSerial.println("New Sensor Readings-MQTT published");
-        // ideally :
     }
 
     webSocket.loop();
@@ -374,7 +304,7 @@ void loop()
     // manageRestarts(1);
     // ZCs[1].manageRestarts(transmitter);
     ZCs[1].resetZoneDevice();
-    // manageRestarts(2);
+
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
@@ -559,31 +489,21 @@ void resetWatchdog(void)
         lastResetWatchdogMillis = millis();
     }
 }
-// void resetI2C(void)
+
+#include "MQTTLib.h"
+
+extern bool MQTTNewData;
+
+// void processMQTTMessage(void)
 // {
-//     static unsigned long lastResetI2CMillis = millis();
-//     unsigned long resetI2CInterval = 360000;
-//     // do only every few hours
-//     // u_long is 0to 4,294,967,295
-//     // 3600000 ms is 1hr
-//     if ((millis() - lastResetI2CMillis) >= resetI2CInterval)
+//     if (MQTTNewData)
 //     {
-//         // reset i2c bus controllerfrom IDF call
-//         periph_module_reset(PERIPH_I2C0_MODULE);
-//         // delay(100);
-//         lastResetI2CMillis = millis();
+//         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
+//         //Serial
+//         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
+//         MQTTNewData = false; // indicate not new data now, processed
 //     }
 // }
-void processMQTTMessage(void)
-{
-    if (MQTTNewData)
-    {
-        digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
-        //Serial
-        operateSocket(MQTTSocketNumber - 1, MQTTNewState);
-        MQTTNewData = false; // indicate not new data now, processed
-    }
-}
 char *getElapsedTimeStr()
 {
     static char elapsedTimeStr[20] = "Test Time";
@@ -700,29 +620,29 @@ void updateDisplayData()
     }
 }
 
-char *getMQTTDisplayString(char *MQTTStatus)
-{
-    char msg[] = "This is a message placeholder";
-    char socketNumber[10];
+// char *getMQTTDisplayString(char *MQTTStatus)
+// {
+//     char msg[] = "This is a message placeholder";
+//     char socketNumber[10];
 
-    sprintf(socketNumber, "%d", (MQTTSocketNumber));
-    strcpy(msg, socketNumber);
-    strcat(msg, "-");
-    strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
-    strcat(msg, ":");
+//     sprintf(socketNumber, "%d", (MQTTSocketNumber));
+//     strcpy(msg, socketNumber);
+//     strcat(msg, "-");
+//     strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
+//     strcat(msg, ":");
 
-    if (MQTTNewState == 0)
-    {
-        strcat(msg, " OFF");
-    }
-    else
-    {
-        strcat(msg, " ON");
-    }
-    // Serial.println(msg);
-    strcpy(MQTTStatus, msg);
-    return MQTTStatus;
-}
+//     if (MQTTNewState == 0)
+//     {
+//         strcat(msg, " OFF");
+//     }
+//     else
+//     {
+//         strcat(msg, " ON");
+//     }
+//     // Serial.println(msg);
+//     strcpy(MQTTStatus, msg);
+//     return MQTTStatus;
+// }
 
 void checkConnections()
 {
@@ -751,23 +671,8 @@ void checkConnections()
         previousConnCheckMillis = currentMillis;
     }
 }
-// void connectRF24()
-// {
-//     rf24Radio.begin();
-//     // enable dynamic payloads
-//     rf24Radio.enableDynamicPayloads();
-//     // optionally, increase the delay between retries & # of retries
-//     // rf24Radio.setRetries(15, 15);
-//     rf24Radio.setPALevel(RF24_PA_MAX);
-//     rf24Radio.setDataRate(RF24_250KBPS);
-//     rf24Radio.setChannel(124);
-//     rf24Radio.startListening();
-//     rf24Radio.printDetails();
-//     // autoACK enabled by default
-//     setPipes(writePipeLocC,
-//              readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-//     rf24Radio.startListening();
-// }
+
+
 void connectWiFi()
 {
     bool wifiConnectTimeout = false;
@@ -834,91 +739,91 @@ void connectMQTT()
                           : myWebSerial.println("MQTT Connection attempt Time Out!");
 }
 
-// MQTTclient call back if mqtt messsage rxed
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
-{
-    uint8_t socketNumber = 0;
+// // MQTTclient call back if mqtt messsage rxed
+// void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
+// {
+//     uint8_t socketNumber = 0;
 
-    // Power<x> 		Show current power state of relay<x> as On or
-    // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
-    // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-    // do some extra checking on rxed topic and payload?
-    payload[length] = '\0';
+//     // Power<x> 		Show current power state of relay<x> as On or
+//     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
+//     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
+//     // do some extra checking on rxed topic and payload?
+//     payload[length] = '\0';
 
-    char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
-    strcpy(message, "MQTT Recieved [");
-    strcat(message, topic);
-    strcat(message, "] : ");
-    //copy on payload and add \o terminator
-    strncat(message, (char *)payload, length);
-    //Serial.println(message);
-    myWebSerial.println(message);
+//     char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
+//     strcpy(message, "MQTT Recieved [");
+//     strcat(message, topic);
+//     strcat(message, "] : ");
+//     //copy on payload and add \o terminator
+//     strncat(message, (char *)payload, length);
+//     //Serial.println(message);
+//     myWebSerial.println(message);
 
-    // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
-    // either match whole topic string or trim off last 1or 2 chars and
-    // convert to a number, convert last 1-2 chars to socket number
-    char lastChar =
-        topic[strlen(topic) - 1]; // lst char will always be a digit char
-    // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
-    char lastButOneChar = topic[strlen(topic) - 2];
+//     // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
+//     // either match whole topic string or trim off last 1or 2 chars and
+//     // convert to a number, convert last 1-2 chars to socket number
+//     char lastChar =
+//         topic[strlen(topic) - 1]; // lst char will always be a digit char
+//     // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
+//     char lastButOneChar = topic[strlen(topic) - 2];
 
-    if ((lastButOneChar >= '0') &&
-        (lastButOneChar <= '9'))
-    { // is it a 2 digit number
-        socketNumber =
-            ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
-    }
-    else
-    {
-        socketNumber = (lastChar - '0');
-    }
-    // convert from 1-16 range to 0-15 range sendUnit uses
-    // int socketID = socketNumber - 1;
-    uint8_t newState = 0; // default to off
-    if ((payload[0] - '1') == 0)
-    {
-        newState = 1;
-    }
-    // signal a new command has been rxed and
-    // topic and payload also available
-    MQTTNewState = newState;         // 0 or 1
-    MQTTSocketNumber = socketNumber; // 1-16
-    MQTTNewData = true;
-}
+//     if ((lastButOneChar >= '0') &&
+//         (lastButOneChar <= '9'))
+//     { // is it a 2 digit number
+//         socketNumber =
+//             ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
+//     }
+//     else
+//     {
+//         socketNumber = (lastChar - '0');
+//     }
+//     // convert from 1-16 range to 0-15 range sendUnit uses
+//     // int socketID = socketNumber - 1;
+//     uint8_t newState = 0; // default to off
+//     if ((payload[0] - '1') == 0)
+//     {
+//         newState = 1;
+//     }
+//     // signal a new command has been rxed and
+//     // topic and payload also available
+//     MQTTNewState = newState;         // 0 or 1
+//     MQTTSocketNumber = socketNumber; // 1-16
+//     MQTTNewData = true;
+// }
 
-// 0-15, 0,1
-// mqtt funct to operate a remote power socket
-// only used by mqtt function
-void operateSocket(uint8_t socketID, uint8_t state)
-{
-    // this is a blocking routine !!!!!!!
-    char msg[40] = "SSS == Operate Socket: ";
-    char buff[10];
+// // 0-15, 0,1
+// // mqtt funct to operate a remote power socket
+// // only used by mqtt function
+// void operateSocket(uint8_t socketID, uint8_t state)
+// {
+//     // this is a blocking routine !!!!!!!
+//     char msg[40] = "SSS == Operate Socket: ";
+//     char buff[10];
 
-    // strcpy(buff, "Socket : ");
-    sprintf(buff, "%d", (socketID + 1));
-    strcat(msg, buff);
-    strcat(msg, "-");
+//     // strcpy(buff, "Socket : ");
+//     sprintf(buff, "%d", (socketID + 1));
+//     strcat(msg, buff);
+//     strcat(msg, "-");
 
-    //add socket item name
-    strcat(msg, socketIDFunctionStrings[socketID]);
+//     //add socket item name
+//     strcat(msg, socketIDFunctionStrings[socketID]);
 
-    // u8g2.setCursor(55, 40);
-    if (state == 0)
-    {
-        strcat(msg, " - OFF");
-    }
-    else
-    {
-        strcat(msg, " - ON");
-    }
-    //Serial.println(msg);
-    myWebSerial.println(msg);
+//     // u8g2.setCursor(55, 40);
+//     if (state == 0)
+//     {
+//         strcat(msg, " - OFF");
+//     }
+//     else
+//     {
+//         strcat(msg, " - ON");
+//     }
+//     //Serial.println(msg);
+//     myWebSerial.println(msg);
 
-    warnLED.fullOn();
-    transmitter.sendUnit(socketID, state);
-    warnLED.fullOff(); //}
-}
+//     warnLED.fullOn();
+//     transmitter.sendUnit(socketID, state);
+//     warnLED.fullOff(); //}
+// }
 
 void printWifiStatus()
 {
@@ -938,80 +843,3 @@ void printWifiStatus()
     Serial.println(" dBm");
 }
 
-// void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
-// {
-//     // config rf24Radio to comm with a node
-//     rf24Radio.stopListening();
-//     rf24Radio.openWritingPipe(writingPipe);
-//     rf24Radio.openReadingPipe(1, readingPipe);
-// }
-
-// void processZoneRF24Message(void)
-// {
-//     char messageText[17];
-//     while (rf24Radio.available())
-//     { // Read all available payloads
-
-//         // Grab the message and process
-//         uint8_t len = rf24Radio.getDynamicPayloadSize();
-
-//         // If a corrupt dynamic payload is received, it will be flushed
-//         if (!len)
-//         {
-//             return;
-//         }
-
-//         rf24Radio.read(receive_payload, len);
-
-//         // Put a zero at the end for easy printing etc
-//         receive_payload[len] = 0;
-
-//         // who was it from?
-//         // reset that timer
-
-//         if (equalID(receive_payload, ZCs[0].heartBeatText))
-//         {
-//             ZCs[0].resetZoneDevice();
-//             //Serial.println("RESET G Watchdog");
-//             myWebSerial.println("RESET G Watchdog");
-
-//             strcpy(messageText, ZCs[0].heartBeatText);
-//         }
-//         else if (equalID(receive_payload, ZCs[1].heartBeatText))
-//         {
-//             ZCs[1].resetZoneDevice();
-//             //Serial.println("RESET C Watchdog");
-//             myWebSerial.println("RESET C Watchdog");
-
-//             strcpy(messageText, ZCs[1].heartBeatText);
-//         }
-//         else if (equalID(receive_payload, ZCs[2].heartBeatText))
-//         {
-//             ZCs[2].resetZoneDevice();
-//             //Serial.println("RESET S Watchdog");
-//             myWebSerial.println("RESET S Watchdog");
-
-//             strcpy(messageText, ZCs[2].heartBeatText);
-//         }
-//         else
-//         {
-//             Serial.println("NO MATCH");
-//             strcpy(messageText, "NO MATCH");
-//         }
-//     }
-// }
-
-// int equalID(char *receive_payload, const char *targetID)
-// {
-//     // check if same 1st 3 chars
-//     if ((receive_payload[0] == targetID[0]) &&
-//         (receive_payload[1] == targetID[1]) &&
-//         (receive_payload[2] == targetID[2]))
-//     {
-//         return true;
-//     }
-//     else
-//     {
-//         return false;
-//     }
-// }
