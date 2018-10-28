@@ -18,6 +18,7 @@
 #include "TempSensor.h"
 #include "sendemail.h"
 
+
 //time stuff
 #include <NTPClient.h>
 //#include <WiFi.h>
@@ -36,7 +37,6 @@ void printWifiStatus();
 boolean processRequest(String &getLine);
 void sendResponse(WiFiClient client);
 void listenForClients(void);
-void LEDBlink(int LEDPin, int repeatNum);
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
 void connectMQTT();
 void connectWiFi();
@@ -48,8 +48,8 @@ int equalID(char *receive_payload, const char *targetID);
 
 void updateDisplayData(void);
 
-int freeRam(void);
-void printFreeRam(void);
+//int freeRam(void);
+//void printFreeRam(void);
 
 void processMQTTMessage(void);
 char *getMQTTDisplayString(char *MQTTStatus);
@@ -107,7 +107,7 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-char tempStr[17]; // buffer for 16 chars and eos
+//char tempStr[17]; // buffer for 16 chars and eos
 
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
@@ -240,9 +240,6 @@ void setup()
     heartBeatLED.begin(); // initialize
     warnLED.begin();      // initialize
 
-    // reset i2c bus controllerfrom IDF call
-    //periph_module_reset(PERIPH_I2C0_MODULE);
-
     Serial.begin(115200);
     //Serial.println("==========running setup==========");
     myWebSerial.println("==========running setup==========");
@@ -253,10 +250,9 @@ void setup()
     //displayMode = MULTI;
     // setup OLED display
     myDisplay.begin();
-
     myDisplay.setFont(SYS_FONT);
     myDisplay.wipe();
-
+    
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(2, TITLE_LINE2);
     myDisplay.writeLine(3, TITLE_LINE3);
@@ -925,17 +921,6 @@ void operateSocket(uint8_t socketID, uint8_t state)
     warnLED.fullOn();
     transmitter.sendUnit(socketID, state);
     warnLED.fullOff(); //}
-}
-
-void LEDBlink(int LPin, int repeatNum)
-{
-    for (int i = 0; i < repeatNum; i++)
-    {
-        digitalWrite(LPin, 1); // GET /H turns the LED on
-        delay(50);
-        digitalWrite(LPin, 0); // GET /H turns the LED on
-        delay(50);
-    }
 }
 
 void printWifiStatus()
