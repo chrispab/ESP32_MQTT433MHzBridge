@@ -13,7 +13,7 @@
 #include "Display.h"
 #include "ZoneController.h"
 #include "secret.h"
-#include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
+//#include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
 #include "LedFader.h"
 #include "TempSensor.h"
 #include "sendemail.h"
@@ -48,13 +48,10 @@ int equalID(char *receive_payload, const char *targetID);
 
 void updateDisplayData(void);
 
-//int freeRam(void);
-//void printFreeRam(void);
 
 void processMQTTMessage(void);
 char *getMQTTDisplayString(char *MQTTStatus);
 
-void resetI2C(void);
 void resetWatchdog(void);
 boolean processTouchPads(void);
 void connectRF24(void);
@@ -65,38 +62,38 @@ void WiFiLocalWebPageCtrl(void);
 TempSensor DHT22Sensor;
 
 // WiFi settings
-const char ssid[] = "notwork";
-const char pass[] = "a new router can solve many problems";
+const char ssid[] = MY_SSID;
+const char pass[] = MY_SSID_PASSWORD;
 int status = WL_IDLE_STATUS;
 
 // MQTT stuff
-IPAddress mqttserver(192, 168, 0, 200);
+IPAddress mqttBroker(192, 168, 0, 200);
 char subscribeTopic[] = "433Bridge/cmnd/#";
 char publishTempTopic[] = "433Bridge/Temperature";
 char publishHumiTopic[] = "433Bridge/Humidity";
 
 WiFiClient WiFiEClient;
-PubSubClient MQTTclient(mqttserver, 1883, MQTTRxcallback, WiFiEClient);
+PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
-// last param is num times control message  is txed
+// param 3 is pulse width, last param is num times control message  is txed
 
-//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
-
-RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
-uint8_t writePipeLocS[] = "NodeS";
-uint8_t readPipeLocS[] = "Node0";
-uint8_t writePipeLocC[] = "NodeC";
-uint8_t readPipeLocC[] = "Node0";
-uint8_t writePipeLocG[] = "NodeG";
-uint8_t readPipeLocG[] = "Node0";
-// Payload
-const int max_payload_size = 32;
-char receive_payload[max_payload_size + 1];
-// +1 to allow room for a terminating NULL char
-// static unsigned int goodSecsMax = 15; // 20
+#include "RF24Lib.h";//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
+//extern RF24 rf24Radio;
+ RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
+// uint8_t writePipeLocS[] = "NodeS";
+// uint8_t readPipeLocS[] = "Node0";
+// uint8_t writePipeLocC[] = "NodeC";
+// uint8_t readPipeLocC[] = "Node0";
+// uint8_t writePipeLocG[] = "NodeG";
+// uint8_t readPipeLocG[] = "Node0";
+// // Payload
+// const int max_payload_size = 32;
+// char receive_payload[max_payload_size + 1];
+// // +1 to allow room for a terminating NULL char
+// // static unsigned int goodSecsMax = 15; // 20
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -562,21 +559,21 @@ void resetWatchdog(void)
         lastResetWatchdogMillis = millis();
     }
 }
-void resetI2C(void)
-{
-    static unsigned long lastResetI2CMillis = millis();
-    unsigned long resetI2CInterval = 360000;
-    // do only every few hours
-    // u_long is 0to 4,294,967,295
-    // 3600000 ms is 1hr
-    if ((millis() - lastResetI2CMillis) >= resetI2CInterval)
-    {
-        // reset i2c bus controllerfrom IDF call
-        periph_module_reset(PERIPH_I2C0_MODULE);
-        // delay(100);
-        lastResetI2CMillis = millis();
-    }
-}
+// void resetI2C(void)
+// {
+//     static unsigned long lastResetI2CMillis = millis();
+//     unsigned long resetI2CInterval = 360000;
+//     // do only every few hours
+//     // u_long is 0to 4,294,967,295
+//     // 3600000 ms is 1hr
+//     if ((millis() - lastResetI2CMillis) >= resetI2CInterval)
+//     {
+//         // reset i2c bus controllerfrom IDF call
+//         periph_module_reset(PERIPH_I2C0_MODULE);
+//         // delay(100);
+//         lastResetI2CMillis = millis();
+//     }
+// }
 void processMQTTMessage(void)
 {
     if (MQTTNewData)
@@ -754,23 +751,23 @@ void checkConnections()
         previousConnCheckMillis = currentMillis;
     }
 }
-void connectRF24()
-{
-    rf24Radio.begin();
-    // enable dynamic payloads
-    rf24Radio.enableDynamicPayloads();
-    // optionally, increase the delay between retries & # of retries
-    // rf24Radio.setRetries(15, 15);
-    rf24Radio.setPALevel(RF24_PA_MAX);
-    rf24Radio.setDataRate(RF24_250KBPS);
-    rf24Radio.setChannel(124);
-    rf24Radio.startListening();
-    rf24Radio.printDetails();
-    // autoACK enabled by default
-    setPipes(writePipeLocC,
-             readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
-    rf24Radio.startListening();
-}
+// void connectRF24()
+// {
+//     rf24Radio.begin();
+//     // enable dynamic payloads
+//     rf24Radio.enableDynamicPayloads();
+//     // optionally, increase the delay between retries & # of retries
+//     // rf24Radio.setRetries(15, 15);
+//     rf24Radio.setPALevel(RF24_PA_MAX);
+//     rf24Radio.setDataRate(RF24_250KBPS);
+//     rf24Radio.setChannel(124);
+//     rf24Radio.startListening();
+//     rf24Radio.printDetails();
+//     // autoACK enabled by default
+//     setPipes(writePipeLocC,
+//              readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
+//     rf24Radio.startListening();
+// }
 void connectWiFi()
 {
     bool wifiConnectTimeout = false;
@@ -941,80 +938,80 @@ void printWifiStatus()
     Serial.println(" dBm");
 }
 
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
-{
-    // config rf24Radio to comm with a node
-    rf24Radio.stopListening();
-    rf24Radio.openWritingPipe(writingPipe);
-    rf24Radio.openReadingPipe(1, readingPipe);
-}
+// void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
+// {
+//     // config rf24Radio to comm with a node
+//     rf24Radio.stopListening();
+//     rf24Radio.openWritingPipe(writingPipe);
+//     rf24Radio.openReadingPipe(1, readingPipe);
+// }
 
-void processZoneRF24Message(void)
-{
-    char messageText[17];
-    while (rf24Radio.available())
-    { // Read all available payloads
+// void processZoneRF24Message(void)
+// {
+//     char messageText[17];
+//     while (rf24Radio.available())
+//     { // Read all available payloads
 
-        // Grab the message and process
-        uint8_t len = rf24Radio.getDynamicPayloadSize();
+//         // Grab the message and process
+//         uint8_t len = rf24Radio.getDynamicPayloadSize();
 
-        // If a corrupt dynamic payload is received, it will be flushed
-        if (!len)
-        {
-            return;
-        }
+//         // If a corrupt dynamic payload is received, it will be flushed
+//         if (!len)
+//         {
+//             return;
+//         }
 
-        rf24Radio.read(receive_payload, len);
+//         rf24Radio.read(receive_payload, len);
 
-        // Put a zero at the end for easy printing etc
-        receive_payload[len] = 0;
+//         // Put a zero at the end for easy printing etc
+//         receive_payload[len] = 0;
 
-        // who was it from?
-        // reset that timer
+//         // who was it from?
+//         // reset that timer
 
-        if (equalID(receive_payload, ZCs[0].heartBeatText))
-        {
-            ZCs[0].resetZoneDevice();
-            //Serial.println("RESET G Watchdog");
-            myWebSerial.println("RESET G Watchdog");
+//         if (equalID(receive_payload, ZCs[0].heartBeatText))
+//         {
+//             ZCs[0].resetZoneDevice();
+//             //Serial.println("RESET G Watchdog");
+//             myWebSerial.println("RESET G Watchdog");
 
-            strcpy(messageText, ZCs[0].heartBeatText);
-        }
-        else if (equalID(receive_payload, ZCs[1].heartBeatText))
-        {
-            ZCs[1].resetZoneDevice();
-            //Serial.println("RESET C Watchdog");
-            myWebSerial.println("RESET C Watchdog");
+//             strcpy(messageText, ZCs[0].heartBeatText);
+//         }
+//         else if (equalID(receive_payload, ZCs[1].heartBeatText))
+//         {
+//             ZCs[1].resetZoneDevice();
+//             //Serial.println("RESET C Watchdog");
+//             myWebSerial.println("RESET C Watchdog");
 
-            strcpy(messageText, ZCs[1].heartBeatText);
-        }
-        else if (equalID(receive_payload, ZCs[2].heartBeatText))
-        {
-            ZCs[2].resetZoneDevice();
-            //Serial.println("RESET S Watchdog");
-            myWebSerial.println("RESET S Watchdog");
+//             strcpy(messageText, ZCs[1].heartBeatText);
+//         }
+//         else if (equalID(receive_payload, ZCs[2].heartBeatText))
+//         {
+//             ZCs[2].resetZoneDevice();
+//             //Serial.println("RESET S Watchdog");
+//             myWebSerial.println("RESET S Watchdog");
 
-            strcpy(messageText, ZCs[2].heartBeatText);
-        }
-        else
-        {
-            Serial.println("NO MATCH");
-            strcpy(messageText, "NO MATCH");
-        }
-    }
-}
+//             strcpy(messageText, ZCs[2].heartBeatText);
+//         }
+//         else
+//         {
+//             Serial.println("NO MATCH");
+//             strcpy(messageText, "NO MATCH");
+//         }
+//     }
+// }
 
-int equalID(char *receive_payload, const char *targetID)
-{
-    // check if same 1st 3 chars
-    if ((receive_payload[0] == targetID[0]) &&
-        (receive_payload[1] == targetID[1]) &&
-        (receive_payload[2] == targetID[2]))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
+// int equalID(char *receive_payload, const char *targetID)
+// {
+//     // check if same 1st 3 chars
+//     if ((receive_payload[0] == targetID[0]) &&
+//         (receive_payload[1] == targetID[1]) &&
+//         (receive_payload[2] == targetID[2]))
+//     {
+//         return true;
+//     }
+//     else
+//     {
+//         return false;
+//     }
+// }
