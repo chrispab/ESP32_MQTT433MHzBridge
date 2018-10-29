@@ -4,6 +4,12 @@ bool MQTTNewData = false;
 int MQTTNewState = 0;     // 0 or 1
 int MQTTSocketNumber = 0; // 1-16
 
+// MQTT stuff
+//IPAddress mqttBroker(192, 168, 0, 200);
+char subscribeTopic[] = "433Bridge/cmnd/#";
+char publishTempTopic[] = "433Bridge/Temperature";
+char publishHumiTopic[] = "433Bridge/Humidity";
+
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
 const char *socketIDFunctionStrings[16];
@@ -153,4 +159,43 @@ void operateSocket(uint8_t socketID, uint8_t state)
     warnLED.fullOn();
     transmitter.sendUnit(socketID, state);
     warnLED.fullOff(); //}
+}
+
+#include <PubSubClient.h>
+extern PubSubClient MQTTclient;
+void connectMQTT()
+{
+    bool MQTTConnectTimeout = false;
+    u16_t startMillis;
+    u16_t timeOutMillis = 20000;
+    // Loop until we're reconnected
+    // check is MQTTclient is connected first
+    MQTTConnectTimeout = false;
+
+    startMillis = millis();
+    while (!MQTTclient.connected() && !MQTTConnectTimeout)
+    {
+        // printO(1, 20, "Connect MQTT..");
+
+        myWebSerial.println("Attempting MQTT connection...");
+        // Attempt to connect
+        //        if (MQTTclient.connect("ESP32Client","",""))
+        if (MQTTclient.connect("ESP32Client"))
+        {
+            myWebSerial.println("connected to MQTT server");
+            MQTTclient.subscribe(subscribeTopic);
+        }
+        else
+        {
+            myWebSerial.println("failed, rc=");
+            Serial.println(MQTTclient.state());
+            myWebSerial.println(" try again ..");
+            // Wait 5 seconds before retrying
+            // delay(5000);
+        }
+        MQTTConnectTimeout =
+            ((millis() - startMillis) > timeOutMillis) ? true : false;
+    }
+    (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
+                          : myWebSerial.println("MQTT Connection attempt Time Out!");
 }

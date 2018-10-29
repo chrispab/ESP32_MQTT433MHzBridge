@@ -1,25 +1,19 @@
 #include "version.h"
-
 #include <NewRemoteTransmitter.h>
-//#include <PubSubClient.h>
 #include <RF24.h>
 #include <WiFi.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-
 #include "MyOTA.h"
 #include "Display.h"
 #include "ZoneController.h"
 #include "secret.h"
-//#include "/home/chris/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/driver/driver/periph_ctrl.h"
 #include "LedFader.h"
 #include "TempSensor.h"
 #include "sendemail.h"
-
 #include "pins.h"
-
 
 //time stuff
 #include <NTPClient.h>
@@ -28,52 +22,28 @@
 #define NTP_OFFSET 60 * 60     // In seconds
 #define NTP_INTERVAL 60 * 1000 // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
-
 WiFiUDP ntpUDP;
 //make unique so can be used in other classes
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 //NTPClient timeClient(ntpUDP);
 
+#include "MQTTLib.h"
+extern char subscribeTopic[];   // = "433Bridge/cmnd/#";
+extern char publishTempTopic[]; // = "433Bridge/Temperature";
+extern char publishHumiTopic[]; // = "433Bridge/Humidity";
+extern bool MQTTNewData;
 // forward decs
-void printWifiStatus();
-boolean processRequest(String &getLine);
-void sendResponse(WiFiClient client);
-void listenForClients(void);
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
-void connectMQTT();
-void connectWiFi();
-void operateSocket(uint8_t socketID, uint8_t state);
 void checkConnections(void);
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
-//void processZoneRF24Message(void);
-int equalID(char *receive_payload, const char *targetID);
-
-void updateDisplayData(void);
-
-
-void processMQTTMessage(void);
-char *getMQTTDisplayString(char *MQTTStatus);
-
+//void updateDisplayData(void);
 void resetWatchdog(void);
-boolean processTouchPads(void);
-//void connectRF24(void);
+//boolean processTouchPads(void);
 
-void WiFiLocalWebPageCtrl(void);
+void IRAM_ATTR resetModule();
 
 // DHT22 stuff
 TempSensor DHT22Sensor;
 
-// WiFi settings
-const char ssid[] = MY_SSID;
-const char pass[] = MY_SSID_PASSWORD;
-int status = WL_IDLE_STATUS;
-
-// MQTT stuff
 IPAddress mqttBroker(192, 168, 0, 200);
-char subscribeTopic[] = "433Bridge/cmnd/#";
-char publishTempTopic[] = "433Bridge/Temperature";
-char publishHumiTopic[] = "433Bridge/Humidity";
-
 WiFiClient WiFiEClient;
 PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
@@ -82,20 +52,8 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
 // param 3 is pulse width, last param is num times control message  is txed
 
-#include "RF24Lib.h"//// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
-//extern RF24 rf24Radio;
- RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
-// uint8_t writePipeLocS[] = "NodeS";
-// uint8_t readPipeLocS[] = "Node0";
-// uint8_t writePipeLocC[] = "NodeC";
-// uint8_t readPipeLocC[] = "Node0";
-// uint8_t writePipeLocG[] = "NodeG";
-// uint8_t readPipeLocG[] = "Node0";
-// // Payload
-// const int max_payload_size = 32;
-// char receive_payload[max_payload_size + 1];
-// // +1 to allow room for a terminating NULL char
-// // static unsigned int goodSecsMax = 15; // 20
+#include "RF24Lib.h" //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
+RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 
 // Global vars
 unsigned long currentMillis = 0;
@@ -106,29 +64,15 @@ unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
-//char tempStr[17]; // buffer for 16 chars and eos
-
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
                   /* data=*/OLED_DATA_PIN);
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 15, "SHD", "SSS")};
-// display vars
-boolean bigTempDisplayEnabled = true;
 
 WiFiServer server(80);
 
-enum displayModes
-{
-    NORMAL,
-    BIG_TEMP,
-    MULTI
-} displayMode;
-
-// int MQTTNewState = 0;     // 0 or 1
-// int MQTTSocketNumber = 0; // 1-16
-//boolean MQTTNewData = false;
 // create object
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
@@ -136,12 +80,7 @@ SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, 700, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
-// // array to enable translation from socket ID (0-15) to string representing
-// // socket function
-// const char *socketIDFunctionStrings[16];
 
-//! WATCHDOG STUFF
-hw_timer_t *timer = NULL;
 
 #include <WebSerial.h>
 WebSerial myWebSerial;
@@ -155,53 +94,41 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 #define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
 
-void IRAM_ATTR resetModule()
-{
-    ets_printf("ESP32 Rebooted by Internal Watchdog\n");
-    esp_restart_noos();
-}
 
 #include "WebSocketLib.h"
 
-extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length); 
+extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
+
+#include "WiFiLib.h"
+#include "WebPageLib.h"
+
+#include "SupportLib.h"
+extern boolean processTouchPads(void);
+extern char *getElapsedTimeStr();
+extern void updateDisplayData();
+extern void checkConnections();
+extern displayModes displayMode;
+extern boolean touchedFlag;// = false;
+
+
+//! WATCHDOG STUFF
+hw_timer_t *timer = NULL;
 
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
-    // // strcpy(socketIDFunctionStrings[0], "blah");
-    // socketIDFunctionStrings[0] = "SKT 1";
-    // socketIDFunctionStrings[1] = "SKT 2";
-    // socketIDFunctionStrings[2] = "L Lights";
-    // socketIDFunctionStrings[3] = "D Lights";
-    // socketIDFunctionStrings[4] = "C Lights";
-    // socketIDFunctionStrings[5] = "DAB";
-    // socketIDFunctionStrings[6] = "Amp";
-    // socketIDFunctionStrings[7] = "TV";
-    // socketIDFunctionStrings[8] = "CSV Rads";
-    // socketIDFunctionStrings[9] = "Fan";
-    // socketIDFunctionStrings[10] = "SKT 11";
-    // socketIDFunctionStrings[11] = "SKT 12";
-    // socketIDFunctionStrings[12] = "SKT 13";
-    // socketIDFunctionStrings[13] = "SKT 14";
-    // socketIDFunctionStrings[14] = "Zone 1";
-    // socketIDFunctionStrings[15] = "Zone 2";
+    Serial.begin(115200);
+    myWebSerial.println("==========running setup==========");
     MQTTLibSetup();
-    
     heartBeatLED.begin(); // initialize
     warnLED.begin();      // initialize
-
-    Serial.begin(115200);
-    //Serial.println("==========running setup==========");
-    myWebSerial.println("==========running setup==========");
-
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
+    // setup OLED display
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
     //displayMode = MULTI;
-    // setup OLED display
     myDisplay.begin();
     myDisplay.setFont(SYS_FONT);
     myDisplay.wipe();
-    
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(2, TITLE_LINE2);
     myDisplay.writeLine(3, TITLE_LINE3);
@@ -215,21 +142,17 @@ void setup()
     myDisplay.writeLine(1, "Connecting to Sensor..");
     myDisplay.refresh();
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
-
     // rf24 stuff
     myDisplay.writeLine(2, "Connecting to RF24..");
     myDisplay.refresh();
     connectRF24();
-
     // attempt to connect to Wifi network:
     myDisplay.writeLine(3, "Connecting to WiFi..");
     myDisplay.refresh();
-
     connectWiFi();
     // you're connected now, so print out the status:
     printWifiStatus();
     //server.begin();
-
     CR;
     myDisplay.writeLine(4, "Connecting to MQTT..");
     myDisplay.refresh();
@@ -239,9 +162,7 @@ void setup()
 
     timeClient.begin();
     timeClient.update();
-
     Serial.println(timeClient.getFormattedTime());
-
     delay(200);
 
     // Send Email
@@ -256,10 +177,8 @@ void setup()
     timerAlarmEnable(timer);                 // enable interrupt
 
     myDisplay.wipe();
-
     //connectWiFi();
     resetWatchdog();
-
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     setupOTA();
@@ -267,12 +186,9 @@ void setup()
 }
 
 
-boolean touchedFlag = false;
-
 void loop()
 {
     ArduinoOTA.handle();
-
     resetWatchdog();
     heartBeatLED.update(); // initialize
     webSocket.loop();
@@ -283,7 +199,6 @@ void loop()
     {
         myWebSerial.println("New Sensor Readings-MQTT published");
     }
-
     webSocket.loop();
     broadcastWS();
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
@@ -300,11 +215,9 @@ void loop()
                "ESP32 Watchdog: Zone 1 power cycled");
     }
     broadcastWS();
-
     // manageRestarts(1);
-    // ZCs[1].manageRestarts(transmitter);
+    // disbale zone 2 restarts for now
     ZCs[1].resetZoneDevice();
-
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
         e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
@@ -319,163 +232,20 @@ void loop()
     broadcastWS();
 }
 
-/***************************************************
-* Send and receive data from Local Page
-****************************************************/
-void WiFiLocalWebPageCtrl(void)
+/**
+ * @brief 
+ * 
+ */
+void IRAM_ATTR resetModule()
 {
-    static char tempDisplayString[20];
-    static char humiDisplayString[20];
-    static char zone1DisplayString[20];
-    static char zone3DisplayString[20];
-    static char MQTTDisplayString[20];
-
-    WiFiClient client = server.available(); // listen for incoming clients
-    //client = server.available();
-    if (client)
-    {                                  // if you get a client,
-        Serial.println("New Client."); // print a message out the serial port
-        String currentLine = "";       // make a String to hold incoming data from the client
-        while (client.connected())
-        { // loop while the client's connected
-            if (client.available())
-            {                           // if there's bytes to read from the client,
-                char c = client.read(); // read a byte, then
-                Serial.write(c);        // print it out the serial monitor
-                if (c == '\n')
-                { // if the byte is a newline character
-
-                    // if the current line is blank, you got two newline characters in a row.
-                    // that's the end of the client HTTP request, so send a response:
-                    if (currentLine.length() == 0)
-                    {
-                        // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                        // and a content-type so the client knows what's coming, then a blank line:
-                        client.println("HTTP/1.1 200 OK");
-                        client.println("Content-type:text/html");
-                        client.println();
-                        client.println("<meta http-equiv='refresh' content='5'>");
-                        client.println(timeClient.getFormattedTime());
-                        client.print("<br>");
-
-                        //Serial.println("!----------! BIG_TEMP Display Refresh");
-                        client.print(DHT22Sensor.getTempDisplayString(tempDisplayString));
-                        client.print("<br>");
-                        client.print(DHT22Sensor.getHumiDisplayString(humiDisplayString));
-                        client.print("<br>");
-                        client.print(getMQTTDisplayString(MQTTDisplayString));
-                        client.print("<br>");
-
-                        client.print(ZCs[0].getDisplayString(zone1DisplayString));
-                        client.print("<br>");
-                        client.print(ZCs[2].getDisplayString(zone3DisplayString));
-                        client.print("<br>");
-                        // Serial.println(zone3DisplayString);
-                        //Serial.println("^----------^");
-                        //! now push out the buffer
-                        client.print("buffer op<br><br>");
-                        client.print(myWebSerial.getBuffer());
-
-                        // The HTTP response ends with another blank line:
-                        client.println();
-                        // break out of the while loop:
-                        break;
-                    }
-                    else
-                    { // if you got a newline, then clear currentLine:
-                        currentLine = "";
-                    }
-                }
-                else if (c != '\r')
-                {                     // if you got anything else but a carriage return character,
-                    currentLine += c; // add it to the end of the currentLine
-                }
-
-                // Check to see if the client request was "GET /H" or "GET /L":
-                if (currentLine.endsWith("GET /H"))
-                {
-                    //digitalWrite(LED_PIN, HIGH);               // GET /H turns the LED on
-                }
-                if (currentLine.endsWith("GET /L"))
-                {
-                    //digitalWrite(LED_PIN, LOW);                // GET /L turns the LED off
-                }
-            }
-        }
-        // close the connection:
-        client.stop();
-        Serial.println("Client Disconnected.");
-    }
+    ets_printf("ESP32 Rebooted by Internal Watchdog\n");
+    esp_restart_noos();
 }
 
-boolean processTouchPads(void)
-{
-    static int lastFilteredVal = 54;
-    static int filteredVal = 54;
-    const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
-    int touchThreshold = 32;
-    int newTouchValue = 100;
-
-    //newTouchValue = touchRead(TOUCH_PIN);
-    //Serial.println(newTouchValue);
-    //delay(500);
-
-    // only read touch sensors every 100ms
-    static unsigned long lastTouchReadMillis = millis();
-    unsigned long touchReadInterval = 25;
-
-    if ((millis() - lastTouchReadMillis) >= touchReadInterval)
-    {
-        newTouchValue = touchRead(TOUCH_PIN);
-        lastTouchReadMillis = millis();
-
-        //! software addition filter here to even out spurious readings
-        int diff;
-        //filteredVal = filteredVal + (filteredVal )
-        if (newTouchValue > filteredVal) //if going up - add onto filteredval
-        {
-            diff = (newTouchValue - filteredVal);
-            filteredVal = filteredVal + (diff / filterConstant);
-        }
-        if (newTouchValue < filteredVal) //if going down - subtract  from filteredval
-        {
-            diff = (filteredVal - newTouchValue);
-            filteredVal = filteredVal - (diff / filterConstant);
-        }
-
-        // !! detect edges
-        if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
-        { //high to low edge finger on
-            Serial.print("$$$]_ Touch Val = ");
-            Serial.println(newTouchValue);
-            Serial.print("filtered Val = ");
-            Serial.println(filteredVal);
-
-            displayMode = MULTI;
-            lastFilteredVal = filteredVal;
-            //lastTouchReadMillis = millis();
-
-            return true;
-        }
-        if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
-        { //low to high edge finger off
-            Serial.print("$$$_[ Touch Val = ");
-            Serial.println(newTouchValue);
-            Serial.print("filtered Val = ");
-            Serial.println(filteredVal);
-            displayMode = BIG_TEMP;
-            lastFilteredVal = filteredVal;
-            //lastTouchReadMillis = millis();
-
-            return true;
-        }
-        lastFilteredVal = filteredVal;
-
-        return false; // no edge detected
-    }
-    return false; // no edge detected
-}
-
+/**
+ * @brief 
+ * 
+ */
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
@@ -484,362 +254,7 @@ void resetWatchdog(void)
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
-        //Serial.println("Reset Module Watchdog......");
         myWebSerial.println("Reset Module Watchdog......");
         lastResetWatchdogMillis = millis();
     }
 }
-
-#include "MQTTLib.h"
-
-extern bool MQTTNewData;
-
-// void processMQTTMessage(void)
-// {
-//     if (MQTTNewData)
-//     {
-//         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
-//         //Serial
-//         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
-//         MQTTNewData = false; // indicate not new data now, processed
-//     }
-// }
-char *getElapsedTimeStr()
-{
-    static char elapsedTimeStr[20] = "Test Time";
-    static unsigned long startMillis = millis();
-
-    unsigned long rawTime = (millis() - startMillis) / 1000;
-
-    unsigned long hours = (rawTime) / 3600;
-    String hoursStr = hours < 10 ? "0" + String(hours) : String(hours);
-
-    unsigned long minutes = (rawTime % 3600) / 60;
-    String minuteStr = minutes < 10 ? "0" + String(minutes) : String(minutes);
-
-    unsigned long seconds = rawTime % 60;
-    String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
-
-    strcpy(elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
-
-    return elapsedTimeStr;
-}
-void updateDisplayData()
-{
-    // static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempDisplayString[20];
-    static char humiDisplayString[20];
-    static char zone1DisplayString[20];
-    static char zone3DisplayString[20];
-    static char MQTTDisplayString[20];
-
-    static char newTempDisplayString[20];
-    static char newHumiDisplayString[20];
-    static char newZone1DisplayString[20];
-    static char newZone3DisplayString[20];
-    static char newMQTTDisplayString[20];
-
-    char justTempString[20];
-
-    // only update screen if status messages or touch sensor is active/has changed
-    // compare new display data to previous display data
-    // if different - update the actual OLED display and previous
-    // if any non zero then data has changed
-    if (strcmp(tempDisplayString,
-               DHT22Sensor.getTempDisplayString(newTempDisplayString)) ||
-        touchedFlag ||
-        strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
-        strcmp(zone3DisplayString,
-               ZCs[2].getDisplayString(newZone3DisplayString)) ||
-        strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
-    {
-        DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
-        // copy new data to old vars
-        strcpy(tempDisplayString, newTempDisplayString);
-        strcpy(humiDisplayString, newHumiDisplayString);
-        strcpy(zone1DisplayString, newZone1DisplayString);
-        strcpy(zone3DisplayString, newZone3DisplayString);
-        strcpy(MQTTDisplayString, newMQTTDisplayString);
-
-        myWebSerial.println("!----------! BIG_TEMP Display Refresh");
-        myWebSerial.println(tempDisplayString);
-        myWebSerial.println(MQTTDisplayString);
-        myWebSerial.println(getElapsedTimeStr());
-        myWebSerial.println(timeClient.getFormattedTime().c_str());
-        myWebSerial.println(zone1DisplayString);
-        myWebSerial.println(zone3DisplayString);
-        myWebSerial.println("^----------^");
-
-        if (displayMode == NORMAL)
-        {
-            // TODO
-        }
-        else if (displayMode == BIG_TEMP)
-        {
-            myDisplay.clearBuffer();
-            myDisplay.setFont(BIG_TEMP_FONT);
-
-            //just get the temp bit of displaystring
-            //end of string is 'C', need to get string from that pos
-            strcpy(justTempString, &tempDisplayString[6]);
-            //myDisplay.writeLine(4, justTempString);
-            //change the 'o'C to a proper 'degrees C' character
-            // strcat(messageString, "\xb0"); // degree symbol
-            justTempString[4] = '\xb0';
-            myDisplay.drawStr(0, 38, justTempString);
-            //myDisplay.refresh();
-
-            myDisplay.setFont(SYS_FONT);
-            myDisplay.drawStr(0, 47, MQTTDisplayString);
-            timeClient.update();
-            //Serial.println(timeClient.getFormattedTime());
-
-            myDisplay.drawStr(0, 55, zone1DisplayString);
-            myDisplay.drawStr(80, 55, getElapsedTimeStr());
-            myDisplay.drawStr(0, 63, zone3DisplayString);
-            myDisplay.drawStr(80, 63, timeClient.getFormattedTime().c_str());
-            myDisplay.sendBuffer();
-        }
-        else if (displayMode == MULTI)
-        {
-            myDisplay.setFont(SYS_FONT);
-            myDisplay.writeLine(1, tempDisplayString);
-            myDisplay.writeLine(2, humiDisplayString);
-            myDisplay.writeLine(3, MQTTDisplayString);
-            myDisplay.writeLine(5, zone1DisplayString);
-            myDisplay.writeLine(6, zone3DisplayString);
-            myDisplay.refresh();
-            Serial.println("!----------! MULTI Display Refresh");
-            Serial.println(tempDisplayString);
-            Serial.println(humiDisplayString);
-            Serial.println(MQTTDisplayString);
-            Serial.println(zone1DisplayString);
-            Serial.println(zone3DisplayString);
-            Serial.println("^----------^");
-        }
-    }
-}
-
-// char *getMQTTDisplayString(char *MQTTStatus)
-// {
-//     char msg[] = "This is a message placeholder";
-//     char socketNumber[10];
-
-//     sprintf(socketNumber, "%d", (MQTTSocketNumber));
-//     strcpy(msg, socketNumber);
-//     strcat(msg, "-");
-//     strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
-//     strcat(msg, ":");
-
-//     if (MQTTNewState == 0)
-//     {
-//         strcat(msg, " OFF");
-//     }
-//     else
-//     {
-//         strcat(msg, " ON");
-//     }
-//     // Serial.println(msg);
-//     strcpy(MQTTStatus, msg);
-//     return MQTTStatus;
-// }
-
-void checkConnections()
-{
-    currentMillis = millis();
-    if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis)
-    {
-        if (!WiFi.isConnected())
-        { //!= WL_CONNECTED)
-            myWebSerial.println("Wifi Needs reconnecting");
-            connectWiFi();
-        }
-        else
-        {
-            myWebSerial.println("OK - WiFi is connected");
-        }
-
-        if (!MQTTclient.connected())
-        {
-            myWebSerial.println("MQTTClient Needs reconnecting");
-            connectMQTT();
-        }
-        else
-        {
-            myWebSerial.println("OK - MQTT is connected");
-        }
-        previousConnCheckMillis = currentMillis;
-    }
-}
-
-
-void connectWiFi()
-{
-    bool wifiConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 20000;
-
-    wifiConnectTimeout = false;
-
-    startMillis = millis();
-    WiFi.begin(ssid, pass);
-    myWebSerial.println("Attempting to connect to SSID: ");
-    myWebSerial.println(ssid);
-    while (!WiFi.isConnected() && !wifiConnectTimeout)
-    {
-
-        // Connect to WPA/WPA2 network. Change this line if using open
-        // or WEP network:
-        // WiFi.begin(ssid, pass);
-
-        // enable jump out if connection attempt has timed out
-        wifiConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (wifiConnectTimeout) ? myWebSerial.println("WiFi Connection attempt Timed Out!")
-                         : myWebSerial.println("Wifi Connection made!");
-
-    server.begin();
-}
-
-void connectMQTT()
-{
-    bool MQTTConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 20000;
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
-    MQTTConnectTimeout = false;
-
-    startMillis = millis();
-    while (!MQTTclient.connected() && !MQTTConnectTimeout)
-    {
-        // printO(1, 20, "Connect MQTT..");
-
-        myWebSerial.println("Attempting MQTT connection...");
-        // Attempt to connect
-        //        if (MQTTclient.connect("ESP32Client","",""))
-        if (MQTTclient.connect("ESP32Client"))
-        {
-            myWebSerial.println("connected to MQTT server");
-            MQTTclient.subscribe(subscribeTopic);
-        }
-        else
-        {
-            myWebSerial.println("failed, rc=");
-            Serial.println(MQTTclient.state());
-            myWebSerial.println(" try again ..");
-            // Wait 5 seconds before retrying
-            // delay(5000);
-        }
-        MQTTConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
-    }
-    (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
-                          : myWebSerial.println("MQTT Connection attempt Time Out!");
-}
-
-// // MQTTclient call back if mqtt messsage rxed
-// void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
-// {
-//     uint8_t socketNumber = 0;
-
-//     // Power<x> 		Show current power state of relay<x> as On or
-//     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
-//     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-//     // do some extra checking on rxed topic and payload?
-//     payload[length] = '\0';
-
-//     char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
-//     strcpy(message, "MQTT Recieved [");
-//     strcat(message, topic);
-//     strcat(message, "] : ");
-//     //copy on payload and add \o terminator
-//     strncat(message, (char *)payload, length);
-//     //Serial.println(message);
-//     myWebSerial.println(message);
-
-//     // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
-//     // either match whole topic string or trim off last 1or 2 chars and
-//     // convert to a number, convert last 1-2 chars to socket number
-//     char lastChar =
-//         topic[strlen(topic) - 1]; // lst char will always be a digit char
-//     // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
-//     char lastButOneChar = topic[strlen(topic) - 2];
-
-//     if ((lastButOneChar >= '0') &&
-//         (lastButOneChar <= '9'))
-//     { // is it a 2 digit number
-//         socketNumber =
-//             ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
-//     }
-//     else
-//     {
-//         socketNumber = (lastChar - '0');
-//     }
-//     // convert from 1-16 range to 0-15 range sendUnit uses
-//     // int socketID = socketNumber - 1;
-//     uint8_t newState = 0; // default to off
-//     if ((payload[0] - '1') == 0)
-//     {
-//         newState = 1;
-//     }
-//     // signal a new command has been rxed and
-//     // topic and payload also available
-//     MQTTNewState = newState;         // 0 or 1
-//     MQTTSocketNumber = socketNumber; // 1-16
-//     MQTTNewData = true;
-// }
-
-// // 0-15, 0,1
-// // mqtt funct to operate a remote power socket
-// // only used by mqtt function
-// void operateSocket(uint8_t socketID, uint8_t state)
-// {
-//     // this is a blocking routine !!!!!!!
-//     char msg[40] = "SSS == Operate Socket: ";
-//     char buff[10];
-
-//     // strcpy(buff, "Socket : ");
-//     sprintf(buff, "%d", (socketID + 1));
-//     strcat(msg, buff);
-//     strcat(msg, "-");
-
-//     //add socket item name
-//     strcat(msg, socketIDFunctionStrings[socketID]);
-
-//     // u8g2.setCursor(55, 40);
-//     if (state == 0)
-//     {
-//         strcat(msg, " - OFF");
-//     }
-//     else
-//     {
-//         strcat(msg, " - ON");
-//     }
-//     //Serial.println(msg);
-//     myWebSerial.println(msg);
-
-//     warnLED.fullOn();
-//     transmitter.sendUnit(socketID, state);
-//     warnLED.fullOff(); //}
-// }
-
-void printWifiStatus()
-{
-    // print the SSID of the network you're attached to:
-    Serial.print("SSID: ");
-    Serial.println(WiFi.SSID());
-
-    // print your WiFi shield's IP address:
-    IPAddress ip = WiFi.localIP();
-    Serial.print("IP Address: ");
-    Serial.println(ip);
-
-    // print the received signal strength:
-    long rssi = WiFi.RSSI();
-    Serial.print("signal strength (RSSI):");
-    Serial.print(rssi);
-    Serial.println(" dBm");
-}
-
