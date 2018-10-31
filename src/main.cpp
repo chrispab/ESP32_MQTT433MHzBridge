@@ -17,13 +17,11 @@
 
 //time stuff
 #include <NTPClient.h>
-//#include <WiFi.h>
 #include <WiFiUdp.h>
 #define NTP_OFFSET 60 * 60     // In seconds
 #define NTP_INTERVAL 60 * 1000 // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
-//make unique so can be used in other classes
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 //NTPClient timeClient(ntpUDP);
 
