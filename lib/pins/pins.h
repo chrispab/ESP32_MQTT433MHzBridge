@@ -16,9 +16,13 @@
 #define RED_LED_PIN GPIO_NUM_26               //LHS_P_7  ??
 
 #define TOUCH_SENSOR_1 GPIO_NUM_13 //LHS_P_3
-#define TOUCH_SENSOR_2 GPIO_NUM_12 //LHS_P_4
+#define TOUCH_SENSOR_2 GPIO_NUM_12 //LHS_P_4 - 
 #define TOUCH_SENSOR_3 GPIO_NUM_14 //LHS_P_5
 #define TOUCH_SENSOR_4 GPIO_NUM_27 //LHS_P_6
 #define TOUCH_SENSOR_5 GPIO_NUM_15 // RHS_P_3  !! also used by 433 Tx??? - resolve
 
-#define TOUCH_PIN T4 // ESP32 Pin gpio13
+
+//currently exposed on box via srew head
+#define TOUCH_PIN T4 // ESP32 Pin gpio13 rhs of panel
+//gpio12 is the other exposed screw head
+

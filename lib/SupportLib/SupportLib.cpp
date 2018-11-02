@@ -35,20 +35,17 @@ boolean processTouchPads(void)
     static int lastFilteredVal = 54;
     static int filteredVal = 54;
     const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
-    int touchThreshold = 32;
+    int touchThreshold = 45;
     int newTouchValue = 100;
 
-    //newTouchValue = touchRead(TOUCH_PIN);
-    //Serial.println(newTouchValue);
-    //delay(500);
-
-    // only read touch sensors every 100ms
     static unsigned long lastTouchReadMillis = millis();
     unsigned long touchReadInterval = 25;
 
     if ((millis() - lastTouchReadMillis) >= touchReadInterval)
     {
-        newTouchValue = touchRead(TOUCH_PIN);
+        //newTouchValue = touchRead(TOUCH_PIN);
+        newTouchValue = touchRead(TOUCH_SENSOR_2);
+
         lastTouchReadMillis = millis();
 
         //! software addition filter here to even out spurious readings
@@ -73,7 +70,7 @@ boolean processTouchPads(void)
             Serial.print("filtered Val = ");
             Serial.println(filteredVal);
 
-            displayMode = MULTI;
+            //displayMode = MULTI;
             lastFilteredVal = filteredVal;
             //lastTouchReadMillis = millis();
 
@@ -85,11 +82,11 @@ boolean processTouchPads(void)
             Serial.println(newTouchValue);
             Serial.print("filtered Val = ");
             Serial.println(filteredVal);
-            displayMode = BIG_TEMP;
+            //displayMode = BIG_TEMP;
             lastFilteredVal = filteredVal;
             //lastTouchReadMillis = millis();
 
-            return true;
+            return false;
         }
         lastFilteredVal = filteredVal;
 

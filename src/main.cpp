@@ -78,8 +78,6 @@ SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, 700, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
-
-
 #include <WebSerial.h>
 WebSerial myWebSerial;
 
@@ -91,7 +89,6 @@ WiFiMulti WiFiMulti;
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 #define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
-
 
 #include "WebSocketLib.h"
 
@@ -106,8 +103,11 @@ extern char *getElapsedTimeStr();
 extern void updateDisplayData();
 extern void checkConnections();
 extern displayModes displayMode;
-extern boolean touchedFlag;// = false;
+extern boolean touchedFlag; // = false;
 
+#include "TouchPad.h"
+TouchPad touchPad1 = TouchPad(TOUCH_SENSOR_1);
+TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
@@ -117,8 +117,8 @@ void setup()
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
     MQTTLibSetup();
-    heartBeatLED.begin(); // initialize
-    warnLED.begin();      // initialize
+    heartBeatLED.begin();                        // initialize
+    warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
     // setup OLED display
     displayMode = NORMAL;
@@ -183,7 +183,6 @@ void setup()
     resetWatchdog();
 }
 
-
 void loop()
 {
     ArduinoOTA.handle();
@@ -203,6 +202,14 @@ void loop()
     updateDisplayData();
     processMQTTMessage(); // check flags set above and act on
     touchedFlag = processTouchPads();
+    if (touchPad1.getState())
+    {
+        displayMode = MULTI;
+    }
+    else
+    {
+        displayMode = BIG_TEMP;
+    }
     webSocket.loop();
     broadcastWS();
     processZoneRF24Message(); // process any zone watchdog messages
