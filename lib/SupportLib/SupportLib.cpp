@@ -30,70 +30,70 @@ boolean touchedFlag = false;
  * 
  * @return boolean true if touch detected
  */
-boolean processTouchPads(void)
-{
-    static int lastFilteredVal = 54;
-    static int filteredVal = 54;
-    const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
-    int touchThreshold = 45;
-    int newTouchValue = 100;
+// boolean processTouchPads(void)
+// {
+//     static int lastFilteredVal = 54;
+//     static int filteredVal = 54;
+//     const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
+//     int touchThreshold = 45;
+//     int newTouchValue = 100;
 
-    static unsigned long lastTouchReadMillis = millis();
-    unsigned long touchReadInterval = 25;
+//     static unsigned long lastTouchReadMillis = millis();
+//     unsigned long touchReadInterval = 25;
 
-    if ((millis() - lastTouchReadMillis) >= touchReadInterval)
-    {
-        //newTouchValue = touchRead(TOUCH_PIN);
-        newTouchValue = touchRead(TOUCH_SENSOR_2);
+//     if ((millis() - lastTouchReadMillis) >= touchReadInterval)
+//     {
+//         //newTouchValue = touchRead(TOUCH_PIN);
+//         newTouchValue = touchRead(TOUCH_SENSOR_2);
 
-        lastTouchReadMillis = millis();
+//         lastTouchReadMillis = millis();
 
-        //! software addition filter here to even out spurious readings
-        int diff;
-        //filteredVal = filteredVal + (filteredVal )
-        if (newTouchValue > filteredVal) //if going up - add onto filteredval
-        {
-            diff = (newTouchValue - filteredVal);
-            filteredVal = filteredVal + (diff / filterConstant);
-        }
-        if (newTouchValue < filteredVal) //if going down - subtract  from filteredval
-        {
-            diff = (filteredVal - newTouchValue);
-            filteredVal = filteredVal - (diff / filterConstant);
-        }
+//         //! software addition filter here to even out spurious readings
+//         int diff;
+//         //filteredVal = filteredVal + (filteredVal )
+//         if (newTouchValue > filteredVal) //if going up - add onto filteredval
+//         {
+//             diff = (newTouchValue - filteredVal);
+//             filteredVal = filteredVal + (diff / filterConstant);
+//         }
+//         if (newTouchValue < filteredVal) //if going down - subtract  from filteredval
+//         {
+//             diff = (filteredVal - newTouchValue);
+//             filteredVal = filteredVal - (diff / filterConstant);
+//         }
 
-        // !! detect edges
-        if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
-        { //high to low edge finger on
-            Serial.print("$$$]_ Touch Val = ");
-            Serial.println(newTouchValue);
-            Serial.print("filtered Val = ");
-            Serial.println(filteredVal);
+//         // !! detect edges
+//         if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
+//         { //high to low edge finger on
+//             Serial.print("$$$]_ Touch Val = ");
+//             Serial.println(newTouchValue);
+//             Serial.print("filtered Val = ");
+//             Serial.println(filteredVal);
 
-            //displayMode = MULTI;
-            lastFilteredVal = filteredVal;
-            //lastTouchReadMillis = millis();
+//             //displayMode = MULTI;
+//             lastFilteredVal = filteredVal;
+//             //lastTouchReadMillis = millis();
 
-            return true;
-        }
-        if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
-        { //low to high edge finger off
-            Serial.print("$$$_[ Touch Val = ");
-            Serial.println(newTouchValue);
-            Serial.print("filtered Val = ");
-            Serial.println(filteredVal);
-            //displayMode = BIG_TEMP;
-            lastFilteredVal = filteredVal;
-            //lastTouchReadMillis = millis();
+//             return true;
+//         }
+//         if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
+//         { //low to high edge finger off
+//             Serial.print("$$$_[ Touch Val = ");
+//             Serial.println(newTouchValue);
+//             Serial.print("filtered Val = ");
+//             Serial.println(filteredVal);
+//             //displayMode = BIG_TEMP;
+//             lastFilteredVal = filteredVal;
+//             //lastTouchReadMillis = millis();
 
-            return false;
-        }
-        lastFilteredVal = filteredVal;
+//             return false;
+//         }
+//         lastFilteredVal = filteredVal;
 
-        return false; // no edge detected
-    }
-    return false; // no edge detected
-}
+//         return false; // no edge detected
+//     }
+//     return false; // no edge detected
+//}
 
 /**
  * @brief Get the Elapsed Time Str pointer

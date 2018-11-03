@@ -1,34 +1,46 @@
-
 #include "TouchPad.h"
 #include <Arduino.h>
 
 TouchPad::TouchPad(int pin)
 {
-    _pin=pin;
+    _pin = pin;
+    state= false;
+    rawValue = 0;
     lastFilteredVal = 54;
-    filteredVal = 54;
+    filteredVal = 65;
     filterConstant = 3; // 2 ishalf, 4 is quarter etc
-    touchThreshold = 35;
+    touchThreshold = 40;
     newTouchValue = 100;
     lastTouchReadMillis = millis();
     touchReadInterval = 25;
 }
 
+int TouchPad::getValue(void)
+{
+    //return rawValue;
+    return lastFilteredVal;
+}
 bool TouchPad::getState(void)
 {
+    //return rawValue;
+    processTouchPad();
+    return state;
+}
 
-    // lastFilteredVal = 54;
-    // filteredVal = 54;
-    // filterConstant = 3; // 2 ishalf, 4 is quarter etc
-    // touchThreshold = 32;
-    // newTouchValue = 100;
-    // only read touch sensors every 100ms
-    // static unsigned long lastTouchReadMillis = millis();
-    // unsigned long touchReadInterval = 25;
-
+bool TouchPad::processTouchPad(void)
+{
     if ((millis() - lastTouchReadMillis) >= touchReadInterval)
     {
         newTouchValue = touchRead(_pin);
+        rawValue = newTouchValue;
+        //Serial.println("===touchRead");
+        //Serial.println(newTouchValue);
+        // if (newTouchValue<30){
+        //     return true;
+        // }else {
+        //     return false;
+        // }
+
         lastTouchReadMillis = millis();
 
         //! software addition filter here to even out spurious readings
@@ -56,7 +68,7 @@ bool TouchPad::getState(void)
             //displayMode = MULTI;
             lastFilteredVal = filteredVal;
             //lastTouchReadMillis = millis();
-
+            state=true;
             return true;
         }
         if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
@@ -68,10 +80,11 @@ bool TouchPad::getState(void)
             //displayMode = BIG_TEMP;
             lastFilteredVal = filteredVal;
             //lastTouchReadMillis = millis();
-
+            state=false;
             return true;
         }
         lastFilteredVal = filteredVal;
+        //Serial.println(lastFilteredVal);
 
         return false; // no edge detected
     }

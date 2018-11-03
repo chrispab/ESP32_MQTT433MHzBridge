@@ -199,17 +199,43 @@ void loop()
     webSocket.loop();
     broadcastWS();
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    updateDisplayData();
-    processMQTTMessage(); // check flags set above and act on
-    touchedFlag = processTouchPads();
+    //touchedFlag = processTouchPads();
+
+    touchedFlag = touchPad1.getState();
+    //if (touchPad1.getValue()<30)
     if (touchPad1.getState())
     {
         displayMode = MULTI;
+        //touchedFlag = false;
     }
     else
     {
         displayMode = BIG_TEMP;
+        //touchedFlag = true;
+        // myWebSerial.println("===FALSE");
     }
+    if (touchPad2.getState())
+    {
+        //check if time to publish
+        if (millis() % 2000 == 0)
+        {
+            warnLED.fullOn();
+            delay(50);
+            warnLED.fullOff();
+            MQTTclient.publish("433Bridge/Button1", "1");
+        }
+        displayMode = MULTI;
+        //touchedFlag = false;
+    }
+    else
+    {
+        displayMode = BIG_TEMP;
+        //touchedFlag = true;
+        // myWebSerial.println("===FALSE");
+    }
+    updateDisplayData();
+    processMQTTMessage(); // check flags set above and act on
+
     webSocket.loop();
     broadcastWS();
     processZoneRF24Message(); // process any zone watchdog messages
