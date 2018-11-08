@@ -164,14 +164,14 @@ void setup()
     delay(200);
 
     // Send Email
-    e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>", EMAIL_SUBJECT,
+    e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT,
            "programm started/restarted");
 
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
-    // 60 secs
-    timerAlarmWrite(timer, 60000000, false); // set time in us
+    // n0 secs
+    timerAlarmWrite(timer, 30000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 
     myDisplay.wipe();
@@ -193,30 +193,17 @@ void loop()
     broadcastWS();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
-    {
         myWebSerial.println("New Sensor Readings-MQTT published");
-    }
+
     webSocket.loop();
     broadcastWS();
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    //touchedFlag = processTouchPads();
 
     touchedFlag = touchPad1.getState();
-    //if (touchPad1.getValue()<30)
-    if (touchPad1.getState())
-    {
-        displayMode = MULTI;
-        //touchedFlag = false;
-    }
-    else
-    {
-        displayMode = BIG_TEMP;
-        //touchedFlag = true;
-        // myWebSerial.println("===FALSE");
-    }
+    (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
+
     if (touchPad2.getState())
     {
-        //check if time to publish
         if (millis() % 2000 == 0)
         {
             warnLED.fullOn();
@@ -225,13 +212,10 @@ void loop()
             MQTTclient.publish("433Bridge/Button1", "1");
         }
         displayMode = MULTI;
-        //touchedFlag = false;
     }
     else
     {
         displayMode = BIG_TEMP;
-        //touchedFlag = true;
-        // myWebSerial.println("===FALSE");
     }
     updateDisplayData();
     processMQTTMessage(); // check flags set above and act on
@@ -241,7 +225,7 @@ void loop()
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
-        e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
+        e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
                "ESP32 Watchdog: Zone 1 power cycled",
                "ESP32 Watchdog: Zone 1 power cycled");
     }
@@ -251,16 +235,16 @@ void loop()
     ZCs[1].resetZoneDevice();
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
-        e.send("<cbattisson@gmail.com>", "<cbattisson@gmail.com>",
+        e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
                "ESP32 Watchdog: Zone 3 power cycled",
                "ESP32 Watchdog: Zone 3 power cycled");
     }
     broadcastWS();
-    checkConnections(); // reconnect if reqd
+    checkConnections(); // and reconnect if reqd
     webSocket.loop();
     WiFiLocalWebPageCtrl();
-    webSocket.loop();
-    broadcastWS();
+    //webSocket.loop();
+    //broadcastWS();
 }
 
 /**
