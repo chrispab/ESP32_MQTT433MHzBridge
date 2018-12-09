@@ -47,7 +47,7 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 256, 4);
+NewRemoteTransmitter transmitter(282830, TX433PIN, 260, 4);
 // param 3 is pulse width, last param is num times control message  is txed
 
 #include "RF24Lib.h" //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
@@ -75,8 +75,8 @@ WiFiServer server(80);
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 10, 700, true);
-LedFader warnLED(RED_LED_PIN, 2, 0, 10, 451, true);
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 2000, true);
+LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 #include <WebSerial.h>
 WebSerial myWebSerial;
