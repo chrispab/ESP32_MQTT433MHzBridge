@@ -11,7 +11,7 @@ extern TempSensor DHT22Sensor;
 extern ZoneController ZCs[];
 
 #include "WebSerial.h"
-extern WebSerial myWebSerial; 
+extern WebSerial myWebSerial;
 
 #include "MQTTLib.h"
 extern char *getMQTTDisplayString(char *MQTTDisplayString);
@@ -23,7 +23,6 @@ extern NTPClient timeClient;
 extern Display myDisplay;
 
 boolean touchedFlag = false;
-
 
 /**
  * @brief scan touchpins and check for a touch
@@ -127,6 +126,9 @@ extern bool touchedFlag;
  * @brief 
  * 
  */
+#include "LedFader.h"
+extern LedFader warnLED;
+
 void updateDisplayData()
 {
     // static unsigned long lastDisplayUpdateMillis = 0;
@@ -144,6 +146,16 @@ void updateDisplayData()
 
     char justTempString[20];
 
+    //blip red led if zone display has changed
+    if (
+        strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
+        strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
+        )
+    {
+        warnLED.fullOn();
+        delay(10);
+        warnLED.fullOff();
+    }
     // only update screen if status messages or touch sensor is active/has changed
     // compare new display data to previous display data
     // if different - update the actual OLED display and previous

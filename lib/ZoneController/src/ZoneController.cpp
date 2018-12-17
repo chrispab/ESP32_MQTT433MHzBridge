@@ -99,6 +99,8 @@ void ZoneController::resetZoneDevice(void) {
 
 // return a text string with current status of zone controller
 // e.g ""
+
+
 char *ZoneController::getDisplayString(char *statusMessage) {
     // all three lines can be displayed at once
     const char rebootMsg[] = {"Reboot: "};
@@ -118,12 +120,6 @@ char *ZoneController::getDisplayString(char *statusMessage) {
     if (this->isRebooting) {
         secsLeft = (this->rebootMillisLeft) / 1000UL;
 
-        //Serial.print("--rebootMillisLeft: ");
-        //Serial.println((this->rebootMillisLeft));
-
-        //Serial.print("--secsLeft var: ");
-        //Serial.println(secsLeft);
-
         // build string to show if cycling or coming back up
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
@@ -135,7 +131,7 @@ char *ZoneController::getDisplayString(char *statusMessage) {
             sprintf(buf, "%d", secsLeft);
             strcat(str_output, buf);
         }
-    } else if ((secsSinceAck > goodSecsMax)) {
+    } else if ((secsSinceAck > goodSecsMax)) {// no heartbeat received from zonecontroller
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         strcat(str_output, this->badStatusMess);
@@ -143,6 +139,12 @@ char *ZoneController::getDisplayString(char *statusMessage) {
 
         sprintf(buf, "%d", secsSinceAck);
         strcat(str_output, buf);
+
+        //flash led every 1 sec
+        
+        // warnLED.fullOn();
+        // delay(10);
+        // warnLED.fullOff();
     } else {
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
