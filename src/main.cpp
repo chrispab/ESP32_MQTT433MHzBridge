@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "version.h"
 #include <NewRemoteTransmitter.h>
 #include <RF24.h>

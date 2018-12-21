@@ -169,9 +169,9 @@ boolean reconnect()
     if (MQTTclient.connect("ESP32Client"))
     {
         // Once connected, publish an announcement...
-        MQTTclient.publish("outTopic", "hello world");
+        //MQTTclient.publish("outTopic", "hello world");
         // ... and resubscribe
-        MQTTclient.subscribe(subscribeTopic);
+        MQTTclient.connect("ESP32Client");
     }
     return MQTTclient.connected();
 }
@@ -180,11 +180,10 @@ long lastReconnectAttempt = 0;
 void connectMQTT()
 {
     bool MQTTConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 5000;
+    u16_t startMillis = millis();
+    u16_t timeOutMillis = 1000;
     // Loop until we're reconnected
     // check is MQTTclient is connected first
-    MQTTConnectTimeout = false;
 
     // if (!MQTTclient.connected())
     // {
@@ -193,8 +192,9 @@ void connectMQTT()
     //     {
     //         lastReconnectAttempt = now;
     //         // Attempt to reconnect
-    //         if (reconnect())
+    //         if (MQTTclient.connect("ESP32Client"))
     //         {
+    //   MQTTclient.connect("ESP32Client")
     //             lastReconnectAttempt = 0;
     //         }
     //     }
@@ -202,29 +202,33 @@ void connectMQTT()
     // return;
 
     startMillis = millis();
-    while (!MQTTclient.connected() && !MQTTConnectTimeout)
+    MQTTConnectTimeout = false;
+    long now = millis();
+    if (now - lastReconnectAttempt > 5000)
     {
-        // printO(1, 20, "Connect MQTT..");
+        //loop till connected or timed out
+        while (!MQTTclient.connected() && !MQTTConnectTimeout)
+        {
+            myWebSerial.println("Attempting MQTT connection...");
 
-        myWebSerial.println("Attempting MQTT connection...");
-        // Attempt to connect
-        //        if (MQTTclient.connect("ESP32Client","",""))
-        if (MQTTclient.connect("ESP32Client"))
-        {
-            myWebSerial.println("connected to MQTT server");
-            MQTTclient.subscribe(subscribeTopic);
-        }
-        else
-        {
-            myWebSerial.println("failed, rc=");
-            Serial.println(MQTTclient.state());
-            myWebSerial.println(" try again ..");
-            // Wait 5 seconds before retrying
-            // delay(5000);
+            lastReconnectAttempt = now;
+            if (MQTTclient.connect("ESP32Client"))
+            {
+                myWebSerial.println("connected to MQTT server");
+                MQTTclient.subscribe(subscribeTopic);
+                lastReconnectAttempt = 0;
+            }
+            else
+            {
+                myWebSerial.println("failed, rc=");
+                Serial.println(MQTTclient.state());
+                myWebSerial.println(" try again ..");
+            }
         }
         MQTTConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
+
     (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
                           : myWebSerial.println("MQTT Connection attempt Time Out!");
 }
