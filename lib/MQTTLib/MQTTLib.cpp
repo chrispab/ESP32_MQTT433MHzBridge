@@ -14,23 +14,24 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 // socket function
 const char *socketIDFunctionStrings[16];
 // strcpy(socketIDFunctionStrings[0], "blah");
-void MQTTLibSetup(void){
-socketIDFunctionStrings[0] = "SKT 1";
-socketIDFunctionStrings[1] = "SKT 2";
-socketIDFunctionStrings[2] = "L Lights";
-socketIDFunctionStrings[3] = "D Lights";
-socketIDFunctionStrings[4] = "C Lights";
-socketIDFunctionStrings[5] = "DAB";
-socketIDFunctionStrings[6] = "Amp";
-socketIDFunctionStrings[7] = "TV";
-socketIDFunctionStrings[8] = "CSV Rads";
-socketIDFunctionStrings[9] = "Fan";
-socketIDFunctionStrings[10] = "SKT 11";
-socketIDFunctionStrings[11] = "SKT 12";
-socketIDFunctionStrings[12] = "SKT 13";
-socketIDFunctionStrings[13] = "SKT 14";
-socketIDFunctionStrings[14] = "Zone 1";
-socketIDFunctionStrings[15] = "Zone 2";
+void MQTTLibSetup(void)
+{
+    socketIDFunctionStrings[0] = "X Lights";
+    socketIDFunctionStrings[1] = "SKT 2";
+    socketIDFunctionStrings[2] = "L Lights";
+    socketIDFunctionStrings[3] = "D Lights";
+    socketIDFunctionStrings[4] = "C Lights";
+    socketIDFunctionStrings[5] = "DAB";
+    socketIDFunctionStrings[6] = "Amp";
+    socketIDFunctionStrings[7] = "TV";
+    socketIDFunctionStrings[8] = "CSV Rads";
+    socketIDFunctionStrings[9] = "Fan";
+    socketIDFunctionStrings[10] = "SKT 11";
+    socketIDFunctionStrings[11] = "SKT 12";
+    socketIDFunctionStrings[12] = "SKT 13";
+    socketIDFunctionStrings[13] = "Zone 1";
+    socketIDFunctionStrings[14] = "Zone 3";
+    socketIDFunctionStrings[15] = "Zone X-16";
 }
 
 void processMQTTMessage(void)
@@ -68,9 +69,8 @@ char *getMQTTDisplayString(char *MQTTStatus)
     return MQTTStatus;
 }
 
-
 #include "WebSerial.h"
-extern WebSerial myWebSerial; 
+extern WebSerial myWebSerial;
 // MQTTclient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 {
@@ -163,14 +163,43 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
+
+boolean reconnect()
+{
+    if (MQTTclient.connect("ESP32Client"))
+    {
+        // Once connected, publish an announcement...
+        MQTTclient.publish("outTopic", "hello world");
+        // ... and resubscribe
+        MQTTclient.subscribe(subscribeTopic);
+    }
+    return MQTTclient.connected();
+}
+long lastReconnectAttempt = 0;
+
 void connectMQTT()
 {
     bool MQTTConnectTimeout = false;
     u16_t startMillis;
-    u16_t timeOutMillis = 20000;
+    u16_t timeOutMillis = 5000;
     // Loop until we're reconnected
     // check is MQTTclient is connected first
     MQTTConnectTimeout = false;
+
+    // if (!MQTTclient.connected())
+    // {
+    //     long now = millis();
+    //     if (now - lastReconnectAttempt > 5000)
+    //     {
+    //         lastReconnectAttempt = now;
+    //         // Attempt to reconnect
+    //         if (reconnect())
+    //         {
+    //             lastReconnectAttempt = 0;
+    //         }
+    //     }
+    // }
+    // return;
 
     startMillis = millis();
     while (!MQTTclient.connected() && !MQTTConnectTimeout)

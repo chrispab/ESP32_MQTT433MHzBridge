@@ -112,6 +112,9 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
 
+
+// ! big issue - does not work when no internet connection - resolve
+
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
     Serial.begin(115200);

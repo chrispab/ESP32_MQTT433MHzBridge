@@ -146,7 +146,7 @@ void updateDisplayData()
 
     char justTempString[20];
 
-    //blip red led if zone display has changed
+    //blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
