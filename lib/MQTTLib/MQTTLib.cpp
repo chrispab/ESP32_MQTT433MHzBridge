@@ -175,7 +175,11 @@ boolean reconnect()
     }
     return MQTTclient.connected();
 }
-long lastReconnectAttempt = 0;
+
+
+
+// set so ensures initial connect attempt, assume now gives 0
+long lastReconnectAttempt = -6000;
 
 void connectMQTT()
 {
@@ -204,8 +208,12 @@ void connectMQTT()
     startMillis = millis();
     MQTTConnectTimeout = false;
     long now = millis();
+    myWebSerial.println("In MQTT connectMQTT...");
+
     if (now - lastReconnectAttempt > 5000)
     {
+        myWebSerial.println("ready to try MQTT reconnectMQTT...");
+
         //loop till connected or timed out
         while (!MQTTclient.connected() && !MQTTConnectTimeout)
         {
