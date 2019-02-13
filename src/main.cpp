@@ -185,6 +185,8 @@ void setup()
     webSocket.onEvent(webSocketEvent);
     setupOTA();
     resetWatchdog();
+
+    //MQTTclient.
 }
 
 void loop()
@@ -201,7 +203,7 @@ void loop()
 
     webSocket.loop();
     broadcastWS();
-    MQTTclient.loop(); // process any MQTT stuff, returned in callback
+    //MQTTclient.loop(); // process any MQTT stuff, returned in callback
 
     touchedFlag = touchPad1.getState();
     (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
@@ -222,6 +224,8 @@ void loop()
         displayMode = BIG_TEMP;
     }
     updateDisplayData();
+
+    MQTTclient.loop(); // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
 
     webSocket.loop();

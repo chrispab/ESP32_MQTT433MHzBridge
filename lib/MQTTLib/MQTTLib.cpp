@@ -31,7 +31,7 @@ void MQTTLibSetup(void)
     socketIDFunctionStrings[12] = "SKT 13";
     socketIDFunctionStrings[13] = "Zone 1";
     socketIDFunctionStrings[14] = "Zone 3";
-    socketIDFunctionStrings[15] = "Zone X-16";
+    socketIDFunctionStrings[15] = "Outer Sensor";
 }
 
 void processMQTTMessage(void)
@@ -79,19 +79,19 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // Power<x> 		Show current power state of relay<x> as On or
     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-    // do some extra checking on rxed topic and payload?
+    //! do some extra checking on rxed topic and payload?
     payload[length] = '\0';
 
     char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
     strcpy(message, "MQTT Recieved [");
     strcat(message, topic);
     strcat(message, "] : ");
-    //copy on payload and add \o terminator
+    //append payload and add \o terminator
     strncat(message, (char *)payload, length);
     //Serial.println(message);
     myWebSerial.println(message);
 
-    // e.g topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
+    // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
     // either match whole topic string or trim off last 1or 2 chars and
     // convert to a number, convert last 1-2 chars to socket number
     char lastChar =
@@ -99,17 +99,18 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
     char lastButOneChar = topic[strlen(topic) - 2];
 
-    if ((lastButOneChar >= '0') &&
-        (lastButOneChar <= '9'))
-    { // is it a 2 digit number
-        socketNumber =
-            ((lastButOneChar - '0') * 10) + (lastChar - '0'); // calc actual int
+    // if ((lastButOneChar >= '0') &&
+    //     (lastButOneChar <= '9'))
+    socketNumber = lastChar - '0';
+    if ( (lastButOneChar == '1') )
+    { // it is a 2 digit number
+        socketNumber = socketNumber + 10; // calc actual int
     }
-    else
-    {
-        socketNumber = (lastChar - '0');
-    }
-    // convert from 1-16 range to 0-15 range sendUnit uses
+    // else
+    // {
+    //     socketNumber = (lastChar - '0');
+    // }
+    // // convert from 1-16 range to 0-15 range sendUnit uses
     // int socketID = socketNumber - 1;
     uint8_t newState = 0; // default to off
     if ((payload[0] - '1') == 0)
@@ -175,8 +176,6 @@ boolean reconnect()
     }
     return MQTTclient.connected();
 }
-
-
 
 // set so ensures initial connect attempt, assume now gives 0
 long lastReconnectAttempt = -6000;
