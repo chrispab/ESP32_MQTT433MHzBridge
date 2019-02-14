@@ -129,20 +129,22 @@ extern bool touchedFlag;
 #include "LedFader.h"
 extern LedFader warnLED;
 
+    // static unsigned long lastDisplayUpdateMillis = 0;
+    static char tempDisplayString[20] = "1234567890123456789";
+    static char humiDisplayString[20] = "1234567890123456789";
+    static char zone1DisplayString[20] = "1234567890123456789";
+    static char zone3DisplayString[20] = "1234567890123456789";
+    static char MQTTDisplayString[20] = "1234567890123456789";
+
+    static char newTempDisplayString[20] = "1234567890123456789";
+    static char newHumiDisplayString[20] = "1234567890123456789";
+    static char newZone1DisplayString[20] = "1234567890123456789";
+    static char newZone3DisplayString[20] = "1234567890123456789";
+    static char newMQTTDisplayString[20] = "1234567890123456789";
+
 void updateDisplayData()
 {
-    // static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempDisplayString[20];
-    static char humiDisplayString[20];
-    static char zone1DisplayString[20];
-    static char zone3DisplayString[20];
-    static char MQTTDisplayString[20];
 
-    static char newTempDisplayString[20];
-    static char newHumiDisplayString[20];
-    static char newZone1DisplayString[20];
-    static char newZone3DisplayString[20];
-    static char newMQTTDisplayString[20];
 
     char justTempString[20];
 
@@ -185,11 +187,13 @@ void updateDisplayData()
         myWebSerial.println(zone3DisplayString);
         myWebSerial.println("^----------^");
 
-        if (displayMode == NORMAL)
-        {
-            // TODO
-        }
-        else if (displayMode == BIG_TEMP)
+        // if (displayMode == NORMAL)
+        // {
+        //     // TODO
+        // }
+        // else 
+        
+        if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {
             myDisplay.clearBuffer();
             myDisplay.setFont(BIG_TEMP_FONT);

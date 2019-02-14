@@ -165,17 +165,17 @@ void operateSocket(uint8_t socketID, uint8_t state)
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 
-boolean reconnect()
-{
-    if (MQTTclient.connect("ESP32Client"))
-    {
-        // Once connected, publish an announcement...
-        //MQTTclient.publish("outTopic", "hello world");
-        // ... and resubscribe
-        MQTTclient.connect("ESP32Client");
-    }
-    return MQTTclient.connected();
-}
+// boolean reconnect()
+// {
+//     if (MQTTclient.connect("ESP32Client"))
+//     {
+//         // Once connected, publish an announcement...
+//         //MQTTclient.publish("outTopic", "hello world");
+//         // ... and resubscribe
+//         MQTTclient.connect("ESP32Client");
+//     }
+//     return MQTTclient.connected();
+// }
 
 // set so ensures initial connect attempt, assume now gives 0
 long lastReconnectAttempt = -6000;

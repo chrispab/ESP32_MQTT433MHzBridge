@@ -76,7 +76,7 @@ WiFiServer server(80);
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
             5000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 2000, true);
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 1500, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 #include <WebSerial.h>
@@ -118,12 +118,15 @@ hw_timer_t *timer = NULL;
 
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
+    Serial.println(1);
+
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
     MQTTLibSetup();
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
+    Serial.println(2);
     // setup OLED display
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
@@ -161,23 +164,23 @@ void setup()
     connectMQTT();
     myDisplay.writeLine(5, "All Connected");
     myDisplay.refresh();
-
+Serial.println(3);
     timeClient.begin();
     timeClient.update();
     Serial.println(timeClient.getFormattedTime());
     delay(200);
-
+Serial.println(4);
     // Send Email
-    e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT,
-           "programm started/restarted");
-
+    //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT,
+    //       "programm started/restarted");
+Serial.println(5);
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
     // n0 secs
     timerAlarmWrite(timer, 30000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
-
+Serial.println(6);
     myDisplay.wipe();
     //connectWiFi();
     resetWatchdog();
@@ -191,6 +194,9 @@ void setup()
 
 void loop()
 {
+    MQTTclient.loop(); // process any MQTT stuff, returned in callback
+    processMQTTMessage(); // check flags set above and act on
+
     ArduinoOTA.handle();
     resetWatchdog();
     heartBeatLED.update(); // initialize
@@ -224,18 +230,20 @@ void loop()
         displayMode = BIG_TEMP;
     }
     updateDisplayData();
+Serial.println(7);
 
-    MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    processMQTTMessage(); // check flags set above and act on
+
 
     webSocket.loop();
     broadcastWS();
+    Serial.println(8);
+
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
-        e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
-               "ESP32 Watchdog: Zone 1 power cycled",
-               "ESP32 Watchdog: Zone 1 power cycled");
+        // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
+        //        "ESP32 Watchdog: Zone 1 power cycled",
+        //        "ESP32 Watchdog: Zone 1 power cycled");
     }
     broadcastWS();
     // manageRestarts(1);
@@ -243,10 +251,13 @@ void loop()
     ZCs[1].resetZoneDevice();
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
-        e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
-               "ESP32 Watchdog: Zone 3 power cycled",
-               "ESP32 Watchdog: Zone 3 power cycled");
+        // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
+        //        "ESP32 Watchdog: Zone 3 power cycled",
+        //        "ESP32 Watchdog: Zone 3 power cycled");
     }
+
+    Serial.println(9);
+
     broadcastWS();
     checkConnections(); // and reconnect if reqd
     webSocket.loop();
@@ -262,7 +273,8 @@ void loop()
 void IRAM_ATTR resetModule()
 {
     ets_printf("ESP32 Rebooted by Internal Watchdog\n");
-    esp_restart_noos();
+    //esp_restart_noos();
+    esp_restart();
 }
 
 /**
