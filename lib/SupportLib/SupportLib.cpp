@@ -145,8 +145,10 @@ extern LedFader warnLED;
 void updateDisplayData()
 {
 
+        Serial.print("d1.");
 
     char justTempString[20];
+        Serial.print("d1a.");
 
     //blip red led if zones display has changed
     if (
@@ -154,22 +156,28 @@ void updateDisplayData()
         strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
         )
     {
+                Serial.print("d2.");
+
         warnLED.fullOn();
-        delay(10);
+        delay(5);
         warnLED.fullOff();
     }
     // only update screen if status messages or touch sensor is active/has changed
     // compare new display data to previous display data
     // if different - update the actual OLED display and previous
     // if any non zero then data has changed
-    if (strcmp(tempDisplayString,
-               DHT22Sensor.getTempDisplayString(newTempDisplayString)) ||
-        touchedFlag ||
-        strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
-        strcmp(zone3DisplayString,
-               ZCs[2].getDisplayString(newZone3DisplayString)) ||
-        strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)))
+                    Serial.print("d2a.");
+
+    if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) 
+        || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString))
+        || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
+        //|| strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
+        //|| touchedFlag 
+
+        )
     {
+                Serial.print("d3.");
+
         DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
         // copy new data to old vars
         strcpy(tempDisplayString, newTempDisplayString);
@@ -177,6 +185,7 @@ void updateDisplayData()
         strcpy(zone1DisplayString, newZone1DisplayString);
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
+        Serial.print("d4.");
 
         myWebSerial.println("!----------! BIG_TEMP Display Refresh");
         myWebSerial.println(tempDisplayString);
@@ -192,7 +201,8 @@ void updateDisplayData()
         //     // TODO
         // }
         // else 
-        
+                Serial.print("d5.");
+
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {
             myDisplay.clearBuffer();
@@ -207,6 +217,7 @@ void updateDisplayData()
             justTempString[4] = '\xb0';
             myDisplay.drawStr(0, 38, justTempString);
             //myDisplay.refresh();
+        Serial.print("d6.");
 
             myDisplay.setFont(SYS_FONT);
             myDisplay.drawStr(0, 47, MQTTDisplayString);

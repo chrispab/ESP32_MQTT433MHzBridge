@@ -12,7 +12,7 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
-const char *socketIDFunctionStrings[16];
+static const char *socketIDFunctionStrings[16];
 // strcpy(socketIDFunctionStrings[0], "blah");
 void MQTTLibSetup(void)
 {

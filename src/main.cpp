@@ -194,18 +194,26 @@ Serial.println(6);
 
 void loop()
 {
+    Serial.print("1..");
+
     MQTTclient.loop(); // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
+    Serial.print("2..");
 
     ArduinoOTA.handle();
     resetWatchdog();
     heartBeatLED.update(); // initialize
     webSocket.loop();
+        Serial.print("3..");
+
     timeClient.update();
+        Serial.print("4..");
+
     broadcastWS();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
         myWebSerial.println("New Sensor Readings-MQTT published");
+    Serial.print("5..");
 
     webSocket.loop();
     broadcastWS();
@@ -229,14 +237,16 @@ void loop()
     {
         displayMode = BIG_TEMP;
     }
+        Serial.print("6..");
+
     updateDisplayData();
-Serial.println(7);
+Serial.print("7,");
 
 
 
     webSocket.loop();
     broadcastWS();
-    Serial.println(8);
+    Serial.print("8.");
 
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
@@ -256,12 +266,12 @@ Serial.println(7);
         //        "ESP32 Watchdog: Zone 3 power cycled");
     }
 
-    Serial.println(9);
+    Serial.print("9.");
 
     broadcastWS();
     checkConnections(); // and reconnect if reqd
     webSocket.loop();
-    WiFiLocalWebPageCtrl();
+    //WiFiLocalWebPageCtrl();
     //webSocket.loop();
     //broadcastWS();
 }
