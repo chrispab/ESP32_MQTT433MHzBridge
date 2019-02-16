@@ -120,7 +120,7 @@ hw_timer_t *timer = NULL;
 
 //#define WEBHOOK "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
 #include "IFTTTWebhook.h"
-#define IFTTT_API_KEY "dF1NEy_aQ5diUyluM3EKcd"
+#define IFTTT_API_KEY "c6qlvGAybXC8_aZ45eAIxE"
 #define IFTTT_EVENT_NAME "ESP32BridgeBoot"
 
 void setup()
