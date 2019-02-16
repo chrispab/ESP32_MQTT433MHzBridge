@@ -2,7 +2,7 @@
 
 bool MQTTNewData = false;
 int MQTTNewState = 0;     // 0 or 1
-int MQTTSocketNumber = 0; // 1-16
+int MQTTSocketNumber = 1; // 1-16
 
 // MQTT stuff
 //IPAddress mqttBroker(192, 168, 0, 200);
@@ -13,7 +13,7 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
 //static const char *socketIDFunctionStrings[16];
-const char *socketIDFunctionStrings[] = {
+static const char *socketIDFunctionStrings[] = {
                 "X Lights",
                 "SKT 2",
                 "L Lights",
@@ -62,13 +62,24 @@ void processMQTTMessage(void)
     }
 }
 
-char *getMQTTDisplayString(char *MQTTStatus)
+char* getMQTTDisplayString(char *MQTTStatus)
 {
     char msg[] = "This is a message placeholder";
-    char socketNumber[] = "This is a also message placeholder";
+    char socketNumber[] = "This is a also message placeh";
+
+    Serial.println(socketNumber);
 
     sprintf(socketNumber, "%d", (MQTTSocketNumber));
+    
+    Serial.println(socketNumber);
+
     strcpy(msg, socketNumber);
+
+Serial.println(msg);
+Serial.println(socketIDFunctionStrings[MQTTSocketNumber - 1]);
+
+//delay(8000);
+
     strcat(msg, "-");
     strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
     strcat(msg, ":");

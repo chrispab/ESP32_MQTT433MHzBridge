@@ -122,7 +122,7 @@ void setup()
 
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
-    MQTTLibSetup();
+    //MQTTLibSetup();
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode

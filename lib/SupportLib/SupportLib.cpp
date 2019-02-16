@@ -167,11 +167,15 @@ void updateDisplayData()
     // if different - update the actual OLED display and previous
     // if any non zero then data has changed
                     Serial.print("d2a.");
+    Serial.println(MQTTDisplayString);
+    Serial.println(getMQTTDisplayString(newMQTTDisplayString));
+
+//delay(5000);
 
     if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) 
         || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString))
         || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
-        || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
+        //|| strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
         //|| touchedFlag 
 
         )
