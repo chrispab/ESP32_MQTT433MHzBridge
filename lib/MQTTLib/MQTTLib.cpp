@@ -12,26 +12,43 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 
 // array to enable translation from socket ID (0-15) to string representing
 // socket function
-static const char *socketIDFunctionStrings[16];
+//static const char *socketIDFunctionStrings[16];
+const char *socketIDFunctionStrings[] = {
+                "X Lights",
+                "SKT 2",
+                "L Lights",
+                "D Lights",
+                "C Lights",
+                "DAB",
+                "Amp",
+                "TV",
+                "CSV Rads",
+                "Fan",
+                "SKT 11",
+                "SKT 12",
+                "SKT 13",
+                "Zone 1",
+                "Zone 3",
+                "Outer Sensor"};
 // strcpy(socketIDFunctionStrings[0], "blah");
 void MQTTLibSetup(void)
 {
-    socketIDFunctionStrings[0] = "X Lights";
-    socketIDFunctionStrings[1] = "SKT 2";
-    socketIDFunctionStrings[2] = "L Lights";
-    socketIDFunctionStrings[3] = "D Lights";
-    socketIDFunctionStrings[4] = "C Lights";
-    socketIDFunctionStrings[5] = "DAB";
-    socketIDFunctionStrings[6] = "Amp";
-    socketIDFunctionStrings[7] = "TV";
-    socketIDFunctionStrings[8] = "CSV Rads";
-    socketIDFunctionStrings[9] = "Fan";
-    socketIDFunctionStrings[10] = "SKT 11";
-    socketIDFunctionStrings[11] = "SKT 12";
-    socketIDFunctionStrings[12] = "SKT 13";
-    socketIDFunctionStrings[13] = "Zone 1";
-    socketIDFunctionStrings[14] = "Zone 3";
-    socketIDFunctionStrings[15] = "Outer Sensor";
+    // socketIDFunctionStrings[0] = "X Lights";
+    // socketIDFunctionStrings[1] = "SKT 2";
+    // socketIDFunctionStrings[2] = "L Lights";
+    // socketIDFunctionStrings[3] = "D Lights";
+    // socketIDFunctionStrings[4] = "C Lights";
+    // socketIDFunctionStrings[5] = "DAB";
+    // socketIDFunctionStrings[6] = "Amp";
+    // socketIDFunctionStrings[7] = "TV";
+    // socketIDFunctionStrings[8] = "CSV Rads";
+    // socketIDFunctionStrings[9] = "Fan";
+    // socketIDFunctionStrings[10] = "SKT 11";
+    // socketIDFunctionStrings[11] = "SKT 12";
+    // socketIDFunctionStrings[12] = "SKT 13";
+    // socketIDFunctionStrings[13] = "Zone 1";
+    // socketIDFunctionStrings[14] = "Zone 3";
+    // socketIDFunctionStrings[15] = "Outer Sensor";
 }
 
 void processMQTTMessage(void)
@@ -48,7 +65,7 @@ void processMQTTMessage(void)
 char *getMQTTDisplayString(char *MQTTStatus)
 {
     char msg[] = "This is a message placeholder";
-    char socketNumber[10];
+    char socketNumber[] = "This is a also message placeholder";
 
     sprintf(socketNumber, "%d", (MQTTSocketNumber));
     strcpy(msg, socketNumber);

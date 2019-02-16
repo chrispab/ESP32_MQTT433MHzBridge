@@ -130,17 +130,17 @@ extern bool touchedFlag;
 extern LedFader warnLED;
 
     // static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempDisplayString[20] = "1234567890123456789";
-    static char humiDisplayString[20] = "1234567890123456789";
-    static char zone1DisplayString[20] = "1234567890123456789";
-    static char zone3DisplayString[20] = "1234567890123456789";
-    static char MQTTDisplayString[20] = "1234567890123456789";
+    static char tempDisplayString[] = "12345678901234567890";
+    static char humiDisplayString[] = "12345678901234567890";
+    static char zone1DisplayString[] = "12345678901234567890";
+    static char zone3DisplayString[] = "12345678901234567890";
+    static char MQTTDisplayString[] = "12345678901234567890";
 
-    static char newTempDisplayString[20] = "1234567890123456789";
-    static char newHumiDisplayString[20] = "1234567890123456789";
-    static char newZone1DisplayString[20] = "1234567890123456789";
-    static char newZone3DisplayString[20] = "1234567890123456789";
-    static char newMQTTDisplayString[20] = "1234567890123456789";
+    static char newTempDisplayString[] = "12345678901234567890";
+    static char newHumiDisplayString[] = "12345678901234567890";
+    static char newZone1DisplayString[] = "12345678901234567890";
+    static char newZone3DisplayString[] = "12345678901234567890";
+    static char newMQTTDisplayString[] = "12345678901234567890";
 
 void updateDisplayData()
 {
@@ -171,7 +171,7 @@ void updateDisplayData()
     if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) 
         || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString))
         || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
-        //|| strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
+        || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
         //|| touchedFlag 
 
         )
