@@ -1,3 +1,6 @@
+//#define DEBUG
+#define RELEASE
+
 #include "Arduino.h"
 #include "version.h"
 #include <NewRemoteTransmitter.h>
@@ -113,20 +116,22 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 //! WATCHDOG STUFF
 hw_timer_t *timer = NULL;
 
-
 // ! big issue - does not work when no internet connection - resolve
 
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
+#ifdef DEBUG
     Serial.println(1);
-
+#endif
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
     //MQTTLibSetup();
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
+#ifdef DEBUG
     Serial.println(2);
+#endif
     // setup OLED display
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
@@ -164,23 +169,30 @@ void setup()
     connectMQTT();
     myDisplay.writeLine(5, "All Connected");
     myDisplay.refresh();
-Serial.println(3);
+#ifdef DEBUG
+    Serial.println(3);
+#endif
     timeClient.begin();
     timeClient.update();
     Serial.println(timeClient.getFormattedTime());
     delay(200);
-Serial.println(4);
+#ifdef DEBUG
+    Serial.println(4);
+#endif
+
     // Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT,
     //       "programm started/restarted");
-Serial.println(5);
+#ifdef DEBUG
+    Serial.println(5);
+#endif
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
     // n0 secs
     timerAlarmWrite(timer, 30000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
-Serial.println(6);
+    Serial.println(6);
     myDisplay.wipe();
     //connectWiFi();
     resetWatchdog();
@@ -194,27 +206,32 @@ Serial.println(6);
 
 void loop()
 {
+#ifdef DEBUG
     Serial.print("1..");
-
-    MQTTclient.loop(); // process any MQTT stuff, returned in callback
+#endif
+    MQTTclient.loop();    // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
+#ifdef DEBUG
     Serial.print("2..");
-
+#endif
     ArduinoOTA.handle();
     resetWatchdog();
     heartBeatLED.update(); // initialize
     webSocket.loop();
-        Serial.print("3..");
-
+#ifdef DEBUG
+    Serial.print("3..");
+#endif
     timeClient.update();
-        Serial.print("4..");
-
+#ifdef DEBUG
+    Serial.print("4..");
+#endif
     broadcastWS();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
         myWebSerial.println("New Sensor Readings-MQTT published");
+#ifdef DEBUG
     Serial.print("5..");
-
+#endif
     webSocket.loop();
     broadcastWS();
     //MQTTclient.loop(); // process any MQTT stuff, returned in callback
@@ -237,17 +254,18 @@ void loop()
     {
         displayMode = BIG_TEMP;
     }
-        Serial.print("6..");
-
+#ifdef DEBUG
+    Serial.print("6..");
+#endif
     updateDisplayData();
-Serial.print("7,");
-
-
-
+#ifdef DEBUG
+    Serial.print("7,");
+#endif
     webSocket.loop();
     broadcastWS();
+#ifdef DEBUG
     Serial.print("8.");
-
+#endif
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
@@ -265,9 +283,10 @@ Serial.print("7,");
         //        "ESP32 Watchdog: Zone 3 power cycled",
         //        "ESP32 Watchdog: Zone 3 power cycled");
     }
+#ifdef DEBUG
 
     Serial.print("9.");
-
+#endif
     broadcastWS();
     checkConnections(); // and reconnect if reqd
     webSocket.loop();

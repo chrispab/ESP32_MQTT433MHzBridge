@@ -24,75 +24,6 @@ extern Display myDisplay;
 
 boolean touchedFlag = false;
 
-/**
- * @brief scan touchpins and check for a touch
- * 
- * @return boolean true if touch detected
- */
-// boolean processTouchPads(void)
-// {
-//     static int lastFilteredVal = 54;
-//     static int filteredVal = 54;
-//     const int filterConstant = 3; // 2 ishalf, 4 is quarter etc
-//     int touchThreshold = 45;
-//     int newTouchValue = 100;
-
-//     static unsigned long lastTouchReadMillis = millis();
-//     unsigned long touchReadInterval = 25;
-
-//     if ((millis() - lastTouchReadMillis) >= touchReadInterval)
-//     {
-//         //newTouchValue = touchRead(TOUCH_PIN);
-//         newTouchValue = touchRead(TOUCH_SENSOR_2);
-
-//         lastTouchReadMillis = millis();
-
-//         //! software addition filter here to even out spurious readings
-//         int diff;
-//         //filteredVal = filteredVal + (filteredVal )
-//         if (newTouchValue > filteredVal) //if going up - add onto filteredval
-//         {
-//             diff = (newTouchValue - filteredVal);
-//             filteredVal = filteredVal + (diff / filterConstant);
-//         }
-//         if (newTouchValue < filteredVal) //if going down - subtract  from filteredval
-//         {
-//             diff = (filteredVal - newTouchValue);
-//             filteredVal = filteredVal - (diff / filterConstant);
-//         }
-
-//         // !! detect edges
-//         if ((lastFilteredVal > touchThreshold) && (filteredVal < touchThreshold))
-//         { //high to low edge finger on
-//             Serial.print("$$$]_ Touch Val = ");
-//             Serial.println(newTouchValue);
-//             Serial.print("filtered Val = ");
-//             Serial.println(filteredVal);
-
-//             //displayMode = MULTI;
-//             lastFilteredVal = filteredVal;
-//             //lastTouchReadMillis = millis();
-
-//             return true;
-//         }
-//         if ((lastFilteredVal < touchThreshold) && (filteredVal > touchThreshold))
-//         { //low to high edge finger off
-//             Serial.print("$$$_[ Touch Val = ");
-//             Serial.println(newTouchValue);
-//             Serial.print("filtered Val = ");
-//             Serial.println(filteredVal);
-//             //displayMode = BIG_TEMP;
-//             lastFilteredVal = filteredVal;
-//             //lastTouchReadMillis = millis();
-
-//             return false;
-//         }
-//         lastFilteredVal = filteredVal;
-
-//         return false; // no edge detected
-//     }
-//     return false; // no edge detected
-//}
 
 /**
  * @brief Get the Elapsed Time Str pointer
@@ -145,10 +76,8 @@ extern LedFader warnLED;
 void updateDisplayData()
 {
 
-        Serial.print("d1.");
 
     char justTempString[20];
-        Serial.print("d1a.");
 
     //blip red led if zones display has changed
     if (
@@ -156,7 +85,6 @@ void updateDisplayData()
         strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
         )
     {
-                Serial.print("d2.");
 
         warnLED.fullOn();
         delay(5);
@@ -166,7 +94,6 @@ void updateDisplayData()
     // compare new display data to previous display data
     // if different - update the actual OLED display and previous
     // if any non zero then data has changed
-                    Serial.print("d2a.");
     Serial.println(MQTTDisplayString);
     Serial.println(getMQTTDisplayString(newMQTTDisplayString));
 
@@ -175,12 +102,11 @@ void updateDisplayData()
     if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) 
         || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString))
         || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
-        //|| strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
+        || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
         //|| touchedFlag 
 
         )
     {
-                Serial.print("d3.");
 
         DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
         // copy new data to old vars
@@ -189,7 +115,6 @@ void updateDisplayData()
         strcpy(zone1DisplayString, newZone1DisplayString);
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
-        Serial.print("d4.");
 
         myWebSerial.println("!----------! BIG_TEMP Display Refresh");
         myWebSerial.println(tempDisplayString);
@@ -205,7 +130,6 @@ void updateDisplayData()
         //     // TODO
         // }
         // else 
-                Serial.print("d5.");
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {
@@ -221,7 +145,6 @@ void updateDisplayData()
             justTempString[4] = '\xb0';
             myDisplay.drawStr(0, 38, justTempString);
             //myDisplay.refresh();
-        Serial.print("d6.");
 
             myDisplay.setFont(SYS_FONT);
             myDisplay.drawStr(0, 47, MQTTDisplayString);

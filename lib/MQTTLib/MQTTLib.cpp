@@ -67,18 +67,10 @@ char* getMQTTDisplayString(char *MQTTStatus)
     char msg[] = "This is a message placeholder";
     char socketNumber[] = "This is a also message placeh";
 
-    Serial.println(socketNumber);
 
     sprintf(socketNumber, "%d", (MQTTSocketNumber));
     
-    Serial.println(socketNumber);
-
     strcpy(msg, socketNumber);
-
-Serial.println(msg);
-Serial.println(socketIDFunctionStrings[MQTTSocketNumber - 1]);
-
-//delay(8000);
 
     strcat(msg, "-");
     strcat(msg, socketIDFunctionStrings[MQTTSocketNumber - 1]);
