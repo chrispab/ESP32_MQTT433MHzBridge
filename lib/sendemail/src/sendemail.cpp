@@ -1,6 +1,6 @@
 #include "sendemail.h"
 ////
-
+#define DEBUG_EMAIL_PORT Serial
 
 SendEmail::SendEmail(const String& host, const int port, const String& user, const String& passwd, const int timeout, const bool ssl) :
     host(host), port(port), user(user), passwd(passwd), timeout(timeout), ssl(ssl), client((ssl) ? new WiFiClientSecure() : new WiFiClient())

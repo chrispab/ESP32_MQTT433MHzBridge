@@ -94,8 +94,8 @@ void updateDisplayData()
     // compare new display data to previous display data
     // if different - update the actual OLED display and previous
     // if any non zero then data has changed
-    Serial.println(MQTTDisplayString);
-    Serial.println(getMQTTDisplayString(newMQTTDisplayString));
+    // Serial.println(MQTTDisplayString);
+    // Serial.println(getMQTTDisplayString(newMQTTDisplayString));
 
 //delay(5000);
 

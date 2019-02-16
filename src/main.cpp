@@ -77,7 +77,7 @@ WiFiServer server(80);
 
 // create object
 SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
-            5000, true);
+            2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 1500, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
@@ -117,6 +117,11 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 hw_timer_t *timer = NULL;
 
 // ! big issue - does not work when no internet connection - resolve
+
+//#define WEBHOOK "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
+#include "IFTTTWebhook.h"
+#define IFTTT_API_KEY "dF1NEy_aQ5diUyluM3EKcd"
+#define IFTTT_EVENT_NAME "ESP32BridgeBoot"
 
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
@@ -180,9 +185,11 @@ void setup()
     Serial.println(4);
 #endif
 
-    // Send Email
-    //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT,
-    //       "programm started/restarted");
+    //Send Email
+    //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
+    IFTTTWebhook wh(IFTTT_API_KEY, IFTTT_EVENT_NAME);
+    wh.trigger();
+
 #ifdef DEBUG
     Serial.println(5);
 #endif
