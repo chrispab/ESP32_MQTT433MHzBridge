@@ -76,8 +76,8 @@ ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
 WiFiServer server(80);
 
 // create object
-SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
-            2000, true);
+//SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
+            //2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 1500, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
@@ -85,14 +85,14 @@ LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 #include <WebSerial.h>
 WebSerial myWebSerial;
 
-#include <WiFiMulti.h>
-WiFiMulti WiFiMulti;
+//#include <WiFiMulti.h>
+//WiFiMulti WiFiMulti;
 //#include <WebSocketsServer.h>
 #include "WebSocketLib.h"
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-#define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
+//#define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
 
 #include "WebSocketLib.h"
 
@@ -218,27 +218,17 @@ void loop()
 #endif
     MQTTclient.loop();    // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
-#ifdef DEBUG
-    Serial.print("2..");
-#endif
     ArduinoOTA.handle();
     resetWatchdog();
     heartBeatLED.update(); // initialize
     webSocket.loop();
-#ifdef DEBUG
-    Serial.print("3..");
-#endif
+
     timeClient.update();
-#ifdef DEBUG
-    Serial.print("4..");
-#endif
+
     broadcastWS();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
         myWebSerial.println("New Sensor Readings-MQTT published");
-#ifdef DEBUG
-    Serial.print("5..");
-#endif
     webSocket.loop();
     broadcastWS();
     //MQTTclient.loop(); // process any MQTT stuff, returned in callback
@@ -261,18 +251,11 @@ void loop()
     {
         displayMode = BIG_TEMP;
     }
-#ifdef DEBUG
-    Serial.print("6..");
-#endif
+
     updateDisplayData();
-#ifdef DEBUG
-    Serial.print("7,");
-#endif
+
     webSocket.loop();
     broadcastWS();
-#ifdef DEBUG
-    Serial.print("8.");
-#endif
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
@@ -290,10 +273,6 @@ void loop()
         //        "ESP32 Watchdog: Zone 3 power cycled",
         //        "ESP32 Watchdog: Zone 3 power cycled");
     }
-#ifdef DEBUG
-
-    Serial.print("9.");
-#endif
     broadcastWS();
     checkConnections(); // and reconnect if reqd
     webSocket.loop();
