@@ -22,7 +22,7 @@
 //time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#define NTP_OFFSET 60 * 60     // In seconds
+#define NTP_OFFSET 0 * 60     // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000 // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
@@ -134,9 +134,6 @@ void setup()
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
-#ifdef DEBUG
-    Serial.println(2);
-#endif
     // setup OLED display
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
@@ -174,25 +171,16 @@ void setup()
     connectMQTT();
     myDisplay.writeLine(5, "All Connected");
     myDisplay.refresh();
-#ifdef DEBUG
-    Serial.println(3);
-#endif
     timeClient.begin();
     timeClient.update();
     Serial.println(timeClient.getFormattedTime());
     delay(200);
-#ifdef DEBUG
-    Serial.println(4);
-#endif
 
     //Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
     IFTTTWebhook wh(IFTTT_API_KEY, IFTTT_EVENT_NAME);
     wh.trigger();
 
-#ifdef DEBUG
-    Serial.println(5);
-#endif
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);

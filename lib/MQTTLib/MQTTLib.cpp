@@ -50,13 +50,32 @@ void MQTTLibSetup(void)
     // socketIDFunctionStrings[14] = "Zone 3";
     // socketIDFunctionStrings[15] = "Outer Sensor";
 }
-
+#include "WebSerial.h"
+extern WebSerial myWebSerial;
 void processMQTTMessage(void)
 {
+
+    //char msg[40] = "SSS == Operate Socket: ";
+    char buff[10];
+
+    // strcpy(buff, "Socket : ");
+    sprintf(buff, "%d", (MQTTSocketNumber));
+    //strcat(msg, buff);
+    //strcat(msg, "-");
+
     if (MQTTNewData)
     {
         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
         //Serial
+            myWebSerial.println("process MQTT - MQTTSocketNumber...");
+
+            myWebSerial.println(buff);
+
+                        myWebSerial.println("process MQTT - MQTTNewState...");
+    sprintf(buff, "%d", (MQTTNewState));
+
+            myWebSerial.println(buff);
+
         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
@@ -89,8 +108,7 @@ char* getMQTTDisplayString(char *MQTTStatus)
     return MQTTStatus;
 }
 
-#include "WebSerial.h"
-extern WebSerial myWebSerial;
+
 // MQTTclient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 {
@@ -151,10 +169,16 @@ extern NewRemoteTransmitter transmitter;
 // 0-15, 0,1
 // mqtt funct to operate a remote power socket
 // only used by mqtt function
+/**
+ * @brief 
+ * 
+ * @param socketID 0-15, correspond to socketNumber 1-16
+ * @param state 
+ */
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[40] = "SSS == Operate Socket: ";
+    char msg[60] = "SSS == Operate Socket: ";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
@@ -178,6 +202,14 @@ void operateSocket(uint8_t socketID, uint8_t state)
     myWebSerial.println(msg);
 
     warnLED.fullOn();
+
+    myWebSerial.println("operate skt scktID..");
+    sprintf(buff, "%d", (socketID));
+    myWebSerial.println(buff);
+        myWebSerial.println("operate skt newstate..");
+    sprintf(buff, "%d", (state));
+    myWebSerial.println(buff);
+
     transmitter.sendUnit(socketID, state);
     warnLED.fullOff(); //}
 }
@@ -185,17 +217,7 @@ void operateSocket(uint8_t socketID, uint8_t state)
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 
-// boolean reconnect()
-// {
-//     if (MQTTclient.connect("ESP32Client"))
-//     {
-//         // Once connected, publish an announcement...
-//         //MQTTclient.publish("outTopic", "hello world");
-//         // ... and resubscribe
-//         MQTTclient.connect("ESP32Client");
-//     }
-//     return MQTTclient.connected();
-// }
+
 
 // set so ensures initial connect attempt, assume now gives 0
 long lastReconnectAttempt = -6000;
@@ -205,24 +227,7 @@ void connectMQTT()
     bool MQTTConnectTimeout = false;
     u16_t startMillis = millis();
     u16_t timeOutMillis = 1000;
-    // Loop until we're reconnected
-    // check is MQTTclient is connected first
 
-    // if (!MQTTclient.connected())
-    // {
-    //     long now = millis();
-    //     if (now - lastReconnectAttempt > 5000)
-    //     {
-    //         lastReconnectAttempt = now;
-    //         // Attempt to reconnect
-    //         if (MQTTclient.connect("ESP32Client"))
-    //         {
-    //   MQTTclient.connect("ESP32Client")
-    //             lastReconnectAttempt = 0;
-    //         }
-    //     }
-    // }
-    // return;
 
     startMillis = millis();
     MQTTConnectTimeout = false;
