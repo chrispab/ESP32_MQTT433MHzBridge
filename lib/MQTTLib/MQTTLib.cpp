@@ -203,12 +203,12 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
     warnLED.fullOn();
 
-    myWebSerial.println("operate skt scktID..");
-    sprintf(buff, "%d", (socketID));
-    myWebSerial.println(buff);
-        myWebSerial.println("operate skt newstate..");
-    sprintf(buff, "%d", (state));
-    myWebSerial.println(buff);
+    // myWebSerial.println("operate skt scktID..");
+    // sprintf(buff, "%d", (socketID));
+    // myWebSerial.println(buff);
+    //     myWebSerial.println("operate skt newstate..");
+    // sprintf(buff, "%d", (state));
+    // myWebSerial.println(buff);
 
     transmitter.sendUnit(socketID, state);
     warnLED.fullOff(); //}

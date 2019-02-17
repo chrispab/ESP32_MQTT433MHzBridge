@@ -16,7 +16,8 @@ void setupOTA(void)
     ArduinoOTA.onStart([]() {
         Serial.println("Start updating");
         myDisplay.wipe();
-        myDisplay.writeLine(1, "Start OTA update");
+        myDisplay.setFont(u8g2_font_fub30_tf); //30px hieght);
+        myDisplay.writeLine(4, " OTA");
         myDisplay.refresh();
     });
     /* this callback function will be invoked when updating end */

@@ -103,8 +103,8 @@ void ZoneController::resetZoneDevice(void) {
 
 char *ZoneController::getDisplayString(char *statusMessage) {
     // all three lines can be displayed at once
-    const char rebootMsg[] = {"Reboot: "};
-    const char powerCycleMsg[] = {"Power Cycle"};
+    const char rebootMsg[] = {"Boot-"};
+    const char powerCycleMsg[] = {"Cycle"};
     // int zoneID; // only initialised once at start
 
     unsigned int secsSinceAck = 0; // max secs out considered good

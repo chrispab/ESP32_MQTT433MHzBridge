@@ -41,7 +41,8 @@ void Display::refresh(void) {
     sendBuffer();
     //delay(50);
 }
-// redraw the display with contents of displayLine array
+// clearbufffer and sendto Disply
+//redraw the display with contents of displayLine array
 void Display::wipe(void) {
     // u8g2.begin();
     clearBuffer();

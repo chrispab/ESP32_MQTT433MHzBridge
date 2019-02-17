@@ -22,7 +22,7 @@
 //time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#define NTP_OFFSET 0 * 60     // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 0 * 60      // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000 // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
@@ -77,7 +77,7 @@ WiFiServer server(80);
 
 // create object
 //SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
-            //2000, true);
+//2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 1500, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
@@ -118,10 +118,9 @@ hw_timer_t *timer = NULL;
 
 // ! big issue - does not work when no internet connection - resolve
 
-//#define WEBHOOK "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
+//#define myWEBHOOk "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
 #include "IFTTTWebhook.h"
-#define IFTTT_API_KEY "c6qlvGAybXC8_aZ45eAIxE"
-#define IFTTT_EVENT_NAME "ESP32BridgeBoot"
+IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
@@ -178,8 +177,8 @@ void setup()
 
     //Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
-    IFTTTWebhook wh(IFTTT_API_KEY, IFTTT_EVENT_NAME);
-    wh.trigger();
+//    myWebhook.trigger("433Bridge Boot/Reboot");
+    myWebhook.trigger();
 
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
@@ -250,6 +249,7 @@ void loop()
         // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
         //        "ESP32 Watchdog: Zone 1 power cycled",
         //        "ESP32 Watchdog: Zone 1 power cycled");
+        myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
     }
     broadcastWS();
     // manageRestarts(1);
@@ -260,6 +260,7 @@ void loop()
         // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
         //        "ESP32 Watchdog: Zone 3 power cycled",
         //        "ESP32 Watchdog: Zone 3 power cycled");
+                    myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
     }
     broadcastWS();
     checkConnections(); // and reconnect if reqd

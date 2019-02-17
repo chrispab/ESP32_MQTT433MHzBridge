@@ -28,7 +28,7 @@ public:
 
 private:
   //single for all instances - share this data
-  static const unsigned int goodSecsMax = 15;                         //20
+  static const unsigned int goodSecsMax = 75;                         //20
   static const unsigned long maxMillisNoAckFromPi = 1000UL * 300UL;   //300 max millisces to wait if no ack from pi before power cycling pi
   static const unsigned long waitForPiPowerUpMillis = 1000UL * 120UL; //120
 
