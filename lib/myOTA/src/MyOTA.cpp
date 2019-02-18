@@ -9,7 +9,7 @@ void setupOTA(void)
     //ArduinoOTA.setPort(3232);
     /* we use mDNS instead of IP of ESP32 directly */
     //hostname.local
-    ArduinoOTA.setHostname("esp32ZC");
+    ArduinoOTA.setHostname("MQTT433Bridge");
     ArduinoOTA.setPassword("iotsharing");
 
     /* this callback function will be invoked when updating start */

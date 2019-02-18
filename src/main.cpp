@@ -85,9 +85,6 @@ LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 #include <WebSerial.h>
 WebSerial myWebSerial;
 
-//#include <WiFiMulti.h>
-//WiFiMulti WiFiMulti;
-//#include <WebSocketsServer.h>
 #include "WebSocketLib.h"
 
 WebSocketsServer webSocket = WebSocketsServer(81);
@@ -119,7 +116,7 @@ hw_timer_t *timer = NULL;
 // ! big issue - does not work when no internet connection - resolve
 
 //#define myWEBHOOk "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
-#include "IFTTTWebhook.h"
+#include <IFTTTWebhook.h>
 IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 void setup()
@@ -177,8 +174,8 @@ void setup()
 
     //Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
-//    myWebhook.trigger("433Bridge Boot/Reboot");
-    myWebhook.trigger();
+    myWebhook.trigger("433Bridge Boot/Reboot");
+    //myWebhook.trigger();
 
     //! watchdog setup
     timer = timerBegin(0, 80, true); // timer 0, div 80
@@ -186,7 +183,6 @@ void setup()
     // n0 secs
     timerAlarmWrite(timer, 30000000, false); // set time in us
     timerAlarmEnable(timer);                 // enable interrupt
-    Serial.println(6);
     myDisplay.wipe();
     //connectWiFi();
     resetWatchdog();
@@ -219,6 +215,7 @@ void loop()
     webSocket.loop();
     broadcastWS();
     //MQTTclient.loop(); // process any MQTT stuff, returned in callback
+    ArduinoOTA.handle();
 
     touchedFlag = touchPad1.getState();
     (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
@@ -238,33 +235,31 @@ void loop()
     {
         displayMode = BIG_TEMP;
     }
+    ArduinoOTA.handle();
 
     updateDisplayData();
+    ArduinoOTA.handle();
 
     webSocket.loop();
     broadcastWS();
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
-        // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
-        //        "ESP32 Watchdog: Zone 1 power cycled",
-        //        "ESP32 Watchdog: Zone 1 power cycled");
         myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
     }
     broadcastWS();
-    // manageRestarts(1);
     // disbale zone 2 restarts for now
     ZCs[1].resetZoneDevice();
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
-        // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS,
-        //        "ESP32 Watchdog: Zone 3 power cycled",
-        //        "ESP32 Watchdog: Zone 3 power cycled");
-                    myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+        myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
     }
     broadcastWS();
     checkConnections(); // and reconnect if reqd
     webSocket.loop();
+
+        ArduinoOTA.handle();
+
     //WiFiLocalWebPageCtrl();
     //webSocket.loop();
     //broadcastWS();
@@ -288,9 +283,9 @@ void IRAM_ATTR resetModule()
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
-    unsigned long resetWatchdogInterval = 10000;
+    unsigned long resetWatchdogIntervalMs = 10000;
 
-    if ((millis() - lastResetWatchdogMillis) >= resetWatchdogInterval)
+    if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
         myWebSerial.println("Reset Module Watchdog......");
