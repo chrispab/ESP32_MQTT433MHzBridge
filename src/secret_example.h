@@ -7,3 +7,6 @@
 
 #define MY_SSID "mywifissid"
 #define MY_SSID_PASSWORD "wifipassword"
+
+#define IFTTT_API_KEY "GjJJL9ITuzwKjiu49fx2c"
+#define IFTTT_EVENT_NAME "ESP32BridgeBoot"

@@ -174,7 +174,7 @@ void setup()
 
     //Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
-    myWebhook.trigger("433Bridge Boot/Reboot");
+    //myWebhook.trigger("433Bridge Boot/Reboot");
     //myWebhook.trigger();
 
     //! watchdog setup
@@ -192,8 +192,14 @@ void setup()
     resetWatchdog();
 
     //MQTTclient.
+        myWebhook.trigger("433Bridge BootReboot");
+
 }
 
+/**
+ * @brief 
+ * 
+ */
 void loop()
 {
 #ifdef DEBUG
@@ -211,7 +217,10 @@ void loop()
     broadcastWS();
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
+    {
         myWebSerial.println("New Sensor Readings-MQTT published");
+    }
+
     webSocket.loop();
     broadcastWS();
     //MQTTclient.loop(); // process any MQTT stuff, returned in callback
@@ -258,9 +267,9 @@ void loop()
     checkConnections(); // and reconnect if reqd
     webSocket.loop();
 
-        ArduinoOTA.handle();
+    ArduinoOTA.handle();
 
-    //WiFiLocalWebPageCtrl();
+    WiFiLocalWebPageCtrl();
     //webSocket.loop();
     //broadcastWS();
 }
@@ -280,6 +289,7 @@ void IRAM_ATTR resetModule()
  * @brief 
  * 
  */
+
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
