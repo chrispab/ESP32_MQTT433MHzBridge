@@ -67,12 +67,12 @@ void processMQTTMessage(void)
     {
         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
         //Serial
-            myWebSerial.println("process MQTT - MQTTSocketNumber...");
+            // myWebSerial.println("process MQTT - MQTTSocketNumber...");
 
-            myWebSerial.println(buff);
+            // myWebSerial.println(buff);
 
-                        myWebSerial.println("process MQTT - MQTTNewState...");
-    sprintf(buff, "%d", (MQTTNewState));
+    //                     myWebSerial.println("process MQTT - MQTTNewState...");
+    // sprintf(buff, "%d", (MQTTNewState));
 
             myWebSerial.println(buff);
 
