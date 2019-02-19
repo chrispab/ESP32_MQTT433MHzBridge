@@ -74,7 +74,7 @@ void processMQTTMessage(void)
     //                     myWebSerial.println("process MQTT - MQTTNewState...");
     // sprintf(buff, "%d", (MQTTNewState));
 
-            myWebSerial.println(buff);
+           // myWebSerial.println(buff);
 
         operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
@@ -178,7 +178,7 @@ extern NewRemoteTransmitter transmitter;
 void operateSocket(uint8_t socketID, uint8_t state)
 {
     // this is a blocking routine !!!!!!!
-    char msg[60] = "SSS == Operate Socket: ";
+    char msg[60] = "=> Operate Socket: ";
     char buff[10];
 
     // strcpy(buff, "Socket : ");
