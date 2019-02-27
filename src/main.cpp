@@ -236,7 +236,7 @@ void loop()
             warnLED.fullOn();
             delay(50);
             warnLED.fullOff();
-            MQTTclient.publish("433Bridge/Button1", "1");
+            //!  MQTTclient.publish("433Bridge/Button1", "1");
         }
         displayMode = MULTI;
     }
