@@ -1,7 +1,7 @@
 //#define DEBUG
-#define RELEASE
+//#define RELEASE
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "version.h"
 #include <NewRemoteTransmitter.h>
 #include <RF24.h>
@@ -10,7 +10,7 @@
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include "MyOTA.h"
+#include "BridgeOTA.h"
 #include "Display.h"
 #include "ZoneController.h"
 #include "secret.h"
@@ -18,7 +18,11 @@
 #include "TempSensor.h"
 #include "sendemail.h"
 #include "pins.h"
-
+#include <ArduinoOTA.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 //time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -35,7 +39,7 @@ extern char publishTempTopic[]; // = "433Bridge/Temperature";
 extern char publishHumiTopic[]; // = "433Bridge/Humidity";
 extern bool MQTTNewData;
 // forward decs
-void checkConnections(void);
+//void checkConnections(void);
 //void updateDisplayData(void);
 void resetWatchdog(void);
 //boolean processTouchPads(void);

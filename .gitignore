@@ -5,4 +5,5 @@
 .vscode/launch.json
 /src/secret.h
 /lib/secret.h
+.vscode/ipch
 
