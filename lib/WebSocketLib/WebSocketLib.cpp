@@ -23,8 +23,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         webSocket.sendTXT(num, "You are connected to esp32 webSocket server<br>");
         webSocket.sendTXT(num, SW_VERSION);
         webSocket.sendTXT(num, "<br>");
-
-        
         break;
     }
     case WStype_TEXT:

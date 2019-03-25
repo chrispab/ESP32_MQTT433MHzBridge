@@ -192,8 +192,7 @@ void setup()
     resetWatchdog();
 
     //MQTTclient.
-        myWebhook.trigger("433Bridge BootReboot");
-
+    myWebhook.trigger("433Bridge BootReboot");
 }
 
 /**
@@ -234,7 +233,7 @@ void loop()
         if (millis() % 2000 == 0)
         {
             warnLED.fullOn();
-            delay(50);
+            delay(10);
             warnLED.fullOff();
             //!  MQTTclient.publish("433Bridge/Button1", "1");
         }
@@ -269,7 +268,8 @@ void loop()
 
     ArduinoOTA.handle();
 
-    WiFiLocalWebPageCtrl();
+    //WiFiLocalWebPageCtrl();
+    checkForPageRequest();
     //webSocket.loop();
     //broadcastWS();
 }

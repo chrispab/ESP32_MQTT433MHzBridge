@@ -166,11 +166,10 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 extern LedFader warnLED;
 #include "NewRemoteTransmitter.h"
 extern NewRemoteTransmitter transmitter;
-// 0-15, 0,1
-// mqtt funct to operate a remote power socket
-// only used by mqtt function
+
 /**
- * @brief 
+ * @brief 0-15, 0,1 mqtt funct to operate a remote power socket
+ *          only used by mqtt function
  * 
  * @param socketID 0-15, correspond to socketNumber 1-16
  * @param state 
@@ -216,7 +215,6 @@ void operateSocket(uint8_t socketID, uint8_t state)
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
-
 
 
 // set so ensures initial connect attempt, assume now gives 0
