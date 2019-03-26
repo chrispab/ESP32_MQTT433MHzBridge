@@ -10,26 +10,11 @@ char subscribeTopic[] = "433Bridge/cmnd/#";
 char publishTempTopic[] = "433Bridge/Temperature";
 char publishHumiTopic[] = "433Bridge/Humidity";
 
-// array to enable translation from socket ID (0-15) to string representing
-// socket function
-//static const char *socketIDFunctionStrings[16];
-static const char *socketIDFunctionStrings[] = {
-                "X Lights",
-                "SKT 2",
-                "L Lights",
-                "D Lights",
-                "C Lights",
-                "DAB",
-                "Amp",
-                "TV",
-                "CSV Rads",
-                "Fan",
-                "SKT 11",
-                "SKT 12",
-                "SKT 13",
-                "Zone 1",
-                "Zone 3",
-                "Outer Sensor"};
+#include "../../src/socketIDFS.h"
+
+
+
+                
 // strcpy(socketIDFunctionStrings[0], "blah");
 void MQTTLibSetup(void)
 {
@@ -52,6 +37,8 @@ void MQTTLibSetup(void)
 }
 #include "WebSerial.h"
 extern WebSerial myWebSerial;
+#include "My433Transmitter.h"
+extern My433Transmitter transmitter;
 void processMQTTMessage(void)
 {
 
@@ -76,7 +63,7 @@ void processMQTTMessage(void)
 
            // myWebSerial.println(buff);
 
-        operateSocket(MQTTSocketNumber - 1, MQTTNewState);
+        transmitter.operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
 }
@@ -162,10 +149,10 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     MQTTNewData = true;
 }
 
-#include "LedFader.h"
-extern LedFader warnLED;
-#include "NewRemoteTransmitter.h"
-extern NewRemoteTransmitter transmitter;
+// #include "LedFader.h"
+// extern LedFader warnLED;
+// #include "NewRemoteTransmitter.h"
+// extern NewRemoteTransmitter transmitter;
 
 /**
  * @brief 0-15, 0,1 mqtt funct to operate a remote power socket
@@ -174,44 +161,44 @@ extern NewRemoteTransmitter transmitter;
  * @param socketID 0-15, correspond to socketNumber 1-16
  * @param state 
  */
-void operateSocket(uint8_t socketID, uint8_t state)
-{
-    // this is a blocking routine !!!!!!!
-    char msg[60] = "=> Operate Socket: ";
-    char buff[10];
+// void operateSocket(uint8_t socketID, uint8_t state)
+// {
+//     // this is a blocking routine !!!!!!!
+//     char msg[60] = "=> Operate Socket: ";
+//     char buff[10];
 
-    // strcpy(buff, "Socket : ");
-    sprintf(buff, "%d", (socketID + 1));
-    strcat(msg, buff);
-    strcat(msg, "-");
+//     // strcpy(buff, "Socket : ");
+//     sprintf(buff, "%d", (socketID + 1));
+//     strcat(msg, buff);
+//     strcat(msg, "-");
 
-    //add socket item name
-    strcat(msg, socketIDFunctionStrings[socketID]);
+//     //add socket item name
+//     strcat(msg, socketIDFunctionStrings[socketID]);
 
-    // u8g2.setCursor(55, 40);
-    if (state == 0)
-    {
-        strcat(msg, " - OFF");
-    }
-    else
-    {
-        strcat(msg, " - ON");
-    }
-    //Serial.println(msg);
-    myWebSerial.println(msg);
+//     // u8g2.setCursor(55, 40);
+//     if (state == 0)
+//     {
+//         strcat(msg, " - OFF");
+//     }
+//     else
+//     {
+//         strcat(msg, " - ON");
+//     }
+//     //Serial.println(msg);
+//     myWebSerial.println(msg);
 
-    warnLED.fullOn();
+//     warnLED.fullOn();
 
-    // myWebSerial.println("operate skt scktID..");
-    // sprintf(buff, "%d", (socketID));
-    // myWebSerial.println(buff);
-    //     myWebSerial.println("operate skt newstate..");
-    // sprintf(buff, "%d", (state));
-    // myWebSerial.println(buff);
+//     // myWebSerial.println("operate skt scktID..");
+//     // sprintf(buff, "%d", (socketID));
+//     // myWebSerial.println(buff);
+//     //     myWebSerial.println("operate skt newstate..");
+//     // sprintf(buff, "%d", (state));
+//     // myWebSerial.println(buff);
 
-    transmitter.sendUnit(socketID, state);
-    warnLED.fullOff(); //}
-}
+//     transmitter.sendUnit(socketID, state);
+//     warnLED.fullOff(); //}
+// }
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;

@@ -2,23 +2,29 @@
 
  */
 
-#ifndef Display_h
-#define Display_h
+#ifndef _MY433TRANSMITTER_H
+#define _MY433TRANSMITTER_H
 
 #include <Arduino.h>
-#include <U8g2lib.h>
+#include <NewRemoteTransmitter.h>
 
 
 /**
  */
-class Display : public U8G2 {
-  public:
-    Display(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE,
-            uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE);
+// 433Mhz settings
+// 282830 addr of 16ch remote
+// param 3 is pulse width, last param is num times control message  is txed
 
-    void writeLine(int lineNumber, const char *lineText);
-    void refresh(void);
-    void wipe(void);
+class My433Transmitter : public NewRemoteTransmitter {
+  public:
+  		My433Transmitter(unsigned long address, byte pin, unsigned int periodusec, byte repeats);
+      void operateSocket(uint8_t socketID, uint8_t state);
+
+    // transmitter(282830, TX433PIN, 260, 4);
+
+    // void writeLine(int lineNumber, const char *lineText);
+    // void refresh(void);
+    // void wipe(void);
 };
 
 #endif

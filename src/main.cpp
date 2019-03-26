@@ -51,8 +51,10 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
-NewRemoteTransmitter transmitter(282830, TX433PIN, 260, 4);
 // param 3 is pulse width, last param is num times control message  is txed
+#include "My433Transmitter.h"
+//NewRemoteTransmitter transmitter(282830, TX433PIN, 260, 4);
+My433Transmitter transmitter(282830, TX433PIN, 260, 4);
 
 #include "RF24Lib.h" //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);

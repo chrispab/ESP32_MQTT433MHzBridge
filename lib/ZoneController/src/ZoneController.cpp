@@ -1,6 +1,6 @@
 
 #include "ZoneController.h"
-#include <NewRemoteTransmitter.h>
+#include <My433Transmitter.h>
 
 // check a unit and see if restart reqd
 ZoneController::ZoneController(int zoneID, int remoteSocketID,
@@ -23,7 +23,7 @@ ZoneController::ZoneController(int zoneID, int remoteSocketID,
     strcpy(heartBeatText, strHeartBeatText);
 }
 
-boolean ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
+boolean ZoneController::manageRestarts(My433Transmitter transmitter) {
     // now check if need to reboot a device
     if ((millis() - lastGoodAckMillis) >
         maxMillisNoAckFromPi) { // over time limit so reboot first time in then
@@ -78,16 +78,18 @@ boolean ZoneController::manageRestarts(NewRemoteTransmitter transmitter) {
     }
     return false; // inducate not recycle device
 }
-void ZoneController::powerCycle(NewRemoteTransmitter transmitter) {
+
+
+void ZoneController::powerCycle(My433Transmitter transmitter) {
     // this is a blocking routine so need to keep checking messages and
     // updating vars etc
     // but do NOT do manage restarts as could be recursive and call this routine
     // again.
     Serial.println("sending off");
-    transmitter.sendUnit(socketID, false);
+    transmitter.operateSocket(socketID, false);
     delay(5000);
     Serial.println("sending on");
-    transmitter.sendUnit(socketID, true);
+    transmitter.operateSocket(socketID, true);
     Serial.println("power cycle completed");
 }
 

@@ -2,15 +2,15 @@
 #define ZoneController_h
 
 #include <Arduino.h>
-#include <NewRemoteTransmitter.h>
+#include <My433Transmitter.h>
 
 class ZoneController
 {
 
 public:
   ZoneController(int zoneID, int socketID, const char *name, const char *heartBeatText);
-  boolean manageRestarts(NewRemoteTransmitter transmitter);
-  void powerCycle(NewRemoteTransmitter transmitter);
+  boolean manageRestarts(My433Transmitter transmitter);
+  void powerCycle(My433Transmitter transmitter);
   void resetZoneDevice(void);
   char *getDisplayString(char *statusMessage);
 

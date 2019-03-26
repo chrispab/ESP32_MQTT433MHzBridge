@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const char webPageString[] PROGMEM = R"=====(
+const char webPageString[] = R"=====(
 <!DOCTYPE html>
 <html>
 <meta charset="UTF-8">
