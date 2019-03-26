@@ -5,7 +5,8 @@
 // check a unit and see if restart reqd
 ZoneController::ZoneController(int zoneID, int remoteSocketID,
                                const char *zoneName,
-                               const char *strHeartBeatText) {
+                               const char *strHeartBeatText)
+{
     id_number = zoneID; // 0 to 2
     zone = zoneID + 1;  // 1 to 3
     lastGoodAckMillis = millis();
@@ -23,14 +24,18 @@ ZoneController::ZoneController(int zoneID, int remoteSocketID,
     strcpy(heartBeatText, strHeartBeatText);
 }
 
-boolean ZoneController::manageRestarts(My433Transmitter transmitter) {
+boolean ZoneController::manageRestarts(My433Transmitter transmitter)
+{
     // now check if need to reboot a device
     if ((millis() - lastGoodAckMillis) >
-        maxMillisNoAckFromPi) { // over time limit so reboot first time in then
-                                // just upadte time each other time
+        maxMillisNoAckFromPi)
+    {
+        // over time limit so reboot first time in then
+        // just upadte time each other time
 
         // printFreeRam();
-        if (!isRebooting) {        // all this done first time triggered
+        if (!isRebooting)
+        {                          // all this done first time triggered
             isRebooting = true;    // signal device is rebooting
             isPowerCycling = true; // signal in power cycle
 
@@ -46,25 +51,29 @@ boolean ZoneController::manageRestarts(My433Transmitter transmitter) {
             Serial.println(rebootMillisLeft);
 
             return true; // inducate recycle device
-
-        } else // is rebooting
-        {      // this executes till end of reboot timer
+        }
+        else // is rebooting
+        {    // this executes till end of reboot timer
             // device is rebooting now - do some stuff to update countdown
             // timers wait for pi to come back up - do nothing millis since last
             // update
             unsigned long millisLapsed = millis() - lastRebootMillisLeftUpdate;
 
             // test if next subtraction will take us to/over limit
-            if (millisLapsed >= rebootMillisLeft) {
+            if (millisLapsed >= rebootMillisLeft)
+            {
                 // zero or neg will be reached reached
                 rebootMillisLeft = 0;
-            } else { // otherwise ok to do timer subtraction
+            }
+            else
+            { // otherwise ok to do timer subtraction
                 rebootMillisLeft = rebootMillisLeft - millisLapsed;
             }
             lastRebootMillisLeftUpdate = millis();
 
             // if next time  takes it below zero, process as if it was zero
-            if (rebootMillisLeft == 0) { // reboot stuff completed here
+            if (rebootMillisLeft == 0)
+            { // reboot stuff completed here
                 lastGoodAckMillis = millis();
                 Serial.print("Assume Pi back up:");
                 Serial.println(id_number);
@@ -79,8 +88,8 @@ boolean ZoneController::manageRestarts(My433Transmitter transmitter) {
     return false; // inducate not recycle device
 }
 
-
-void ZoneController::powerCycle(My433Transmitter transmitter) {
+void ZoneController::powerCycle(My433Transmitter transmitter)
+{
     // this is a blocking routine so need to keep checking messages and
     // updating vars etc
     // but do NOT do manage restarts as could be recursive and call this routine
@@ -93,7 +102,8 @@ void ZoneController::powerCycle(My433Transmitter transmitter) {
     Serial.println("power cycle completed");
 }
 
-void ZoneController::resetZoneDevice(void) {
+void ZoneController::resetZoneDevice(void)
+{
     this->lastGoodAckMillis = millis();
     this->isRebooting = false;
     this->rebootMillisLeft = false;
@@ -102,8 +112,8 @@ void ZoneController::resetZoneDevice(void) {
 // return a text string with current status of zone controller
 // e.g ""
 
-
-char *ZoneController::getDisplayString(char *statusMessage) {
+char *ZoneController::getDisplayString(char *statusMessage)
+{
     // all three lines can be displayed at once
     const char rebootMsg[] = {"Boot-"};
     const char powerCycleMsg[] = {"Cycle"};
@@ -119,21 +129,27 @@ char *ZoneController::getDisplayString(char *statusMessage) {
     secsSinceAck = (millis() - this->lastGoodAckMillis) / 1000;
     // make sure check for restarting device
     // if so return current secs in wait for reboot cycle
-    if (this->isRebooting) {
+    if (this->isRebooting)
+    {
         secsLeft = (this->rebootMillisLeft) / 1000UL;
 
         // build string to show if cycling or coming back up
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         // char message[] = " Reboot: ";
-        if (this->isPowerCycling) {
+        if (this->isPowerCycling)
+        {
             strcat(str_output, powerCycleMsg);
-        } else {
+        }
+        else
+        {
             strcat(str_output, rebootMsg);
             sprintf(buf, "%d", secsLeft);
             strcat(str_output, buf);
         }
-    } else if ((secsSinceAck > goodSecsMax)) {// no heartbeat received from zonecontroller
+    }
+    else if ((secsSinceAck > goodSecsMax))
+    { // no heartbeat received from zonecontroller
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         strcat(str_output, this->badStatusMess);
@@ -143,11 +159,13 @@ char *ZoneController::getDisplayString(char *statusMessage) {
         strcat(str_output, buf);
 
         //flash led every 1 sec
-        
+
         // warnLED.fullOn();
         // delay(10);
         // warnLED.fullOff();
-    } else {
+    }
+    else
+    {
         strcpy(str_output, this->name);
         strcat(str_output, ": ");
         strcat(str_output, this->goodStatusMess);

@@ -24,7 +24,6 @@ extern Display myDisplay;
 
 boolean touchedFlag = false;
 
-
 /**
  * @brief Get the Elapsed Time Str pointer
  * 
@@ -60,34 +59,32 @@ extern bool touchedFlag;
 #include "LedFader.h"
 extern LedFader warnLED;
 
-    // static unsigned long lastDisplayUpdateMillis = 0;
-    static char tempDisplayString[] = "12345678901234567890";
-    static char humiDisplayString[] = "12345678901234567890";
-    static char zone1DisplayString[] = "12345678901234567890";
-    static char zone3DisplayString[] = "12345678901234567890";
-    static char MQTTDisplayString[] = "12345678901234567890";
+// static unsigned long lastDisplayUpdateMillis = 0;
+static char tempDisplayString[] = "12345678901234567890";
+static char humiDisplayString[] = "12345678901234567890";
+static char zone1DisplayString[] = "12345678901234567890";
+static char zone3DisplayString[] = "12345678901234567890";
+static char MQTTDisplayString[] = "12345678901234567890";
 
-    static char newTempDisplayString[] = "12345678901234567890";
-    static char newHumiDisplayString[] = "12345678901234567890";
-    static char newZone1DisplayString[] = "12345678901234567890";
-    static char newZone3DisplayString[] = "12345678901234567890";
-    static char newMQTTDisplayString[] = "12345678901234567890";
+static char newTempDisplayString[] = "12345678901234567890";
+static char newHumiDisplayString[] = "12345678901234567890";
+static char newZone1DisplayString[] = "12345678901234567890";
+static char newZone3DisplayString[] = "12345678901234567890";
+static char newMQTTDisplayString[] = "12345678901234567890";
 
 void updateDisplayData()
 {
-
 
     char justTempString[20];
 
     //blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
-        strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
-        )
+        strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString)))
     {
 
         warnLED.fullOn();
-        delay(5);
+        delay(1);
         warnLED.fullOff();
     }
     // only update screen if status messages or touch sensor is active/has changed
@@ -97,15 +94,12 @@ void updateDisplayData()
     // Serial.println(MQTTDisplayString);
     // Serial.println(getMQTTDisplayString(newMQTTDisplayString));
 
-//delay(5000);
+    //delay(5000);
 
-    if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) 
-        || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString))
-        || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))
-        || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString)) 
-        //|| touchedFlag 
+    if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString)) || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString))
+        //|| touchedFlag
 
-        )
+    )
     {
 
         DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
@@ -129,7 +123,7 @@ void updateDisplayData()
         // {
         //     // TODO
         // }
-        // else 
+        // else
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {

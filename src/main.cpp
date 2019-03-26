@@ -69,8 +69,7 @@ unsigned long previousTempDisplayMillis =
     millis() - intervalTempDisplayMillis; // trigger on start
 
 // create the display object
-Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, /* clock=*/OLED_CLOCK_PIN,
-                  /* data=*/OLED_DATA_PIN);
+Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN, OLED_DATA_PIN);
 ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 15, "SHD", "SSS")};
@@ -206,6 +205,8 @@ void loop()
 #ifdef DEBUG
     Serial.print("1..");
 #endif
+    checkConnections(); // and reconnect if reqd
+
     MQTTclient.loop();    // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on
     ArduinoOTA.handle();
@@ -265,7 +266,6 @@ void loop()
         myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
     }
     broadcastWS();
-    checkConnections(); // and reconnect if reqd
     webSocket.loop();
 
     ArduinoOTA.handle();
@@ -291,7 +291,6 @@ void IRAM_ATTR resetModule()
  * @brief 
  * 
  */
-
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
