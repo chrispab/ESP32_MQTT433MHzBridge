@@ -20,11 +20,6 @@ class My433Transmitter : public NewRemoteTransmitter {
   		My433Transmitter(unsigned long address, byte pin, unsigned int periodusec, byte repeats);
       void operateSocket(uint8_t socketID, uint8_t state);
 
-    // transmitter(282830, TX433PIN, 260, 4);
-
-    // void writeLine(int lineNumber, const char *lineText);
-    // void refresh(void);
-    // void wipe(void);
 };
 
 #endif

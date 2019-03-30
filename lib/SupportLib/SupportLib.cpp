@@ -110,6 +110,7 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
+        myWebSerial.println("");
         myWebSerial.println("!----------! BIG_TEMP Display Refresh");
         myWebSerial.println(tempDisplayString);
         myWebSerial.println(MQTTDisplayString);
@@ -118,12 +119,6 @@ void updateDisplayData()
         myWebSerial.println(zone1DisplayString);
         myWebSerial.println(zone3DisplayString);
         myWebSerial.println("^----------^");
-
-        // if (displayMode == NORMAL)
-        // {
-        //     // TODO
-        // }
-        // else
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {
@@ -160,6 +155,8 @@ void updateDisplayData()
             myDisplay.writeLine(5, zone1DisplayString);
             myDisplay.writeLine(6, zone3DisplayString);
             myDisplay.refresh();
+            myWebSerial.println("");
+
             Serial.println("!----------! MULTI Display Refresh");
             Serial.println(tempDisplayString);
             Serial.println(humiDisplayString);
@@ -174,8 +171,7 @@ void updateDisplayData()
 extern unsigned long currentMillis;
 extern unsigned long previousConnCheckMillis;
 extern unsigned long intervalConnCheckMillis;
-//extern unsigned long intervalConnCheckMillis;
-//extern unsigned long intervalConnCheckMillis;
+
 
 #include "WiFiLib.h"
 
