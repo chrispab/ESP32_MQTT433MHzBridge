@@ -13,7 +13,9 @@ private:
 public:
   Light(uint8_t pin);
   // bool getState();
-  bool sampleState();
+  //bool State();
+  int getLevel();
+  void setThresholdLevel();
 
   int getLightSensor();
 };
