@@ -59,6 +59,8 @@ My433Transmitter transmitter(282830, TX433PIN, 260, 4);
 #include "RF24Lib.h" //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 
+#include "LightSensor.h"
+LightSensor MyLightSensor(LDR_PIN);
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;
@@ -194,6 +196,8 @@ void setup()
 
     //MQTTclient.
     myWebhook.trigger("433Bridge BootReboot");
+    MyLightSensor.getLevel();
+    
 }
 
 /**

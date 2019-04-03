@@ -1,20 +1,21 @@
-#ifndef __LIGHT_H
-#define __LIGHT_H
+#ifndef __LIGHTSENSOR_H
+#define __LIGHTSENSOR_H
 
 #include <Arduino.h>
 #include "IOBase.h"
 
-class Light : public IOBase
+class LightSensor : public IOBase
 {
 private:
   //bool state;
   int pin;
 
 public:
-  Light(uint8_t pin);
+  LightSensor(uint8_t pin);
   // bool getState();
-  //bool State();
+  bool sampleState();
   int getLevel();
+  bool hasNewLevel();
   void setThresholdLevel();
 
   int getLightSensor();

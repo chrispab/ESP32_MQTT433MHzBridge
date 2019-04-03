@@ -1,14 +1,14 @@
-#include "Light.h"
+#include "LightSensor.h"
 ////
 
-Light::Light(uint8_t ADC_Pin) : pin(ADC_Pin)
+LightSensor::LightSensor(uint8_t ADC_Pin) : pin(ADC_Pin)
 {
     state = false;
     newStateFlag = true;
 }
 
 
-bool Light::sampleState()
+bool LightSensor::sampleState()
 {
     int threshold = 500;
     //int sensorValue = getLightSensor();
@@ -24,7 +24,7 @@ bool Light::sampleState()
     return state;
 }
 
-int Light::getLightSensor()
+int LightSensor::getLevel()
 {
     return analogRead(pin);
 }

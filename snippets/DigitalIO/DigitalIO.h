@@ -1,5 +1,5 @@
-#ifndef __IOBASE_H
-#define __IOBASE_H
+#ifndef __DIOBASE_H
+#define __DIOBASE_H
 
 #include <Arduino.h>
 
