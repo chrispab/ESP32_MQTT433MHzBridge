@@ -9,16 +9,35 @@ class LightSensor : public IOBase
 private:
   //bool state;
   int pin;
+  bool newLevelFlag;
+  u_int currentLevel;
+  u_int previousLevel = 500;
+  u_int readIntervalMillis = 5000; //min interval between reading sensor in ms
+  u_int lastReadMillis = -5000;
+  
+  //hysteresis and state related properties
+      //u_int thresholdLevel = 600;
+    int lowerThresholdLevel = 500;
+    int upperThresholdLevel = 700;
+    //bool trigger = false;
+
+    //int currentLevel;
+    //int lowerHys = targetLevel - lowerLevel;
+    //int upperHys = targetLevel + upperLevel;
 
 public:
   LightSensor(uint8_t pin);
   // bool getState();
-  bool sampleState();
-  int getLevel();
+  //bool sampleState();
+  u_int getLevel();
+  u_int clearNewLevelFlag();
   bool hasNewLevel();
   void setThresholdLevel();
 
   int getLightSensor();
+
+  bool getState();
+
 };
 
 #endif

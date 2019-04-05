@@ -25,5 +25,7 @@
 //currently exposed on box via srew head
 #define TOUCH_PIN T4 // ESP32 Pin gpio13 rhs of panel
 //gpio12 is the other exposed screw head
-#define LDR_PIN 0   //! To be sorted!!
+#define LDR_PIN GPIO_NUM_3 // RHS_P_12
+#define PIR_PIN GPIO_NUM_1 // RHS_P_13
+
 

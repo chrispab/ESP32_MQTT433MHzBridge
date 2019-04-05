@@ -27,7 +27,7 @@ bool IOBase::hasNewState()
 {
     return newStateFlag;
 }
-bool IOBase::readState()
+bool IOBase::clearNewStateFlag()
 {
     //ensures MQTT pub only sent once per state change since last readState
     newStateFlag = false; //indicate data read and used e.g MQTT pub

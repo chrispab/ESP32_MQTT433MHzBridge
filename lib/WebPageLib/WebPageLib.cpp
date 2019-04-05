@@ -25,11 +25,11 @@ extern WebSerial myWebSerial;
 
 void checkForPageRequest(void)
 {
-    static char tempDisplayString[30];
-    static char humiDisplayString[30];
-    static char zone1DisplayString[30];
-    static char zone3DisplayString[30];
-    static char MQTTDisplayString[30];
+    // static char tempDisplayString[30];
+    // static char humiDisplayString[30];
+    // static char zone1DisplayString[30];
+    // static char zone3DisplayString[30];
+    // static char MQTTDisplayString[30];
 
     WiFiClient client = server.available(); // listen for incoming clients
     //client = server.available();

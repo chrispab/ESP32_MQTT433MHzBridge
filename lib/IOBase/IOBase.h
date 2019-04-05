@@ -20,7 +20,7 @@ public:
   IOBase();
   bool getState();
   void setState(bool);
-  bool readState();
+  bool clearNewStateFlag();
 //  int getLevel();
 
   bool hasNewState();

@@ -4,27 +4,62 @@
 LightSensor::LightSensor(uint8_t ADC_Pin) : pin(ADC_Pin)
 {
     state = false;
+    currentLevel = 500; //start level??
     newStateFlag = true;
+    newLevelFlag = true;
 }
 
-
-bool LightSensor::sampleState()
+u_int LightSensor::getLevel()
 {
-    int threshold = 500;
-    //int sensorValue = getLightSensor();
-    bool currentState;
-
-    currentState = (getLightSensor() > threshold);
-
-    if (currentState != state) //new reading value
+    int nowMs = millis();
+    //only read a new sample if time is due
+    if (nowMs > lastReadMillis + readIntervalMillis)
     {
-        state = currentState;
-        newStateFlag = true;
+        currentLevel = analogRead(pin);
+        if (currentLevel != previousLevel)
+        {
+            newLevelFlag = true;
+            previousLevel = currentLevel;
+        }
+        lastReadMillis = nowMs;
+        return currentLevel;
+    }
+}
+
+bool LightSensor::hasNewLevel()
+{
+    return newLevelFlag;
+}
+
+u_int LightSensor::clearNewLevelFlag()
+{
+    newLevelFlag = false; //indicate new data has been read by the program
+    return currentLevel;
+    //return analogRead(pin);
+}
+
+bool LightSensor::getState()
+{
+    getLevel(); //initiate new sensor sample if due
+    if (hasNewLevel())
+    {
+        clearNewLevelFlag();
+        if (state == true)
+        {
+            if (currentLevel < lowerThresholdLevel)
+            {                  //: #(currentLevel < lowerHys):
+                state = false; 
+                newStateFlag = true;
+            }
+        }
+        else //state is false
+        {
+            if (currentLevel > upperThresholdLevel)
+            {                 //}: #(currentLevel > upperHys):
+                state = true; 
+                newStateFlag = true;
+            }
+        }
     }
     return state;
-}
-
-int LightSensor::getLevel()
-{
-    return analogRead(pin);
 }

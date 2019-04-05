@@ -5,6 +5,8 @@ bool processTouchPads(void);
 char *getElapsedTimeStr();
 void updateDisplayData();
 void checkConnections();
+void checkLightSensor();
+
 
 
 enum displayModes

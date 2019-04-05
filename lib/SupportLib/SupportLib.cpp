@@ -172,7 +172,6 @@ extern unsigned long currentMillis;
 extern unsigned long previousConnCheckMillis;
 extern unsigned long intervalConnCheckMillis;
 
-
 #include "WiFiLib.h"
 
 #include <PubSubClient.h>
@@ -205,3 +204,27 @@ void checkConnections()
         previousConnCheckMillis = currentMillis;
     }
 }
+
+#include <LightSensor.h>
+extern LightSensor myLightSensor;
+void checkLightSensor()
+{
+
+    myLightSensor.getLevel(); // trigger sampling if due
+    if (myLightSensor.hasNewState()) {
+        //mqtt
+    }
+    //hystresis algorythm
+    //     lowerHys = targetLevel - LowerLevel
+    //     upperHys = target_temp + upperLevel
+    //     if ( trigger==ON):
+    //         if (currentLevel > lowerHys):#
+    //             trigger=ON# high speed - leave on
+    //         else: #(currentLevel < lowerHys):
+    //             trigger=OFF# lo speed
+    //     else: #trigger is OFF
+    //         if (currentLevel < upperHys):#
+    //             trigger=OFF# high speed - leave on
+    //         else: #(currentLevel > upperHys):
+    //             trigger=ON# lo speed
+};

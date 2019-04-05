@@ -22,7 +22,7 @@
 //time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#define NTP_OFFSET 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 60 * 60     // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000 // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
@@ -60,7 +60,7 @@ My433Transmitter transmitter(282830, TX433PIN, 260, 4);
 RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 
 #include "LightSensor.h"
-LightSensor MyLightSensor(LDR_PIN);
+LightSensor myLightSensor(LDR_PIN);
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;
@@ -196,8 +196,7 @@ void setup()
 
     //MQTTclient.
     myWebhook.trigger("433Bridge BootReboot");
-    MyLightSensor.getLevel();
-    
+    myLightSensor.getLevel();
 }
 
 /**
@@ -209,6 +208,7 @@ void loop()
 #ifdef DEBUG
     Serial.print("1..");
 #endif
+    checkLightSensor();
     checkConnections(); // and reconnect if reqd
 
     MQTTclient.loop();    // process any MQTT stuff, returned in callback
