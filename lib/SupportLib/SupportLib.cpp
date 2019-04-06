@@ -219,10 +219,10 @@ char str[21];
     myLightSensor.getLevel(); // trigger sampling if due
     if (myLightSensor.hasNewState())
     {
-        //send mqtt
         MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
         sprintf(str, "%d", myLightSensor.getLevel());
         MQTTclient.publish(publishLightStateTopic, str);
+
         myLightSensor.clearNewStateFlag();
     }
     //hystresis algorythm

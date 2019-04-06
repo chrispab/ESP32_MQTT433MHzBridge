@@ -45,6 +45,8 @@ void IRAM_ATTR resetModule();
 // DHT22 stuff
 TempSensor DHT22Sensor;
 
+//MQTT stuff
+#include <PubSubClient.h>
 IPAddress mqttBroker(192, 168, 0, 200);
 WiFiClient WiFiEClient;
 PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
@@ -61,6 +63,7 @@ RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 
 #include "LightSensor.h"
 LightSensor myLightSensor(LDR_PIN);
+
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;

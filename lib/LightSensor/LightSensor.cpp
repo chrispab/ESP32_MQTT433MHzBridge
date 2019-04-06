@@ -7,6 +7,7 @@ LightSensor::LightSensor(uint8_t ADC_Pin) : pin(ADC_Pin)
     currentLevel = 500; //start level??
     newStateFlag = true;
     newLevelFlag = true;
+    pinMode(ADC_Pin, INPUT);
 }
 
 u_int LightSensor::getLevel()
