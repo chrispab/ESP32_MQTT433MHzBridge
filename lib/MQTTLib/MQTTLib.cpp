@@ -149,56 +149,6 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     MQTTNewData = true;
 }
 
-// #include "LedFader.h"
-// extern LedFader warnLED;
-// #include "NewRemoteTransmitter.h"
-// extern NewRemoteTransmitter transmitter;
-
-/**
- * @brief 0-15, 0,1 mqtt funct to operate a remote power socket
- *          only used by mqtt function
- * 
- * @param socketID 0-15, correspond to socketNumber 1-16
- * @param state 
- */
-// void operateSocket(uint8_t socketID, uint8_t state)
-// {
-//     // this is a blocking routine !!!!!!!
-//     char msg[60] = "=> Operate Socket: ";
-//     char buff[10];
-
-//     // strcpy(buff, "Socket : ");
-//     sprintf(buff, "%d", (socketID + 1));
-//     strcat(msg, buff);
-//     strcat(msg, "-");
-
-//     //add socket item name
-//     strcat(msg, socketIDFunctionStrings[socketID]);
-
-//     // u8g2.setCursor(55, 40);
-//     if (state == 0)
-//     {
-//         strcat(msg, " - OFF");
-//     }
-//     else
-//     {
-//         strcat(msg, " - ON");
-//     }
-//     //Serial.println(msg);
-//     myWebSerial.println(msg);
-
-//     warnLED.fullOn();
-
-//     // myWebSerial.println("operate skt scktID..");
-//     // sprintf(buff, "%d", (socketID));
-//     // myWebSerial.println(buff);
-//     //     myWebSerial.println("operate skt newstate..");
-//     // sprintf(buff, "%d", (state));
-//     // myWebSerial.println(buff);
-
-//     transmitter.sendUnit(socketID, state);
-//     warnLED.fullOff(); //}
-// }
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;

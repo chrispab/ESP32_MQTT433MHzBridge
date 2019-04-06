@@ -22,8 +22,8 @@ u_int LightSensor::getLevel()
             previousLevel = currentLevel;
         }
         lastReadMillis = nowMs;
-        return currentLevel;
     }
+    return currentLevel;
 }
 
 bool LightSensor::hasNewLevel()
@@ -40,23 +40,23 @@ u_int LightSensor::clearNewLevelFlag()
 
 bool LightSensor::getState()
 {
-    getLevel(); //initiate new sensor sample if due
-    if (hasNewLevel())
+    getLevel();        //initiate new sensor sample if due
+    if (hasNewLevel()) //hystresis algorythm
     {
         clearNewLevelFlag();
         if (state == true)
         {
             if (currentLevel < lowerThresholdLevel)
-            {                  //: #(currentLevel < lowerHys):
-                state = false; 
+            { //: #(currentLevel < lowerHys):
+                state = false;
                 newStateFlag = true;
             }
         }
         else //state is false
         {
             if (currentLevel > upperThresholdLevel)
-            {                 //}: #(currentLevel > upperHys):
-                state = true; 
+            { //}: #(currentLevel > upperHys):
+                state = true;
                 newStateFlag = true;
             }
         }

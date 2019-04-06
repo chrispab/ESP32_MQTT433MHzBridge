@@ -207,12 +207,23 @@ void checkConnections()
 
 #include <LightSensor.h>
 extern LightSensor myLightSensor;
+
+#include <PubSubClient.h>
+extern PubSubClient MQTTclient;
+char publishLightStateTopic[] = "433Bridge/LightState";
+char publishLightLevelTopic[] = "433Bridge/LightLevel";
 void checkLightSensor()
 {
+char str[21];
 
     myLightSensor.getLevel(); // trigger sampling if due
-    if (myLightSensor.hasNewState()) {
-        //mqtt
+    if (myLightSensor.hasNewState())
+    {
+        //send mqtt
+        MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
+        sprintf(str, "%d", myLightSensor.getLevel());
+        MQTTclient.publish(publishLightStateTopic, str);
+        myLightSensor.clearNewStateFlag();
     }
     //hystresis algorythm
     //     lowerHys = targetLevel - LowerLevel
