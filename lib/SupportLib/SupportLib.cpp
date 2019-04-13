@@ -217,25 +217,12 @@ void checkLightSensor()
 char str[21];
 
     myLightSensor.getLevel(); // trigger sampling if due
-    if (myLightSensor.hasNewState())
+    if (myLightSensor.hasNewLevel())
     {
         MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
         sprintf(str, "%d", myLightSensor.getLevel());
-        MQTTclient.publish(publishLightStateTopic, str);
+        MQTTclient.publish(publishLightLevelTopic, str);
 
-        myLightSensor.clearNewStateFlag();
+        myLightSensor.clearNewLevelFlag();
     }
-    //hystresis algorythm
-    //     lowerHys = targetLevel - LowerLevel
-    //     upperHys = target_temp + upperLevel
-    //     if ( trigger==ON):
-    //         if (currentLevel > lowerHys):#
-    //             trigger=ON# high speed - leave on
-    //         else: #(currentLevel < lowerHys):
-    //             trigger=OFF# lo speed
-    //     else: #trigger is OFF
-    //         if (currentLevel < upperHys):#
-    //             trigger=OFF# high speed - leave on
-    //         else: #(currentLevel > upperHys):
-    //             trigger=ON# lo speed
 };

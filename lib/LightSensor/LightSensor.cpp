@@ -14,7 +14,7 @@ u_int LightSensor::getLevel()
 {
     int nowMs = millis();
     //only read a new sample if time is due
-    if (nowMs > lastReadMillis + readIntervalMillis)
+    if (nowMs > (lastReadMillis + readIntervalMillis))
     {
         currentLevel = analogRead(pin);
         if (currentLevel != previousLevel)

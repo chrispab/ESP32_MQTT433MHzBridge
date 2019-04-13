@@ -61,7 +61,7 @@ void broadcastWS()
     static unsigned long lastResetMillis = millis();
     unsigned long resetInterval = 10000;
 
-    //!if websockets buffer has content then send to client and empty the buffer
+    //if websockets buffer has content then send to client and empty the buffer
     if (myWebSerial.hasData())
     {
         String statusString;

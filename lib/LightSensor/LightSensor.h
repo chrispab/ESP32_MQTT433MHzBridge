@@ -17,8 +17,8 @@ private:
   
   //hysteresis and state related properties
       //u_int thresholdLevel = 600;
-    int lowerThresholdLevel = 500;
-    int upperThresholdLevel = 700;
+    int lowerThresholdLevel = 1200;
+    int upperThresholdLevel = 2100;
     //bool trigger = false;
 
     //int currentLevel;

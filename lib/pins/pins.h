@@ -4,7 +4,7 @@
 //refer to  cct diag for extra info
 #define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
 #define GREEN_LED_PIN GPIO_NUM_33             //LHS_P_9
-#define DHTPIN GPIO_NUM_25                    // LHS_P_8 what digital pin we're connected to
+#define DHTPIN GPIO_NUM_25                    // LHS_P_8 
 #define TX433PIN GPIO_NUM_32                  //LHS_P_10
 #define RF24_CE_PIN GPIO_NUM_5                //RHS_P_8
 #define RF24_CS_PIN GPIO_NUM_4                //RHS_P_5
@@ -25,7 +25,7 @@
 //currently exposed on box via srew head
 #define TOUCH_PIN T4 // ESP32 Pin gpio13 rhs of panel
 //gpio12 is the other exposed screw head
-#define LDR_PIN GPIO_NUM_3 // RHS_P_12
+#define LDR_PIN GPIO_NUM_36 // ADC_0 LHS_P_14
 #define PIR_PIN GPIO_NUM_1 // RHS_P_13
 
 

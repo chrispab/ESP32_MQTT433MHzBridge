@@ -72,17 +72,8 @@ boolean TempSensor::publishReadings(PubSubClient MQTTclient,
     // get current readings and pub via mqtt
     if (takeReadings())//new readings taken?
     {
-        //char messageString[20];
         MQTTclient.publish(publishTempTopic, temperatureString);
         MQTTclient.publish(publishHumiTopic, humidityString);
-        // format for serial print
-        // strcpy(messageString, getTemperatureString());
-        // strcat(messageString, "\xb0"); // degree symbol
-        // strcat(messageString, "C");    // suffix
-        // Serial.print("MQTT published Temperature: ");
-        // Serial.println(getTemperatureString());
-        // Serial.print("MQTT published Humidity: ");
-        // Serial.println(getHumidityString());
         return true;
     }
     return false;
