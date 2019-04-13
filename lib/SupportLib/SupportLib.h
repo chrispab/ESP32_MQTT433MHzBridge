@@ -6,6 +6,8 @@ char *getElapsedTimeStr();
 void updateDisplayData();
 void checkConnections();
 void checkLightSensor();
+void checkPIRSensor();
+
 
 
 

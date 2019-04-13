@@ -212,6 +212,7 @@ void loop()
     Serial.print("1..");
 #endif
     checkLightSensor();
+    checkPIRSensor();
     checkConnections(); // and reconnect if reqd
 
     MQTTclient.loop();    // process any MQTT stuff, returned in callback

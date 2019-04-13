@@ -226,3 +226,10 @@ char str[21];
         myLightSensor.clearNewLevelFlag();
     }
 };
+
+void checkPIRSensor()
+{
+char str[21];
+
+
+};
