@@ -167,7 +167,7 @@ void connectMQTT()
     startMillis = millis();
     MQTTConnectTimeout = false;
     long now = millis();
-    myWebSerial.println("In MQTT connectMQTT...");
+    //myWebSerial.println("In MQTT connectMQTT...");
 
     if (now - lastReconnectAttempt > 5000)
     {
@@ -187,7 +187,7 @@ void connectMQTT()
             }
             else
             {
-                myWebSerial.println("failed, rc=");
+                myWebSerial.println("MQTT connection failed, rc=");
                 Serial.println(MQTTclient.state());
                 myWebSerial.println(" try again ..");
             }
@@ -196,6 +196,7 @@ void connectMQTT()
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }
 
-    (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
-                          : myWebSerial.println("MQTT Connection attempt Time Out!");
+    // (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
+    //                       : myWebSerial.println("MQTT Connection attempt Time Out!");
+
 }

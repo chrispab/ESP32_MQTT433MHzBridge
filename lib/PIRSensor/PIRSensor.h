@@ -17,12 +17,9 @@ private:
 
 public:
   PIRSensor(uint8_t pin);
-  u_int getLevel();
-  u_int clearNewLevelFlag();
-  bool hasNewLevel();
-  void setThresholdLevel();
-  int getPIRSensor();
-  bool getState();
+
+  //int getPIRSensor();
+  //bool getState();
 };
 
 #endif

@@ -21,8 +21,6 @@ public:
   bool getState();
   void setState(bool);
   bool clearNewStateFlag();
-//  int getLevel();
-
   bool hasNewState();
   void setOnMillis(long onMillis);
   void setOffMillis(long offMillis);

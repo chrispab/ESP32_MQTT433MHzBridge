@@ -227,9 +227,24 @@ char str[21];
     }
 };
 
+#include <PIRSensor.h>
+extern PIRSensor myPIRSensor;
+
+#include <PubSubClient.h>
+extern PubSubClient MQTTclient;
+char publishPIRStateTopic[] = "433Bridge/PIRState";
+//char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
 void checkPIRSensor()
 {
-char str[21];
+//char str[21];
+    myPIRSensor.getState(); // trigger sampling if due
+    if (myPIRSensor.hasNewState())
+    {
+        MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
+        //sprintf(str, "%d", myPIRSensor.getLevel());
+        //MQTTclient.publish(publishPIRLevelTopic, str);
 
+        myPIRSensor.clearNewStateFlag();
+    }
 
 };

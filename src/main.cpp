@@ -125,6 +125,12 @@ hw_timer_t *timer = NULL;
 #include <IFTTTWebhook.h>
 IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
+
+#include "PIRSensor.h"
+PIRSensor myPIRSensor(PIR_PIN);
+
+
+
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
 #ifdef DEBUG
