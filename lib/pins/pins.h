@@ -26,6 +26,6 @@
 #define TOUCH_PIN T4 // ESP32 Pin gpio13 rhs of panel
 //gpio12 is the other exposed screw head
 #define LDR_PIN GPIO_NUM_36 // ADC_0 LHS_P_14
-#define PIR_PIN GPIO_NUM_1 // RHS_P_13
+#define PIR_PIN GPIO_NUM_16 // RHS_P_6
 
 

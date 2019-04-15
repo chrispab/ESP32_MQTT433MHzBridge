@@ -1,4 +1,4 @@
-#define SW_VERSION "V4.30 Br:\"dev\""
+#define SW_VERSION "V4.31 Br:\"dev\""
 
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"

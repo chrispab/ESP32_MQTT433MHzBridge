@@ -179,7 +179,7 @@ void connectMQTT()
             myWebSerial.println("Attempting MQTT connection...");
 
             lastReconnectAttempt = now;
-            if (MQTTclient.connect("ESP32Client"))
+            if (MQTTclient.connect("433BridgeMQTTClient"))
             {
                 myWebSerial.println("connected to MQTT server");
                 MQTTclient.subscribe(subscribeTopic);
