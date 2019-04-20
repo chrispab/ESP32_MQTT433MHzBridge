@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "IOBase.h"
+#include "bridge_config.h"
 
 class LightSensor : public IOBase
 {
@@ -17,8 +18,8 @@ private:
 
   //hysteresis and state related properties
   //u_int thresholdLevel = 600;
-  int lowerThresholdLevel = 1200;
-  int upperThresholdLevel = 2100;
+  int lowerThresholdLevel = LIGHT_SENSOR_LOWER_THRESHOLD;
+  int upperThresholdLevel = LIGHT_SENSOR_UPPER_THRESHOLD;
   //bool trigger = false;
 
   //int currentLevel;
