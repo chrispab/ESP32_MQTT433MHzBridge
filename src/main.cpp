@@ -130,15 +130,10 @@ IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 PIRSensor myPIRSensor(PIR_PIN);
 
 
-
 void setup()
 { // Initialize serial monitor port to PC and wait for port to
-#ifdef DEBUG
-    Serial.println(1);
-#endif
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
-    //MQTTLibSetup();
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
