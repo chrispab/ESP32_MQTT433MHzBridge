@@ -8,7 +8,14 @@
 extern WebSocketsServer webSocket;
 
 extern WebSerial myWebSerial;
-
+/**
+ * @brief 
+ * 
+ * @param num 
+ * @param type 
+ * @param payload 
+ * @param length 
+ */
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
     switch (type)

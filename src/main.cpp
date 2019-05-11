@@ -207,6 +207,8 @@ void setup()
  * @brief 
  * 
  */
+//text buffer for main loop
+char tempString[] = "12345678901234567890";
 void loop()
 {
 #ifdef DEBUG
@@ -229,7 +231,8 @@ void loop()
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
-        myWebSerial.println("New Sensor Readings-MQTT published");
+        myWebSerial.print("New Sensor Readings-MQTT published : ");
+        myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
     }
 
     webSocket.loop();
