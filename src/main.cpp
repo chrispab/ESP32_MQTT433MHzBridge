@@ -85,7 +85,7 @@ WiFiServer server(80);
 //SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 //2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 24, 1500, true);
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 25, HEART_BEAT_TIME, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 #include <WebSerial.h>
