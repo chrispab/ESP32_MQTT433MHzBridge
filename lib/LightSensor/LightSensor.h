@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "IOBase.h"
-#include "bridge_config.h"
+#include <config.h>
 
 class LightSensor : public IOBase
 {
