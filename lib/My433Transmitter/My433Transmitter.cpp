@@ -3,7 +3,7 @@
 #include <My433Transmitter.h>
 
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
-#include "../../src/socketIDFS.h"
+#include "socketIDFS.h"
 
 
 My433Transmitter::My433Transmitter(unsigned long address, byte pin, unsigned int periodusec, byte repeats) :

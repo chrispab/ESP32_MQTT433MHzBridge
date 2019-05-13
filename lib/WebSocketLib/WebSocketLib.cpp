@@ -3,7 +3,7 @@
 
 #include "WebSerial.h"
 //#include <WebSocketsServer.h>
-#include "../../src/version.h"
+#include "version.h"
 
 extern WebSocketsServer webSocket;
 

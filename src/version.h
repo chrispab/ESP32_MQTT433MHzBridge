@@ -1,10 +1,10 @@
-#define SW_VERSION "V4.39 Br:\"dev\""
+#define SW_VERSION "V4.40 Br:\"master\""
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
 #define TITLE_LINE3 "Zone Wireless Dog"
 #define TITLE_LINE4 "Temp Light PIR"
 #define TITLE_LINE5 SW_VERSION
-#define TITLE_LINE6 "webpage"
+#define TITLE_LINE6 "----"
 // //#define SYS_FONT u8g2_font_8x13_tf
 // #define SYS_FONT u8g2_font_6x12_tf       // 7 px high
 // #define BIG_TEMP_FONT u8g2_font_fub30_tf //30px hieght

@@ -10,7 +10,7 @@ char subscribeTopic[] = "433Bridge/cmnd/#";
 char publishTempTopic[] = "433Bridge/Temperature";
 char publishHumiTopic[] = "433Bridge/Humidity";
 
-#include "../../src/socketIDFS.h"
+#include "socketIDFS.h"
 
 
 
