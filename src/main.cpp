@@ -120,6 +120,8 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 hw_timer_t *timer = NULL;
 
 // ! big issue - does not work when no internet connection - resolve
+//hang on wifi connect etc
+//!! poss fixed - !!RETEST
 
 //#define myWEBHOOk "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
 #include <IFTTTWebhook.h>

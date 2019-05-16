@@ -27,7 +27,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     {
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        webSocket.sendTXT(num, "You are connected to esp32 webSocket server<br>");
+        webSocket.sendTXT(num, "You are connected to Bridge esp32 webSocket server<br>");
         webSocket.sendTXT(num, SW_VERSION);
         webSocket.sendTXT(num, "<br>");
         break;
