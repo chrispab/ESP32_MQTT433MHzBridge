@@ -1,4 +1,4 @@
-#define SW_VERSION "V4.40 Br:\"master\""
+#define SW_VERSION "V4.41 Br:\"master\""
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
 #define TITLE_LINE3 "Zone Wireless Dog"
