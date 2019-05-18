@@ -133,7 +133,7 @@ PIRSensor myPIRSensor(PIR_PIN);
 
 
 void setup()
-{ // Initialize serial monitor port to PC and wait for port to
+{
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
     heartBeatLED.begin();                        // initialize

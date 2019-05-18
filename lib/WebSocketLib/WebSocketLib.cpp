@@ -30,6 +30,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         webSocket.sendTXT(num, "You are connected to Bridge esp32 webSocket server<br>");
         webSocket.sendTXT(num, SW_VERSION);
         webSocket.sendTXT(num, "<br>");
+
+        webSocket.sendTXT(num, TITLE_LINE6);
+        webSocket.sendTXT(num, "<br>");
         break;
     }
     case WStype_TEXT:
@@ -43,7 +46,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         break;
     case WStype_BIN:
         Serial.printf("[%u] get binary length: %u\n", num, length);
-        hexdump(payload, length,16);
+        hexdump(payload, length, 16);
 
         // send message to client
         // webSocket.sendBIN(num, payload, length);
@@ -100,4 +103,3 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols)
     }
     Serial.printf("\n");
 }
-
