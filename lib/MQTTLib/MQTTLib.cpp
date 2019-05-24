@@ -108,9 +108,9 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     payload[length] = '\0';
 
     char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload, and a bit extra to make sure there is room in the string";
-    strcpy(message, "MQTT Recieved [");
+    strcpy(message, "MQTT Rx [");
     strcat(message, topic);
-    strcat(message, "] : ");
+    strcat(message, "]: ");
     //append payload and add \o terminator
     strncat(message, (char *)payload, length);
     //Serial.println(message);

@@ -233,7 +233,7 @@ void loop()
     //if new readings taken, op to serial etc
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
-        myWebSerial.print("New Sensor Readings-MQTT published : ");
+        myWebSerial.print("New-MQTT pub: ");
         myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
     }
 
@@ -313,7 +313,7 @@ void resetWatchdog(void)
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
-        myWebSerial.println("Reset Module Watchdog......");
+        myWebSerial.println("Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();
     }
 }
