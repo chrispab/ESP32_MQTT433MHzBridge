@@ -161,7 +161,7 @@ void connectMQTT()
 {
     bool MQTTConnectTimeout = false;
     u16_t startMillis = millis();
-    u16_t timeOutMillis = 1000;
+    u16_t timeOutMillis = 5000;
 
 
     startMillis = millis();
@@ -191,9 +191,9 @@ void connectMQTT()
                 Serial.println(MQTTclient.state());
                 myWebSerial.println(" try again ..");
             }
+            MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
         }
-        MQTTConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
+
     }
 
     // (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")

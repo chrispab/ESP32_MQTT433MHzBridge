@@ -15,11 +15,13 @@ extern WiFiServer server;
 
 void connectWiFi()
 {
+
+    //! ensure non blocking so can act as zone watchdog
+
     bool wifiConnectTimeout = false;
     u16_t startMillis;
-    u16_t timeOutMillis = 15000;
+    u16_t timeOutMillis = 5000;
 
-    //wifiConnectTimeout = false;
     WiFi.begin(ssid, pass);
 
     startMillis = millis();
@@ -27,11 +29,6 @@ void connectWiFi()
     myWebSerial.println(ssid);
     while (!WiFi.isConnected() && !wifiConnectTimeout)
     {
-        // Connect to WPA/WPA2 network. Change this line if using open
-        // or WEP network:
-        // WiFi.begin(ssid, pass);
-        //WiFi.begin(ssid, pass);
-
         // enable jump out if connection attempt has timed out
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;

@@ -77,6 +77,8 @@ void updateDisplayData()
 
     char justTempString[20];
 
+
+
     //blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
@@ -87,6 +89,10 @@ void updateDisplayData()
         delay(1);
         warnLED.fullOff();
     }
+        //check for any ongoing erros/issues and display them
+    // if ()
+    // {
+    // }
     // only update screen if status messages or touch sensor is active/has changed
     // compare new display data to previous display data
     // if different - update the actual OLED display and previous
@@ -98,7 +104,6 @@ void updateDisplayData()
 
     if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString)) || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString))
         //|| touchedFlag
-
     )
     {
 
@@ -214,7 +219,7 @@ char publishLightStateTopic[] = "433Bridge/LightState";
 char publishLightLevelTopic[] = "433Bridge/LightLevel";
 void checkLightSensor()
 {
-char str[21];
+    char str[21];
 
     myLightSensor.getLevel(); // trigger sampling if due
     if (myLightSensor.hasNewLevel())
@@ -236,7 +241,7 @@ char publishPIRStateTopic[] = "433Bridge/PIRState";
 //char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
 void checkPIRSensor()
 {
-//char str[21];
+    //char str[21];
     myPIRSensor.getState(); // trigger sampling if due
     if (myPIRSensor.hasNewState())
     {
@@ -246,5 +251,4 @@ void checkPIRSensor()
 
         myPIRSensor.clearNewStateFlag();
     }
-
 };
