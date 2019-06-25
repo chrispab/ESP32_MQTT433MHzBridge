@@ -155,35 +155,26 @@ extern PubSubClient MQTTclient;
 
 
 // set so ensures initial connect attempt, assume now gives 0
-long lastReconnectAttempt = -6000;
+static long lastReconnectAttemptMillis = -6000;
 
 void connectMQTT()
 {
     bool MQTTConnectTimeout = false;
-    u16_t startMillis = millis();
-    u16_t timeOutMillis = 5000;
-
-
-    startMillis = millis();
+    u16_t checkPeriodMillis = 10000;
+    u16_t timeOutMillis = 3000;
     MQTTConnectTimeout = false;
-    long now = millis();
-    //myWebSerial.println("In MQTT connectMQTT...");
+    u16_t startMillis = millis();
 
-    if (now - lastReconnectAttempt > 5000)
+    if (startMillis - lastReconnectAttemptMillis > checkPeriodMillis)
     {
         myWebSerial.println("ready to try MQTT reconnectMQTT...");
-
-        //loop till connected or timed out
-        while (!MQTTclient.connected() && !MQTTConnectTimeout)
+        while (!MQTTclient.connected() && !MQTTConnectTimeout)//loop till connected or timed out
         {
             myWebSerial.println("Attempting MQTT connection...");
-
-            lastReconnectAttempt = now;
             if (MQTTclient.connect("433BridgeMQTTClient"))
             {
                 myWebSerial.println("connected to MQTT server");
                 MQTTclient.subscribe(subscribeTopic);
-                lastReconnectAttempt = 0;
             }
             else
             {
@@ -191,12 +182,10 @@ void connectMQTT()
                 Serial.println(MQTTclient.state());
                 myWebSerial.println(" try again ..");
             }
+            lastReconnectAttemptMillis = startMillis;
             MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
         }
-
     }
-
+}
     // (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
     //                       : myWebSerial.println("MQTT Connection attempt Time Out!");
-
-}

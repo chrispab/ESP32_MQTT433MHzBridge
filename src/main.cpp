@@ -139,6 +139,15 @@ void setup()
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
+
+        //! watchdog setup
+    timer = timerBegin(0, 80, true); // timer 0, div 80
+    timerAttachInterrupt(timer, &resetModule, true);
+    // n0 secs
+    timerAlarmWrite(timer, 30000000, false); // set time in us
+    timerAlarmEnable(timer);                 // enable interrupt
+
+
     // setup OLED display
     displayMode = NORMAL;
     displayMode = BIG_TEMP;
@@ -174,7 +183,7 @@ void setup()
     myDisplay.writeLine(4, "Connecting to MQTT..");
     myDisplay.refresh();
     connectMQTT();
-    myDisplay.writeLine(5, "All Connected");
+    myDisplay.writeLine(5, "DONE");
     myDisplay.refresh();
     timeClient.begin();
     timeClient.update();
@@ -186,12 +195,6 @@ void setup()
     //myWebhook.trigger("433Bridge Boot/Reboot");
     //myWebhook.trigger();
 
-    //! watchdog setup
-    timer = timerBegin(0, 80, true); // timer 0, div 80
-    timerAttachInterrupt(timer, &resetModule, true);
-    // n0 secs
-    timerAlarmWrite(timer, 30000000, false); // set time in us
-    timerAlarmEnable(timer);                 // enable interrupt
     myDisplay.wipe();
     //connectWiFi();
     resetWatchdog();
