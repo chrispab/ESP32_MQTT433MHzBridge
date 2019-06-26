@@ -12,9 +12,6 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 
 #include "socketIDFS.h"
 
-
-
-                
 // strcpy(socketIDFunctionStrings[0], "blah");
 void MQTTLibSetup(void)
 {
@@ -54,28 +51,27 @@ void processMQTTMessage(void)
     {
         digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
         //Serial
-            // myWebSerial.println("process MQTT - MQTTSocketNumber...");
+        // myWebSerial.println("process MQTT - MQTTSocketNumber...");
 
-            // myWebSerial.println(buff);
+        // myWebSerial.println(buff);
 
-    //                     myWebSerial.println("process MQTT - MQTTNewState...");
-    // sprintf(buff, "%d", (MQTTNewState));
+        //                     myWebSerial.println("process MQTT - MQTTNewState...");
+        // sprintf(buff, "%d", (MQTTNewState));
 
-           // myWebSerial.println(buff);
+        // myWebSerial.println(buff);
 
         transmitter.operateSocket(MQTTSocketNumber - 1, MQTTNewState);
         MQTTNewData = false; // indicate not new data now, processed
     }
 }
 
-char* getMQTTDisplayString(char *MQTTStatus)
+char *getMQTTDisplayString(char *MQTTStatus)
 {
     char msg[] = "This is a message placeholder";
     char socketNumber[] = "This is a also message placeh";
 
-
     sprintf(socketNumber, "%d", (MQTTSocketNumber));
-    
+
     strcpy(msg, socketNumber);
 
     strcat(msg, "-");
@@ -94,7 +90,6 @@ char* getMQTTDisplayString(char *MQTTStatus)
     strcpy(MQTTStatus, msg);
     return MQTTStatus;
 }
-
 
 // MQTTclient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
@@ -127,8 +122,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     // if ((lastButOneChar >= '0') &&
     //     (lastButOneChar <= '9'))
     socketNumber = lastChar - '0';
-    if ( (lastButOneChar == '1') )
-    { // it is a 2 digit number
+    if ((lastButOneChar == '1'))
+    {                                     // it is a 2 digit number
         socketNumber = socketNumber + 10; // calc actual int
     }
     // else
@@ -149,10 +144,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     MQTTNewData = true;
 }
 
-
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
-
 
 // set so ensures initial connect attempt, assume now gives 0
 static long lastReconnectAttemptMillis = -6000;
@@ -162,13 +155,14 @@ void connectMQTT()
     bool MQTTConnectTimeout = false;
     u16_t checkPeriodMillis = 10000;
     u16_t timeOutMillis = 3000;
-    MQTTConnectTimeout = false;
+    u16_t now;
     u16_t startMillis = millis();
+    myWebSerial.println("HELLO...");
 
-    if (startMillis - lastReconnectAttemptMillis > checkPeriodMillis)
+    if ((startMillis - lastReconnectAttemptMillis) > checkPeriodMillis)
     {
         myWebSerial.println("ready to try MQTT reconnectMQTT...");
-        while (!MQTTclient.connected() && !MQTTConnectTimeout)//loop till connected or timed out
+        while (!MQTTclient.connected() && !MQTTConnectTimeout) //loop till connected or timed out
         {
             myWebSerial.println("Attempting MQTT connection...");
             if (MQTTclient.connect("433BridgeMQTTClient"))
@@ -182,10 +176,11 @@ void connectMQTT()
                 Serial.println(MQTTclient.state());
                 myWebSerial.println(" try again ..");
             }
-            lastReconnectAttemptMillis = startMillis;
-            MQTTConnectTimeout = ((millis() - startMillis) > timeOutMillis) ? true : false;
+            now = millis();
+            lastReconnectAttemptMillis = now;
+            MQTTConnectTimeout = ((now - startMillis) > timeOutMillis) ? true : false;
         }
     }
 }
-    // (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
-    //                       : myWebSerial.println("MQTT Connection attempt Time Out!");
+// (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
+//                       : myWebSerial.println("MQTT Connection attempt Time Out!");
