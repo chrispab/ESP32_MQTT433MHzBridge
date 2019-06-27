@@ -185,7 +185,7 @@ extern PubSubClient MQTTclient;
 void checkConnections()
 {
     currentMillis = millis();
-    if (currentMillis - previousConnCheckMillis > intervalConnCheckMillis)
+    if ((currentMillis - previousConnCheckMillis) > intervalConnCheckMillis)
     {
         if (!WiFi.isConnected())
         { //!= WL_CONNECTED)

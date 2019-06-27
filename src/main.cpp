@@ -67,7 +67,7 @@ LightSensor myLightSensor(LDR_PIN);
 // Global vars
 unsigned long currentMillis = 0;
 unsigned long previousConnCheckMillis = 0;
-unsigned long intervalConnCheckMillis = 63000;
+unsigned long intervalConnCheckMillis = 30000;
 
 unsigned long intervalTempDisplayMillis = 60000;
 unsigned long previousTempDisplayMillis =

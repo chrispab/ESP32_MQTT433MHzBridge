@@ -148,16 +148,23 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 extern PubSubClient MQTTclient;
 
 // set so ensures initial connect attempt, assume now gives 0
-static long lastReconnectAttemptMillis = -6000;
 
 void connectMQTT()
 {
+    static u16_t lastReconnectAttemptMillis = 0;
+
     bool MQTTConnectTimeout = false;
     u16_t checkPeriodMillis = 10000;
     u16_t timeOutMillis = 3000;
     u16_t now;
     u16_t startMillis = millis();
     myWebSerial.println("HELLO...");
+    char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload room in the string";
+    
+    myWebSerial.println("HELLO...");
+    myWebSerial.println("HELLO...");
+    myWebSerial.println("HELLO...");
+
 
     if ((startMillis - lastReconnectAttemptMillis) > checkPeriodMillis)
     {
