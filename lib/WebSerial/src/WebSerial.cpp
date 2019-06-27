@@ -39,14 +39,11 @@ void WebSerial::refresh(void)
 void WebSerial::wipe(void)
 {
 }
+
+
 // add-update a line of text in the display text buffer
 void WebSerial::println(const char *lineText)
 {
-
-    // String statusString;
-    // statusString = timeClient.getFormattedTime() + ": " + this.getBuffer();
-    // Serial.print(statusString);
-
     Serial.println(lineText);
 
     int newLineLen = strlen(lineText);
@@ -55,12 +52,34 @@ void WebSerial::println(const char *lineText)
     if ((strlen(consoleBuffer) + newLineLen + 20) > (BUFF_SIZE - 1))
     {
         memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
-        //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
-        //items[k] = value;
     }
     strcat(consoleBuffer, lineText);
     strcat(consoleBuffer, "<br>");
 }
+
+// print text with a u long number
+void WebSerial::println(const char *lineText, unsigned long uLongNumber)
+{
+        char buff1[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload room in the string";
+        char buff2[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload room in the string";
+
+    strcpy(buff1,lineText);
+    sprintf(buff2, "%lu", uLongNumber);
+    strcat(buff1,buff2);
+    Serial.println(buff1);
+
+    int newLineLen = strlen(buff1);
+
+    //! do whole lines
+    if ((strlen(consoleBuffer) + newLineLen + 20) > (BUFF_SIZE - 1))
+    {
+        memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
+    }
+    strcat(consoleBuffer, buff1);
+    strcat(consoleBuffer, "<br>");
+}
+
+
 void WebSerial::print(const char *lineText)
 {
     Serial.println(lineText);
@@ -71,9 +90,6 @@ void WebSerial::print(const char *lineText)
     if ((strlen(consoleBuffer) + newLineLen + 20) > (BUFF_SIZE - 1))
     {
         memmove(&consoleBuffer, (&consoleBuffer[newLineLen] + 20), BUFF_SIZE - newLineLen - 20);
-        //memmove(&items[k + 1], &items[k], (numItems - k - 1) * sizeof(double));
-        //items[k] = value;
     }
     strcat(consoleBuffer, lineText);
-    //strcat(consoleBuffer, "<br>");
 }

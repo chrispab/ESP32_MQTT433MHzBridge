@@ -59,6 +59,7 @@ void setupOTA(void)
             Serial.println("Receive Failed");
         else if (error == OTA_END_ERROR)
             Serial.println("End Failed");
+        ESP.restart();
     });
     /* start updating */
     ArduinoOTA.begin();

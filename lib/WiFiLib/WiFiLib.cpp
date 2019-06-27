@@ -19,8 +19,8 @@ void connectWiFi()
     //! ensure non blocking so can act as zone watchdog
 
     bool wifiConnectTimeout = false;
-    u16_t startMillis;
-    u16_t timeOutMillis = 5000;
+    unsigned long startMillis;
+    unsigned long timeOutMillis = 5000;
 
     WiFi.begin(ssid, pass);
 

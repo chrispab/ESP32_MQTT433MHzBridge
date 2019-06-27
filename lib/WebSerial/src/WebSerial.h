@@ -18,6 +18,8 @@ public:
   WebSerial();
 
   void println(const char *text);
+  void println(const char *lineText, unsigned long uLongNumber);
+
   void print(const char *text);
 
   char *getBuffer(void);

@@ -151,22 +151,25 @@ extern PubSubClient MQTTclient;
 
 void connectMQTT()
 {
-    static u16_t lastReconnectAttemptMillis = 0;
-
+    static unsigned long lastReconnectAttemptMillis = 0;
     bool MQTTConnectTimeout = false;
-    u16_t checkPeriodMillis = 10000;
-    u16_t timeOutMillis = 3000;
-    u16_t now;
-    u16_t startMillis = millis();
-    myWebSerial.println("HELLO...");
-    char message[] = "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the payload room in the string";
-    
-    myWebSerial.println("HELLO...");
-    myWebSerial.println("HELLO...");
-    myWebSerial.println("HELLO...");
+    unsigned long checkPeriodMillis = 5000;
+    unsigned long timeOutMillis = 5000;
+    unsigned long now;
+    unsigned long nowMillis = millis();
 
+    myWebSerial.println("HELLO...");
+    myWebSerial.println("nowMillis : ", nowMillis);
+    myWebSerial.println("Last reconn attempt : ", lastReconnectAttemptMillis);
+    myWebSerial.println("checkPeriodMillis : ", checkPeriodMillis);
 
-    if ((startMillis - lastReconnectAttemptMillis) > checkPeriodMillis)
+    //do on start up
+    // if (lastReconnectAttemptMillis == 0)
+    // {
+    //     nowMillis = checkPeriodMillis + 1;
+    // }
+
+    if ((nowMillis - lastReconnectAttemptMillis) > checkPeriodMillis)
     {
         myWebSerial.println("ready to try MQTT reconnectMQTT...");
         while (!MQTTclient.connected() && !MQTTConnectTimeout) //loop till connected or timed out
@@ -181,13 +184,15 @@ void connectMQTT()
             {
                 myWebSerial.println("MQTT connection failed, rc=");
                 Serial.println(MQTTclient.state());
+                myWebSerial.println("MQTT STATE : ",MQTTclient.state());
+
                 myWebSerial.println(" try again ..");
             }
             now = millis();
             lastReconnectAttemptMillis = now;
-            MQTTConnectTimeout = ((now - startMillis) > timeOutMillis) ? true : false;
+            MQTTConnectTimeout = ((now - nowMillis) > timeOutMillis) ? true : false;
         }
+        (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
+                              : myWebSerial.println("MQTT Connection attempt Time Out!");
     }
 }
-// (!MQTTConnectTimeout) ? myWebSerial.println("MQTT Connection made!")
-//                       : myWebSerial.println("MQTT Connection attempt Time Out!");

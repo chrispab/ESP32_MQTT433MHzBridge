@@ -76,9 +76,6 @@ void updateDisplayData()
 {
 
     char justTempString[20];
-
-
-
     //blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
@@ -89,7 +86,7 @@ void updateDisplayData()
         delay(1);
         warnLED.fullOff();
     }
-        //check for any ongoing erros/issues and display them
+    //check for any ongoing erros/issues and display them
     // if ()
     // {
     // }
