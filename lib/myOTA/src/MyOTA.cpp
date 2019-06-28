@@ -16,8 +16,8 @@ void setupOTA(void)
     ArduinoOTA.onStart([]() {
         Serial.println("Start updating");
         myDisplay.wipe();
-        myDisplay.setFont(u8g2_font_fub30_tf); //30px hieght);
-        myDisplay.writeLine(4, " OTA");
+        myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
+        myDisplay.writeLine(4, "OTA-U");
         myDisplay.refresh();
     });
     /* this callback function will be invoked when updating end */
@@ -33,17 +33,7 @@ void setupOTA(void)
   so we can use it to calculate the progress of flashing */
     //char str[12];
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-
-        // myDisplay.wipe();
-        // myDisplay.writeLine(1, "OTA updating");
-        // char str[5];
-        // sprintf(str, "%d", (progress / (total / 100)));
-        // myDisplay.drawStr(0, 24, str);
-        //myDisplay.sendBuffer();
-        // myDisplay.writeLine(3, str);
-
-        // myDisplay.refresh();
+        //Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     });
 
     /* this callback function will be invoked when updating error */

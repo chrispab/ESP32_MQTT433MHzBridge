@@ -22,7 +22,11 @@ void connectWiFi()
     unsigned long startMillis;
     unsigned long timeOutMillis = 5000;
 
-    WiFi.begin(ssid, pass);
+    WiFi.begin(ssid, pass);//move out or if
+
+//! if wifi notconnected then
+//wifi begin
+//{}
 
     startMillis = millis();
     myWebSerial.println("Attempting to connect to SSID: ");
@@ -30,6 +34,8 @@ void connectWiFi()
     while (!WiFi.isConnected() && !wifiConnectTimeout)
     {
         // enable jump out if connection attempt has timed out
+        //WiFi.reconnect();
+
         wifiConnectTimeout =
             ((millis() - startMillis) > timeOutMillis) ? true : false;
     }

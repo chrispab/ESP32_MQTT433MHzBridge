@@ -132,7 +132,7 @@ IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
 
-
+const int wdtTimeout = 40000; //time in ms to trigger the watchdog
 void setup()
 {
     Serial.begin(115200);
@@ -142,10 +142,16 @@ void setup()
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
 
         //! watchdog setup
+         // timer = timerBegin(0, 80, true);                  //timer 0, div 80
+  //timerAttachInterrupt(timer, &resetModule, true);  //attach callback
+  //timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
+//timerAlarmEnable(timer); //enable interrupt
+
     timer = timerBegin(0, 80, true); // timer 0, div 80
     timerAttachInterrupt(timer, &resetModule, true);
     // n0 secs
-    timerAlarmWrite(timer, 30000000, false); // set time in us
+    //timerAlarmWrite(timer, 30000000, false); // set time in us
+    timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
     timerAlarmEnable(timer);                 // enable interrupt
 
 
@@ -166,25 +172,26 @@ void setup()
     delay(1000);
 
     myDisplay.wipe();
-    myDisplay.writeLine(1, "Connecting to Sensor..");
+    myDisplay.writeLine(1, SW_VERSION);
+    myDisplay.writeLine(2, "Connecting to Sensor..");
     myDisplay.refresh();
     DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
     // rf24 stuff
-    myDisplay.writeLine(2, "Connecting to RF24..");
+    myDisplay.writeLine(3, "Connecting to RF24..");
     myDisplay.refresh();
     connectRF24();
     // attempt to connect to Wifi network:
-    myDisplay.writeLine(3, "Connecting to WiFi..");
+    myDisplay.writeLine(4, "Connecting to WiFi..");
     myDisplay.refresh();
     connectWiFi();
     // you're connected now, so print out the status:
     printWifiStatus();
     //server.begin();
     CR;
-    myDisplay.writeLine(4, "Connecting to MQTT..");
+    myDisplay.writeLine(5, "Connecting to MQTT..");
     myDisplay.refresh();
     connectMQTT();
-    myDisplay.writeLine(5, "DONE");
+    myDisplay.writeLine(6, "DONE");
     myDisplay.refresh();
     timeClient.begin();
     timeClient.update();
@@ -246,24 +253,24 @@ void loop()
     //MQTTclient.loop(); // process any MQTT stuff, returned in callback
     ArduinoOTA.handle();
 
-    touchedFlag = touchPad1.getState();
-    (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
+    // touchedFlag = touchPad1.getState();
+    // (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
 
-    if (touchPad2.getState())
-    {
-        if (millis() % 2000 == 0)
-        {
-            warnLED.fullOn();
-            delay(10);
-            warnLED.fullOff();
-            //!  MQTTclient.publish("433Bridge/Button1", "1");
-        }
-        displayMode = MULTI;
-    }
-    else
-    {
-        displayMode = BIG_TEMP;
-    }
+    // if (touchPad2.getState())
+    // {
+    //     if (millis() % 2000 == 0)
+    //     {
+    //         warnLED.fullOn();
+    //         delay(10);
+    //         warnLED.fullOff();
+    //         //!  MQTTclient.publish("433Bridge/Button1", "1");
+    //     }
+    //     displayMode = MULTI;
+    // }
+    // else
+    // {
+    //     displayMode = BIG_TEMP;
+    // }
     ArduinoOTA.handle();
 
     updateDisplayData();
@@ -301,7 +308,6 @@ void loop()
 void IRAM_ATTR resetModule()
 {
     ets_printf("ESP32 Rebooted by Internal Watchdog\n");
-    //esp_restart_noos();
     esp_restart();
 }
 

@@ -153,7 +153,7 @@ void connectMQTT()
 {
     static unsigned long lastReconnectAttemptMillis = 0;
     bool MQTTConnectTimeout = false;
-    unsigned long checkPeriodMillis = 5000;
+    unsigned long checkPeriodMillis = 20000;
     unsigned long timeOutMillis = 5000;
     unsigned long now;
     unsigned long nowMillis = millis();
@@ -175,7 +175,7 @@ void connectMQTT()
         while (!MQTTclient.connected() && !MQTTConnectTimeout) //loop till connected or timed out
         {
             myWebSerial.println("Attempting MQTT connection...");
-            if (MQTTclient.connect("433BridgeMQTTClient"))
+            if (MQTTclient.connect("433BridgeMQTTClient"))//failure will insert a delay,poss 15 secs
             {
                 myWebSerial.println("connected to MQTT server");
                 MQTTclient.subscribe(subscribeTopic);
