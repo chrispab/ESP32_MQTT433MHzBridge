@@ -117,9 +117,6 @@ extern boolean touchedFlag; // = false;
 TouchPad touchPad1 = TouchPad(TOUCH_SENSOR_1);
 TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 
-//! WATCHDOG STUFF
-hw_timer_t *timer = NULL;
-
 // ! big issue - does not work when no internet connection - resolve
 //hang on wifi connect etc
 //!! poss fixed - !!RETEST
@@ -128,11 +125,25 @@ hw_timer_t *timer = NULL;
 #include <IFTTTWebhook.h>
 IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
-
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
+/**
+ * @brief 
+ * 
+ */
+//! WATCHDOG STUFF
+#include "esp_system.h"
+hw_timer_t *timer = NULL;
+const int wdtTimeoutS = 40;
+const int wdtTimeoutMs = wdtTimeoutS * 1000; //time in ms to trigger the watchdog
+unsigned long resetWatchdogIntervalMs = 20000;
 
-const int wdtTimeout = 40000; //time in ms to trigger the watchdog
+void IRAM_ATTR resetModule()
+{
+    ets_printf("ESP32 Rebooted by Internal Watchdog\n");
+    esp_restart();
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -141,19 +152,10 @@ void setup()
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
 
-        //! watchdog setup
-         // timer = timerBegin(0, 80, true);                  //timer 0, div 80
-  //timerAttachInterrupt(timer, &resetModule, true);  //attach callback
-  //timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
-//timerAlarmEnable(timer); //enable interrupt
-
-    timer = timerBegin(0, 80, true); // timer 0, div 80
+    timer = timerBegin(0, 8000, true); // timer 0, 80mhz div 8000
     timerAttachInterrupt(timer, &resetModule, true);
-    // n0 secs
-    //timerAlarmWrite(timer, 30000000, false); // set time in us
-    timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
-    timerAlarmEnable(timer);                 // enable interrupt
-
+    timerAlarmWrite(timer, wdtTimeoutMs * 10, false); //set time in us
+    timerAlarmEnable(timer);                          // enable interrupt
 
     // setup OLED display
     displayMode = NORMAL;
@@ -305,20 +307,11 @@ void loop()
  * @brief 
  * 
  */
-void IRAM_ATTR resetModule()
-{
-    ets_printf("ESP32 Rebooted by Internal Watchdog\n");
-    esp_restart();
-}
+//extern unsigned long resetWatchdogIntervalMs;
 
-/**
- * @brief 
- * 
- */
 void resetWatchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
-    unsigned long resetWatchdogIntervalMs = 10000;
 
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs)
     {

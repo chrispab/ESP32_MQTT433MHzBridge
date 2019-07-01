@@ -18,7 +18,15 @@ char receive_payload[max_payload_size + 1];
 extern RF24 rf24Radio;
 void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 int equalID(char *receive_payload, const char *targetID);
+static char messageText[21];
 
+char*  RF24getDisplayString(char *statusMessage){
+//    char str_output[20] = {0};
+    //strcpy(statusMessage, str_output); // copy status mess to loc
+    strcpy(statusMessage, messageText); // copy status mess to loc
+
+    return statusMessage;              // return pointer to status message
+}
 
 void connectRF24()
 {
@@ -43,9 +51,9 @@ extern ZoneController ZCs[];
 #include "WebSerial.h"
 extern WebSerial myWebSerial; 
 
+
 void processZoneRF24Message(void)
 {
-    char messageText[17];
     while (rf24Radio.available())
     { // Read all available payloads
 
@@ -65,7 +73,6 @@ void processZoneRF24Message(void)
 
         // who was it from?
         // reset that timer
-
         if (equalID(receive_payload, ZCs[0].heartBeatText))
         {
             ZCs[0].resetZoneDevice();

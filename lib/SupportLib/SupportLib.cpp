@@ -58,19 +58,22 @@ extern bool touchedFlag;
  */
 #include "LedFader.h"
 extern LedFader warnLED;
+char *RF24getDisplayString(char *statusMessage);
 
 // static unsigned long lastDisplayUpdateMillis = 0;
 static char tempDisplayString[] = "12345678901234567890";
 static char humiDisplayString[] = "12345678901234567890";
 static char zone1DisplayString[] = "12345678901234567890";
 static char zone3DisplayString[] = "12345678901234567890";
-static char MQTTDisplayString[] = "12345678901234567890";
+static char MQTTDisplayString[] = "12345678901234567890123456789";
+static char RF24DisplayString[] = "12345678901234567890";
 
 static char newTempDisplayString[] = "12345678901234567890";
 static char newHumiDisplayString[] = "12345678901234567890";
 static char newZone1DisplayString[] = "12345678901234567890";
 static char newZone3DisplayString[] = "12345678901234567890";
 static char newMQTTDisplayString[] = "12345678901234567890";
+static char newRF24DisplayString[] = "12345678901234567890";
 
 void updateDisplayData()
 {
@@ -112,6 +115,9 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
+        strcpy(newRF24DisplayString, RF24getDisplayString(newRF24DisplayString));
+        strcpy(RF24DisplayString, newRF24DisplayString);
+
         myWebSerial.println("");
         myWebSerial.println("!----------! BIG_TEMP Display Refresh");
         myWebSerial.println(tempDisplayString);
@@ -134,11 +140,16 @@ void updateDisplayData()
             //change the 'o'C to a proper 'degrees C' character
             // strcat(messageString, "\xb0"); // degree symbol
             justTempString[4] = '\xb0';
+            //x,y
             myDisplay.drawStr(0, 38, justTempString);
             //myDisplay.refresh();
 
             myDisplay.setFont(SYS_FONT);
-            myDisplay.drawStr(0, 47, MQTTDisplayString);
+            //myDisplay.drawStr(0, 47, MQTTDisplayString);
+            strcat(MQTTDisplayString, "::.");
+
+            strcat(MQTTDisplayString, RF24DisplayString);
+            myDisplay.drawStr(0, 47, MQTTDisplayString );
             timeClient.update();
             //Serial.println(timeClient.getFormattedTime());
 

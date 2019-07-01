@@ -2,6 +2,10 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"name": "esp32-arduino_watchdog_test",
+			"path": "/home/chris/Projects/git/esp32-arduino_watchdog_test"
 		}
 	],
 	"settings": {

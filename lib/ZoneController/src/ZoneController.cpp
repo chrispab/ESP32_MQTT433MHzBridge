@@ -109,7 +109,7 @@ void ZoneController::resetZoneDevice(void)
     this->rebootMillisLeft = false;
 }
 
-// return a text string with current status of zone controller
+// return a pointer to text string with current status of zone controller
 // e.g ""
 
 char *ZoneController::getDisplayString(char *statusMessage)
