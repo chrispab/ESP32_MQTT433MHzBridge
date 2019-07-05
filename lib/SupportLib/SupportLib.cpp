@@ -79,6 +79,7 @@ void updateDisplayData()
 {
 
     char justTempString[20];
+    char strx[30];
     //blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
@@ -89,25 +90,27 @@ void updateDisplayData()
         delay(1);
         warnLED.fullOff();
     }
-    //check for any ongoing erros/issues and display them
-    // if ()
-    // {
-    // }
-    // only update screen if status messages or touch sensor is active/has changed
-    // compare new display data to previous display data
-    // if different - update the actual OLED display and previous
-    // if any non zero then data has changed
-    // Serial.println(MQTTDisplayString);
-    // Serial.println(getMQTTDisplayString(newMQTTDisplayString));
 
-    //delay(5000);
+    //update the status strings
+    DHT22Sensor.getTempDisplayString(newTempDisplayString);
+    DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
+    getMQTTDisplayString(newMQTTDisplayString);
+    RF24getDisplayString(newRF24DisplayString);
 
-    if (strcmp(tempDisplayString, DHT22Sensor.getTempDisplayString(newTempDisplayString)) || strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) || strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString)) || strcmp(MQTTDisplayString, getMQTTDisplayString(newMQTTDisplayString))
+    if (
+        strcmp(tempDisplayString, newTempDisplayString)
+    || strcmp(zone1DisplayString, newZone1DisplayString)
+    || strcmp(zone3DisplayString, newZone3DisplayString)
+    || strcmp(MQTTDisplayString, newMQTTDisplayString)
+    || strcmp(RF24DisplayString, newRF24DisplayString)
         //|| touchedFlag
     )
     {
+        if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
+                    myWebSerial.println("MQTT DISP STRING CHANGED");
 
-        DHT22Sensor.getHumiDisplayString(newHumiDisplayString); //get current humi reading
+        }
+        
         // copy new data to old vars
         strcpy(tempDisplayString, newTempDisplayString);
         strcpy(humiDisplayString, newHumiDisplayString);
@@ -115,13 +118,15 @@ void updateDisplayData()
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
 
-        strcpy(newRF24DisplayString, RF24getDisplayString(newRF24DisplayString));
+        //strcpy(newRF24DisplayString, RF24getDisplayString(newRF24DisplayString));
         strcpy(RF24DisplayString, newRF24DisplayString);
 
         myWebSerial.println("");
         myWebSerial.println("!----------! BIG_TEMP Display Refresh");
         myWebSerial.println(tempDisplayString);
         myWebSerial.println(MQTTDisplayString);
+        myWebSerial.println(RF24DisplayString);
+
         myWebSerial.println(getElapsedTimeStr());
         myWebSerial.println(timeClient.getFormattedTime().c_str());
         myWebSerial.println(zone1DisplayString);
@@ -145,12 +150,19 @@ void updateDisplayData()
             //myDisplay.refresh();
 
             myDisplay.setFont(SYS_FONT);
-            //myDisplay.drawStr(0, 47, MQTTDisplayString);
-            strcat(MQTTDisplayString, "::.");
+            
 
+            //myDisplay.drawStr(0, 47, MQTTDisplayString);
+            strcpy(strx,MQTTDisplayString);
+            strcat(MQTTDisplayString, "::.");
             strcat(MQTTDisplayString, RF24DisplayString);
             myDisplay.drawStr(0, 47, MQTTDisplayString );
             timeClient.update();
+            strcpy(MQTTDisplayString, strx);
+
+
+
+
             //Serial.println(timeClient.getFormattedTime());
 
             myDisplay.drawStr(0, 55, zone1DisplayString);
