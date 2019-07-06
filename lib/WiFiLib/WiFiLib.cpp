@@ -13,7 +13,40 @@ extern WebSerial myWebSerial;
 #include "WebSerial.h"
 extern WiFiServer server;
 
+
+
+
 void connectWiFi()
+{
+
+    //! ensure non blocking so can act as zone watchdog
+
+    bool wifiConnectTimeout = false;
+    unsigned long startMillis;
+    unsigned long timeOutMillis = 5000;
+
+    WiFi.begin(ssid, pass);//move out or if
+
+    startMillis = millis();
+    myWebSerial.println("Attempting to connect to SSID: ");
+    myWebSerial.println(ssid);
+    while (!WiFi.isConnected() && !wifiConnectTimeout)
+    {
+        // enable jump out if connection attempt has timed out
+        //WiFi.reconnect();
+
+        wifiConnectTimeout =
+            ((millis() - startMillis) > timeOutMillis) ? true : false;
+    }
+
+    wifiConnectTimeout ? myWebSerial.println("WiFi Connection attempt Timed Out!")
+                       : myWebSerial.println("Wifi Connection made!");
+
+    server.begin();
+}
+
+
+void connectWiFiOld()
 {
 
     //! ensure non blocking so can act as zone watchdog
