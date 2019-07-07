@@ -91,7 +91,7 @@ char *getMQTTDisplayString(char *MQTTStatus)
     return MQTTStatus;
 }
 
-// MQTTclient call back if mqtt messsage rxed
+// MQTTClient call back if mqtt messsage rxed
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 {
     uint8_t socketNumber = 0;
@@ -145,7 +145,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
 }
 
 #include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+extern PubSubClient MQTTClient;
 
 // set so ensures initial connect attempt, assume now gives 0
 
@@ -172,19 +172,19 @@ void connectMQTT()
     if ((nowMillis - lastReconnectAttemptMillis) > checkPeriodMillis)
     {
         myWebSerial.println("ready to try MQTT reconnectMQTT...");
-        while (!MQTTclient.connected() && !MQTTConnectTimeout) //loop till connected or timed out
+        while (!MQTTClient.connected() && !MQTTConnectTimeout) //loop till connected or timed out
         {
             myWebSerial.println("Attempting MQTT connection...");
-            if (MQTTclient.connect("433BridgeMQTTClient"))//failure will insert a delay,poss 15 secs
+            if (MQTTClient.connect("433BridgeMQTTClient"))//failure will insert a delay,poss 15 secs
             {
                 myWebSerial.println("connected to MQTT server");
-                MQTTclient.subscribe(subscribeTopic);
+                MQTTClient.subscribe(subscribeTopic);
             }
             else
             {
                 myWebSerial.println("MQTT connection failed, rc=");
-                Serial.println(MQTTclient.state());
-                myWebSerial.println("MQTT STATE : ",MQTTclient.state());
+                Serial.println(MQTTClient.state());
+                myWebSerial.println("MQTT STATE : ",MQTTClient.state());
 
                 myWebSerial.println(" try again ..");
             }

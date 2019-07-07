@@ -65,15 +65,15 @@ char *TempSensor::getHumidityString() { return humidityString; }
 
 //return true if new reading taken and published
 //return false if not done
-boolean TempSensor::publishReadings(PubSubClient MQTTclient,
+boolean TempSensor::publishReadings(PubSubClient MQTTClient,
                                  char *publishTempTopic,
                                  char *publishHumiTopic)
 {
     // get current readings and pub via mqtt
     if (takeReadings())//new readings taken?
     {
-        MQTTclient.publish(publishTempTopic, temperatureString);
-        MQTTclient.publish(publishHumiTopic, humidityString);
+        MQTTClient.publish(publishTempTopic, temperatureString);
+        MQTTClient.publish(publishHumiTopic, humidityString);
         return true;
     }
     return false;

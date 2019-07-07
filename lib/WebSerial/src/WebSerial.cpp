@@ -1,6 +1,10 @@
 #include <WebSerial.h>
 #include <stdlib.h> // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
 
+
+//DO CHECKS FOR WIFI CONNECTED IN ALL FUNCS
+
+
 WebSerial::WebSerial()
 {
 }

@@ -200,7 +200,7 @@ extern unsigned long intervalConnCheckMillis;
 #include "WiFiLib.h"
 
 #include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+extern PubSubClient MQTTClient;
 
 void checkConnections()
 {
@@ -217,7 +217,7 @@ void checkConnections()
             myWebSerial.println("OK - WiFi is connected");
         }
 
-        if (!MQTTclient.connected())
+        if (!MQTTClient.connected())
         {
             myWebSerial.println("MQTTClient Needs reconnecting");
             connectMQTT();
@@ -234,7 +234,7 @@ void checkConnections()
 extern LightSensor myLightSensor;
 
 #include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+extern PubSubClient MQTTClient;
 char publishLightStateTopic[] = "433Bridge/LightState";
 char publishLightLevelTopic[] = "433Bridge/LightLevel";
 void checkLightSensor()
@@ -244,9 +244,9 @@ void checkLightSensor()
     myLightSensor.getLevel(); // trigger sampling if due
     if (myLightSensor.hasNewLevel())
     {
-        MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
+        MQTTClient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
         sprintf(str, "%d", myLightSensor.getLevel());
-        MQTTclient.publish(publishLightLevelTopic, str);
+        MQTTClient.publish(publishLightLevelTopic, str);
 
         myLightSensor.clearNewLevelFlag();
     }
@@ -256,7 +256,7 @@ void checkLightSensor()
 extern PIRSensor myPIRSensor;
 
 #include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+extern PubSubClient MQTTClient;
 char publishPIRStateTopic[] = "433Bridge/PIRState";
 //char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
 void checkPIRSensor()
@@ -265,9 +265,9 @@ void checkPIRSensor()
     myPIRSensor.getState(); // trigger sampling if due
     if (myPIRSensor.hasNewState())
     {
-        MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
+        MQTTClient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
         //sprintf(str, "%d", myPIRSensor.getLevel());
-        //MQTTclient.publish(publishPIRLevelTopic, str);
+        //MQTTClient.publish(publishPIRLevelTopic, str);
 
         myPIRSensor.clearNewStateFlag();
     }

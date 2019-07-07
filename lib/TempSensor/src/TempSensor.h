@@ -10,7 +10,7 @@ public:
   char *getTempDisplayString(char *thistempStr);
   char *getHumiDisplayString(char *thishumiStr);
 
-  boolean publishReadings(PubSubClient MQTTclient, char *publishTempTopic,
+  boolean publishReadings(PubSubClient MQTTClient, char *publishTempTopic,
                        char *publishHumiTopic);
   char *getTemperatureString();
   char *getHumidityString();

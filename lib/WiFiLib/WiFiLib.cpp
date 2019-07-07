@@ -1,5 +1,7 @@
 //#include "WebSocketLib.h"
 #include "WiFiLib.h"
+#include <WiFi.h>
+
 #include "../../src/secret.h"
 
 // WiFi settings
@@ -14,7 +16,21 @@ extern WebSerial myWebSerial;
 extern WiFiServer server;
 
 
+// void setup_wifi(){
+//       gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
+//   {
+//     Serial.print("Station connected, IP: ");
+//     Serial.println(WiFi.localIP());
+//   });
 
+//   disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event)
+//   {
+//     Serial.println("Station disconnected");
+//   });
+
+//   Serial.printf("Connecting to %s ...\n", ssid);
+//   WiFi.begin(ssid, pass);
+// }
 
 void connectWiFi()
 {

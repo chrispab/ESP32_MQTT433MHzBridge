@@ -34,10 +34,15 @@ extern char subscribeTopic[];   // = "433Bridge/cmnd/#";
 extern char publishTempTopic[]; // = "433Bridge/Temperature";
 extern char publishHumiTopic[]; // = "433Bridge/Humidity";
 extern bool MQTTNewData;
-// forward decs
+
+// forward declarations
+
+void doNonBlockingConnectionSetup(void);
+void doConnectionRequiredTasks(void);
+void doConnectionIndependantTasks(void);
 void checkConnections(void);
 //void updateDisplayData(void);
-void resetWatchdog(void);
+void resetESP32Watchdog(void);
 //boolean processTouchPads(void);
 
 void IRAM_ATTR resetModule();
@@ -49,7 +54,7 @@ TempSensor DHT22Sensor;
 #include <PubSubClient.h>
 IPAddress mqttBroker(192, 168, 0, 200);
 WiFiClient WiFiEClient;
-PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
+PubSubClient MQTTClient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
@@ -146,8 +151,11 @@ void IRAM_ATTR resetModule()
 
 void setup()
 {
+    //! Remeber no wifi or MQTT at this point till main loop
+
     Serial.begin(115200);
-    myWebSerial.println("==========running setup==========");
+    Serial.println("==========running setup==========");
+    //myWebSerial.println("==========running setup==========");
     heartBeatLED.begin();                        // initialize
     warnLED.begin();                             // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT); // set the LED pin mode
@@ -183,140 +191,221 @@ void setup()
     myDisplay.refresh();
     connectRF24();
     // attempt to connect to Wifi network:
-    myDisplay.writeLine(4, "Connecting to WiFi..");
-    myDisplay.refresh();
-    connectWiFi();
+    // myDisplay.writeLine(4, "Connecting to WiFi..");
+    // myDisplay.refresh();
+    // connectWiFi();
     // you're connected now, so print out the status:
-    printWifiStatus();
+    // printWifiStatus();
     //server.begin();
-    CR;
-    myDisplay.writeLine(5, "Connecting to MQTT..");
-    myDisplay.refresh();
-    connectMQTT();
+    // CR;
+    // myDisplay.writeLine(5, "Connecting to MQTT..");
+    // myDisplay.refresh();
+    // connectMQTT();
     myDisplay.writeLine(6, "DONE");
     myDisplay.refresh();
-    timeClient.begin();
-    timeClient.update();
+    Serial.println("setup 0");
+
+    // timeClient.begin();
+    //         Serial.println("setup 0.2");
+
+    // timeClient.update();
+
+    Serial.println("setup 0.5");
+
     Serial.println(timeClient.getFormattedTime());
-    delay(200);
+    delay(900);
 
     //Send Email
     //e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm started/restarted");
     //myWebhook.trigger("433Bridge Boot/Reboot");
     //myWebhook.trigger();
+    Serial.println("setup 1");
 
     myDisplay.wipe();
-    //connectWiFi();
-    resetWatchdog();
-    webSocket.begin();
-    webSocket.onEvent(webSocketEvent);
-    setupOTA();
-    resetWatchdog();
 
-    //MQTTclient.
-    myWebhook.trigger("433Bridge BootReboot");
+    connectWiFi();
+
+    resetESP32Watchdog();
+    Serial.println("setup 2");
+
+    Serial.println("setup 3");
+
+    Serial.println("setup 4");
+
+    resetESP32Watchdog();
+
+    //MQTTClient.
     myLightSensor.getLevel();
+    Serial.println("setup END");
 }
 
-/**
- * @brief 
- * 
- */
-//text buffer for main loop
 char tempString[] = "12345678901234567890";
+
+//*** vars for non blocking wifi and MQTT functionality
+//**
+uint8_t conn_stat = 0;       // Connection status for WiFi and MQTT:
+unsigned long waitCount = 0; // counter
+const char *Version = "{\"Version\":\"low_prio_wifi_v2\"}";
+const char *Status = "{\"Message\":\"up and running\"}";
+unsigned long lastStatus = 0; // counter in example code for conn_stat == 5
+unsigned long lastTask = 0;   // counter in example code for conn_stat <> 5
+
 void loop()
 {
-#ifdef DEBUG
-    Serial.print("1..");
-#endif
-    checkLightSensor();
-    checkPIRSensor();
-    checkConnections(); // and reconnect if reqd
 
-    MQTTclient.loop();    // process any MQTT stuff, returned in callback
-    processMQTTMessage(); // check flags set above and act on
-    ArduinoOTA.handle();
-    resetWatchdog();
-    heartBeatLED.update(); // initialize
-    webSocket.loop();
-
-    timeClient.update();
-
-    broadcastWS();
-    //if new readings taken, op to serial etc
-    if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
-    {
-        myWebSerial.print("New-MQTT pub: ");
-        myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
-    }
-
-    webSocket.loop();
-    broadcastWS();
-    //MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    ArduinoOTA.handle();
-
-    // touchedFlag = touchPad1.getState();
-    // (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
-
-    // if (touchPad2.getState())
-    // {
-    //     if (millis() % 2000 == 0)
-    //     {
-    //         warnLED.fullOn();
-    //         delay(10);
-    //         warnLED.fullOff();
-    //         //!  MQTTclient.publish("433Bridge/Button1", "1");
-    //     }
-    //     displayMode = MULTI;
-    // }
-    // else
-    // {
-    //     displayMode = BIG_TEMP;
-    // }
-    ArduinoOTA.handle();
-
-    updateDisplayData();
-    ArduinoOTA.handle();
-
-    webSocket.loop();
-    broadcastWS();
-    processZoneRF24Message(); // process any zone watchdog messages
-    if (ZCs[0].manageRestarts(transmitter) == true)
-    {
-        myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
-    }
-    broadcastWS();
-    // disbale zone 2 restarts for now
-    ZCs[1].resetZoneDevice();
-    if (ZCs[2].manageRestarts(transmitter) == true)
-    {
-        myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
-    }
-    broadcastWS();
-    webSocket.loop();
-
-    ArduinoOTA.handle();
-
-    //WiFiLocalWebPageCtrl();
-    checkForPageRequest();
-    //webSocket.loop();
-    //broadcastWS();
+    doNonBlockingConnectionSetup();
+    doConnectionRequiredTasks();
+    doConnectionIndependantTasks();
 }
 
-/**
- * @brief 
- * 
- */
-//extern unsigned long resetWatchdogIntervalMs;
+void doNonBlockingConnectionSetup()
+{
+    // start of non-blocking connection setup section
+    if ((WiFi.status() != WL_CONNECTED) && (conn_stat != 1))
+    {
+        conn_stat = 0;
+    }
+    if ((WiFi.status() == WL_CONNECTED) && !MQTTClient.connected() && (conn_stat != 3))
+    {
+        conn_stat = 2;
+    }
+    if ((WiFi.status() == WL_CONNECTED) && MQTTClient.connected() && (conn_stat != 5))
+    {
+        conn_stat = 4;
+    }
+    switch (conn_stat)
+    {
+    case 0: // MQTT and WiFi down: start WiFi
+        Serial.println("MQTT and WiFi down: start WiFi");
+        WiFi.begin(MY_SSID, MY_SSID_PASSWORD);
+        conn_stat = 1;
+        break;
+    case 1: // WiFi starting, do nothing here
+        Serial.println("WiFi starting, wait : " + String(waitCount));
+        waitCount++;
+        break;
+    case 2: // WiFi up, MQTT down: start MQTT
+        Serial.println("WiFi up, MQTT down: start MQTT");
+        //MQTTClient.begin(mqtt_broker.c_str(), 8883, TCP); //   config MQTT Server, use port 8883 for secure connection
+        //MQTTClient.connect(Hostname, mqtt_user.c_str(), mqtt_pw.c_str());
+        //MQTTClient.connect(mqttBroker);
+        server.begin();
+        timeClient.begin();
+        Serial.println("setup 0.2");
 
-void resetWatchdog(void)
+        timeClient.update();
+        webSocket.begin();
+        webSocket.onEvent(webSocketEvent);
+        setupOTA();
+
+        myWebhook.trigger("433Bridge BootReboot");
+
+        MQTTClient.connect("433BridgeMQTTClient");
+        conn_stat = 3;
+        waitCount = 0;
+        break;
+    case 3: // WiFi up, MQTT starting, do nothing here
+        Serial.println("WiFi up, MQTT starting, wait : " + String(waitCount));
+        waitCount++;
+        break;
+    case 4: // WiFi up, MQTT up: finish MQTT configuration
+        Serial.println("WiFi up, MQTT up: finish MQTT configuration");
+        //MQTTClient.subscribe(output_topic);
+        MQTTClient.subscribe(subscribeTopic);
+
+        //MQTTClient.publish(input_topic, Version);
+        conn_stat = 5;
+        break;
+    }
+    // end of non-blocking connection setup section
+}
+
+void doConnectionRequiredTasks()
+{
+    // start section with tasks where WiFi/MQTT is required
+    if (conn_stat == 5)
+    {
+        // if (millis() - lastStatus > 10000)
+        // { // Start send status every 10 sec (just as an example)
+        //     Serial.println(Status);
+        //     //MQTTClient.publish(pub, Status); //      send status to broker
+        //     MQTTClient.loop();     //      give control to MQTT to send message to broker
+        //     lastStatus = millis(); //      remember time of last sent status message
+        // }
+        //ArduinoOTA.handle(); // internal household function for OTA
+        //MQTTClient.loop();   // internal household function for MQTT
+        MQTTClient.loop();    // process any MQTT stuff, returned in callback
+        processMQTTMessage(); // check flags set above and act on
+        ArduinoOTA.handle();
+        webSocket.loop();
+        timeClient.update();
+        broadcastWS();
+        //webSocket.loop();
+        //broadcastWS();
+        //MQTTClient.loop(); // process any MQTT stuff, returned in callback
+        //ArduinoOTA.handle();
+        //ArduinoOTA.handle();
+
+        //webSocket.loop();
+        // broadcastWS();
+        //broadcastWS();
+        //webSocket.loop();
+
+        //ArduinoOTA.handle();
+
+        //WiFiLocalWebPageCtrl();
+        checkForPageRequest();
+        //if new readings taken, op to serial etc
+        if (DHT22Sensor.publishReadings(MQTTClient, publishTempTopic, publishHumiTopic))
+        {
+            myWebSerial.print("New-MQTT pub: ");
+            myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
+        }
+        if (ZCs[0].manageRestarts(transmitter) == true)
+        {
+            myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
+        }
+        //broadcastWS();
+        // disbale zone 2 restarts for now
+        ZCs[1].resetZoneDevice();
+
+        if (ZCs[2].manageRestarts(transmitter) == true)
+        {
+            myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+        }
+    }
+    // end of section for tasks where WiFi/MQTT are required
+}
+
+void doConnectionIndependantTasks()
+{
+    // start section for tasks which should run regardless of WiFi/MQTT
+    // if (millis() - lastTask > 1000)
+    // { // Print message every second (just as an example)
+    //     Serial.println("print this every second");
+    //     lastTask = millis();
+    // }
+    //delay(100);
+    // end of section for tasks which should run regardless of WiFi/MQTT
+
+    // MY NEW STUFF
+    resetESP32Watchdog();
+    checkLightSensor();
+    checkPIRSensor();
+    heartBeatLED.update(); // initialize
+    updateDisplayData();
+    processZoneRF24Message(); // process any zone watchdog messages
+}
+
+void resetESP32Watchdog(void)
 {
     static unsigned long lastResetWatchdogMillis = millis();
 
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
-        myWebSerial.println("Reset Bridge Watchdog");
+        //myWebSerial.println("Reset Bridge Watchdog");
+        Serial.println("Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();
     }
 }
