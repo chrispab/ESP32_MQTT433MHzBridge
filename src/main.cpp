@@ -142,7 +142,7 @@ PIRSensor myPIRSensor(PIR_PIN);
 //! WATCHDOG STUFF
 #include "esp_system.h"
 hw_timer_t *timer = NULL;
-const int wdtTimeoutS = 40;
+const int wdtTimeoutS = 60;
 const int wdtTimeoutMs =
     wdtTimeoutS * 1000;  // time in ms to trigger the watchdog
 unsigned long resetWatchdogIntervalMs = 20000;
@@ -252,6 +252,13 @@ const char *Status = "{\"Message\":\"up and running\"}";
 unsigned long lastStatus = 0;  // counter in example code for conn_stat == 5
 unsigned long lastTask = 0;    // counter in example code for conn_stat <> 5
 
+
+
+unsigned long lastConTryMillis=0;
+unsigned long mqttConTime = 30000;
+
+
+
 void loop() {
   doNonBlockingConnectionSetup();
   doConnectionRequiredTasks();
@@ -309,8 +316,13 @@ void doNonBlockingConnectionSetup() {
       Serial.println("WiFi up, MQTT starting, wait : " + String(waitCount));
       waitCount++;
       // must call connect here as wont work in case 2
-      MQTTClient.connect("433BridgeMQTTClient");
-
+      //only do this every 30 secs or so to give other processes a go
+      //as it causes a 15 sec block!
+      if(lastConTryMillis + mqttConTime < millis()){
+        MQTTClient.connect("433BridgeMQTTClient");
+        lastConTryMillis = millis();
+      }
+      
       break;
 
     case 4:  // WiFi up, MQTT up: finish MQTT configuration
@@ -347,6 +359,7 @@ void doConnectionRequiredTasks() {
 
     checkForPageRequest();
     // if new readings taken, op to serial etc
+
     if (DHT22Sensor.publishReadings(MQTTClient, publishTempTopic,
                                     publishHumiTopic)) {
       myWebSerial.print("New-MQTT pub: ");
@@ -373,6 +386,8 @@ void doConnectionIndependantTasks() {
   heartBeatLED.update();  // initialize
   updateDisplayData();
   processZoneRF24Message();  // process any zone watchdog messages
+  DHT22Sensor.takeReadings();
+
   if (ZCs[0].manageRestarts(transmitter) == true) {
     myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
   }
