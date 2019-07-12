@@ -134,7 +134,7 @@ PIRSensor myPIRSensor(PIR_PIN);
 //! WATCHDOG STUFF
 #include "esp_system.h"
 hw_timer_t *timer = NULL;
-const int wdtTimeoutS = 40;
+const int wdtTimeoutS = 60;
 const int wdtTimeoutMs = wdtTimeoutS * 1000; //time in ms to trigger the watchdog
 unsigned long resetWatchdogIntervalMs = 20000;
 
