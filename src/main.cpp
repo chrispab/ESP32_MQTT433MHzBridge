@@ -127,6 +127,13 @@ IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
+
+#include <RestClient.h>
+char restHost[]="homested.local";
+
+RestClient client = RestClient(restHost, 443);
+
+
 /**
  * @brief 
  * 
@@ -143,6 +150,22 @@ void IRAM_ATTR resetModule()
     ets_printf("ESP32 Rebooted by Internal Watchdog\n");
     esp_restart();
 }
+
+
+void doRest()
+{
+    char postParameter[10];
+    String postValue = "value=10";
+    postValue.toCharArray(postParameter, 10);
+
+    client.setHeader("Authorization: Basic FIUFHfpUHFpUFH39=");
+    int statusCode = client.post("/post/write?db=dbName", postParameter);
+    Serial.print("Status code from server: ");
+    Serial.println(statusCode);
+
+    delay(2000);
+}
+
 
 void setup()
 {
@@ -224,11 +247,15 @@ void setup()
  */
 //text buffer for main loop
 char tempString[] = "12345678901234567890";
+
+// rest vars
 void loop()
 {
 #ifdef DEBUG
     Serial.print("1..");
 #endif
+
+    doRest();
     checkLightSensor();
     checkPIRSensor();
     checkConnections(); // and reconnect if reqd
@@ -302,6 +329,9 @@ void loop()
     //webSocket.loop();
     //broadcastWS();
 }
+
+
+
 
 /**
  * @brief 
