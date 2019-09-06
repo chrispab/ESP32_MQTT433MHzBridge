@@ -1,7 +1,7 @@
 #include "RestClient.h"
 
 // Uncomment to debug
-// #define ESP32_RESTCLIENT_DEBUG
+ #define ESP32_RESTCLIENT_DEBUG
 
 #ifdef ESP32_RESTCLIENT_DEBUG
 #define DEBUG_PRINT(x) Serial.print(x);
@@ -71,7 +71,11 @@ void RestClient::writeHeaders()
     for (int i = 0; i < num_headers; i++)
     {
         write(headers[i]);
+            //Serial.print(headers[i]);
+
         write("\r\n");
+            //Serial.print("\r\n");
+
     }
 }
 
@@ -80,12 +84,13 @@ void RestClient::writeBody(const char *body)
     if (body != NULL)
     {
         char contentLength[30];
-        sprintf(contentLength, "Content-Length: %d\r\n", strlen(body));
+//        sprintf(contentLength, "Content-Length: %d\r\n", strlen(body));
+        sprintf(contentLength, "Content-Length:\r\n");
         write(contentLength);
 
-        write("Content-Type: ");
-        write(contentType);
-        write("\r\n");
+        // write("Content-Type: ");
+        // write(contentType);
+        // write("\r\n");
     }
 
     write("\r\n");
@@ -114,14 +119,21 @@ int RestClient::request(const char *method, const char *path, const char *body)
     write(method);
     write(" ");
     write(path);
-    write(" ");
+    write("    ");
     write("HTTP/1.1\r\n");
-    writeHeaders();
+    //writeHeaders();
     write("Host: ");
     write(host);
     write("\r\n");
-    write("Connection: close\r\n");
+        writeHeaders();
+    write("Host: ");
+    write(host);
+    write("\r\n");
+    //write("Connection: close\r\n");
     writeBody(body);
+    write("\r\n");
+    write("\r\n");
+    write("\r\n");
 
     DEBUG_PRINT("][End Request]\n");
     delay(100);

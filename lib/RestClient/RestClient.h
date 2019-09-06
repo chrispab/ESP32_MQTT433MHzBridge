@@ -25,7 +25,8 @@ private:
     const char *headers[10];
     const char *contentType;
     WiFiClient client;
-    WiFiClientSecure client_s;
+//    WiFiClientSecure client_s;
+    WiFiClient client_s;
 
     void writeHeaders();
     void writeBody(const char *body);
