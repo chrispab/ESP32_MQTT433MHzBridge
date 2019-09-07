@@ -1,4 +1,4 @@
-#define SW_VERSION "V4.73 Br:\"API\""
+#define SW_VERSION "V4.74 Br:\"new NTP\""
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
 #define TITLE_LINE3 "Zone RF24 Dog"

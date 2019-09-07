@@ -1,7 +1,7 @@
 #include "RestClient.h"
 
 // Uncomment to debug
- #define ESP32_RESTCLIENT_DEBUG
+// #define ESP32_RESTCLIENT_DEBUG
 
 #ifdef ESP32_RESTCLIENT_DEBUG
 #define DEBUG_PRINT(x) Serial.print(x);
