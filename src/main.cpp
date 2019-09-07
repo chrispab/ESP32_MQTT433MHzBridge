@@ -160,10 +160,17 @@ unsigned long previousAPIWriteMillis =0;
 void doRest()
 {
     char postParameter[79];
+        char postMessage[255];
+
     String postValue = "";
     postValue.toCharArray(postParameter, 79);
-    unsigned long intervalAPIWriteMillis=60000;
+    unsigned long intervalAPIWriteMillis=20000;
     unsigned long currentMillis=millis();
+    String dateTimeStr="";
+     String postStrFull="";
+
+     String postStr1="";
+String postStr2="";
     //do every 5 secs
     if ( currentMillis - previousAPIWriteMillis > intervalAPIWriteMillis){
         client.setHeader("Accept: application/json");
@@ -176,9 +183,16 @@ void doRest()
         
 
         //build the POST string
-        
+        postStr1 =  "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
+        dateTimeStr = timeClient.getFormattedDateTime(0);
+        //postStr2 =  "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
+        postStrFull = postStr1 + dateTimeStr;
+        //replace any spaces (esp the one bet date and time) with %20
+        postStrFull.replace(" ","%20");
+        postStrFull.toCharArray(postMessage, 255);
         //int statusCode = client.post("/api/todo?topic=/test/topic&content={content:body}&published_at=2019-08-12 21:12:26.987", postParameter);
-        int statusCode = client.post("/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123", postParameter);
+        //int statusCode = client.post("/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123", postParameter);
+        int statusCode = client.post(postMessage, postParameter);
         //int statusCode = client.post("/api/todo?topic=/test/topic&amp; content={content:body}&amp; published_at=2019-08-12 21:12:26.123", postParameter);
       //POST /api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123 HTTP/1.1\r\n
         
@@ -189,6 +203,67 @@ void doRest()
     }
 }
 
+//extern void storeREST(topic, payload, published_at);
+// unsigned long previousAPIWriteMillis =0;
+void storeREST(char* topic, char* payload, char* published_at)
+{
+    char postParameter[79];
+        char postMessage[255];
+
+    String postValue = "";
+    postValue.toCharArray(postParameter, 79);
+    unsigned long intervalAPIWriteMillis=20000;
+    unsigned long currentMillis=millis();
+    String dateTimeStr="";
+     String postStrFull="";
+
+     String postStr1="";
+String postStr2="";
+String postTopic="";
+String postPayload="";
+String published_atStr="";
+
+    //do every 5 secs
+  //  if ( currentMillis - previousAPIWriteMillis > intervalAPIWriteMillis){
+        client.setHeader("Accept: application/json");
+        
+        //local auth token
+        //client.setHeader("Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjI1MjE2OWI3MTMxNjVlNTczNWU1MGUwMGY2NzZhYjdiOGYwYTUzMTY0YWEyZTdiYzdiMzAzMDMzNzE4ZmRlMmE5M2QwZDdlODEwMDI1NDMwIn0.eyJhdWQiOiIzIiwianRpIjoiMjUyMTY5YjcxMzE2NWU1NzM1ZTUwZTAwZjY3NmFiN2I4ZjBhNTMxNjRhYTJlN2JjN2IzMDMwMzM3MThmZGUyYTkzZDBkN2U4MTAwMjU0MzAiLCJpYXQiOjE1Njc0NDkyOTEsIm5iZiI6MTU2NzQ0OTI5MSwiZXhwIjoxNTk5MDcxNjkwLCJzdWIiOiIyIiwic2NvcGVzIjpbXX0.Q8i63MAVgbGjRTYilydHHb0ljHvKhkeSANJbJ-qD_8_uWhPC_vQUrAC67mL3DmHm3pZkOvNm5WTAx5zQpTfOq-nJkB4c6vUytjQmyQNG-eV8WF90q_ccO5jbljlHORvfUzDF7TJRgKwO4Dcl8lWSQYgta3g_MkgH42qJHg9HEbGOKvgAvGsMsmeouLKwYojN8Oh02gKCQ_T7hcUkcB3zWVH9_ltV3qiSqA66VMyT45NzMuz3yxOYbSwXWaJl4AgiMs96LBDnpqMZzJIIYJ2YMMkXdaYljJhHga6vsGgxwc9HrZM2ZdY4EJcRcokVc6S6TGIJLEeGuIgGet-qDXhTEN832ufwh8saETrH_D_isnDohMEOkHjwWHkfcF4kfoYvQyD5jTg7DP4zqMDIE7uQmdiWDES512nByqmpzWNenIIMKZ1e5nT2EqvLDT21mdHhF35JzL0FUWd341xXTqjJLV27lfX3HAcs0pn69kY5X7Wqb4GNnEKlU-BbV-d6tBMNQI6yDcnKFYE2eJADtauMzmcAr_nNRqf212jqjLjblrqH1Qaoh1ZGHHnITUPd6Ai5uZa_x-phv1sTK4IaWwdtLn4RTQEWfiR1wVYePkfVM9xl1eTuiRrTfwAmRu-flCTCC66_ZobhYqLLmOssImK-GrxOmqQFC15zgC6PxklihpE");
+        
+        //chrisiot auth token
+        client.setHeader("Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjZhOWExZTg1MTEwM2JlNDgxYWQ1Nzk0ZGMzNGM5NTkzYjk0NDk4YjQ3ZjA1YjBiOTU5ODg2YzM4YzRmMmRmODMyZmE1ODZjZjE1NDFmZjBmIn0.eyJhdWQiOiIxIiwianRpIjoiNmE5YTFlODUxMTAzYmU0ODFhZDU3OTRkYzM0Yzk1OTNiOTQ0OThiNDdmMDViMGI5NTk4ODZjMzhjNGYyZGY4MzJmYTU4NmNmMTU0MWZmMGYiLCJpYXQiOjE1Njc3ODQ3MDIsIm5iZiI6MTU2Nzc4NDcwMiwiZXhwIjoxNTk5NDA3MTAyLCJzdWIiOiIzIiwic2NvcGVzIjpbXX0.lmMl9R3CHo9ODPwwYcLH3tDrqolIyJgVeQWBVJF41RYzHmZDkZzFG9oL_trt1ewwDqYWsx_G7_Ka6_rwrQoKvefR4KY7HzMXACc-iiKpjoYX4Ersd3tXqFuj0AdkM7xzLjzPWHJhFleHjrrMwNuITD2-YXHGqjznCr5mCsfgTxfW0h3sEpKTv3DBukGScPmPFzPn-hL0-tmDZHImuQAwT6aDVjdEMJfSgtrkGDmF1CaXPi27JL8TjbCvGA2cyuNp6wpuutsqi9UuKTt_gQbrH9hsVxOwgS3GST2GMhWlbGx9vWkrilUWnkOVpSR0RzLzRLb-8se4BPOsi3Jer_h1pXNSKlOYylpeRZm_9Qd_ooI6YI7PIuU0ZN9hj5QDeRbq2JVfXMnBgI9X9x9cJEpWu7vuWtJCntVTvSVJqaBVoh0SCQn9yzpPfj5wJjuw1EZN-w8nphb5vgw-LTfjv4QeBdZ9Vo9VoUrUnNng6Ki3_uNzbvZOiCDQ8sKWBBHPQ421Rv-Z2UFghNAsG7_GL9_n6etFrKch34CGIAqPjcF1fJhTv3ERQh3ep5Ym_LsWxCYFv7WkKOAP1mxoPWNPtBvQ9ms5SHYZNnUtOzPTL6HDWuAllwZFOyVj7YmCZm1imN4d1dvUlhCAfkgd33ZNPREaGxjJyAyRMYE9D_Y7K0pnMNg");
+        
+
+        //build the POST string
+        //"/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
+        postStr1 =  "/api/todo?"; //"/test/topic""&content=%7Bcontent:body%7D&published_at=";
+        postTopic="topic=";
+        postTopic+= topic;
+        postPayload = "&content=";
+        postPayload+= payload;
+        dateTimeStr = timeClient.getFormattedDateTime(0);
+        published_atStr = "&published_at=";
+        published_atStr+= String(published_at);
+        //postStr2 =  "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
+        postStrFull = postStr1 + postTopic + postPayload + published_atStr; //dateTimeStr;
+        //replace any spaces (esp the one bet date and time) with %20
+        postStrFull.replace(" ","%20");
+        postStrFull.replace("{","%7B");
+        postStrFull.replace("}","%7D");
+
+        postStrFull.toCharArray(postMessage, 255);
+        //int statusCode = client.post("/api/todo?topic=/test/topic&content={content:body}&published_at=2019-08-12 21:12:26.987", postParameter);
+        //int statusCode = client.post("/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123", postParameter);
+        int statusCode = client.post(postMessage, postParameter);
+        //int statusCode = client.post("/api/todo?topic=/test/topic&amp; content={content:body}&amp; published_at=2019-08-12 21:12:26.123", postParameter);
+      //POST /api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123 HTTP/1.1\r\n
+        
+        Serial.print("Status code from server: ");
+        Serial.println(statusCode);
+        previousAPIWriteMillis = currentMillis;
+
+   // }
+}
 
 void setup()
 {
@@ -280,7 +355,7 @@ void loop()
     Serial.print("1..");
 #endif
 
-    doRest();
+    //doRest();
     checkLightSensor();
     checkPIRSensor();
     checkConnections(); // and reconnect if reqd
