@@ -84,8 +84,8 @@ void RestClient::writeBody(const char *body)
     if (body != NULL)
     {
         char contentLength[30];
-//        sprintf(contentLength, "Content-Length: %d\r\n", strlen(body));
-        sprintf(contentLength, "Content-Length:\r\n");
+        sprintf(contentLength, "Content-Length: %d\r\n", strlen(body));
+//        sprintf(contentLength, "Content-Length:\r\n");
         write(contentLength);
 
         // write("Content-Type: ");
@@ -119,7 +119,7 @@ int RestClient::request(const char *method, const char *path, const char *body)
     write(method);
     write(" ");
     write(path);
-    write("    ");
+    write(" ");
     write("HTTP/1.1\r\n");
     //writeHeaders();
     write("Host: ");
@@ -131,10 +131,12 @@ int RestClient::request(const char *method, const char *path, const char *body)
     write("\r\n");
     //write("Connection: close\r\n");
     writeBody(body);
-    write("\r\n");
-    write("\r\n");
-    write("\r\n");
-
+    // write("\r\n");
+    // write("\r\n");
+    // write("\r\n");
+    write("Connection: close\r\n\r\n");
+    // client.println("Connection: close");
+    // client.println();
     DEBUG_PRINT("][End Request]\n");
     delay(100);
     DEBUG_PRINT("[Reading Response]\n");
@@ -142,7 +144,7 @@ int RestClient::request(const char *method, const char *path, const char *body)
     DEBUG_PRINT("[End Read Response]\n");
     DEBUG_PRINT("[Stoping client]\n");
     num_headers = 0;
-    client_s.stop();
+    //client_s.stop();
     delay(50);
     DEBUG_PRINT("[Client stopped]\n");
     return statusCode;
