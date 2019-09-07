@@ -111,6 +111,11 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length)
     //Serial.println(message);
     myWebSerial.println(message);
 
+//!now store the topic and payload VIA REST POST to remote site DB
+    //get the time mesage published - use now!//then add 3dp precision by interrogating millis()
+    //for thousands of a sec (modulo????)
+    
+
     // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload = 1 or 0
     // either match whole topic string or trim off last 1or 2 chars and
     // convert to a number, convert last 1-2 chars to socket number
