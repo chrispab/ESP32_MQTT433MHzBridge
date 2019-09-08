@@ -357,7 +357,7 @@ void loop()
 
     //doRest();
     checkLightSensor();
-    checkPIRSensor();
+    //checkPIRSensor();
     checkConnections(); // and reconnect if reqd
 
     MQTTclient.loop();    // process any MQTT stuff, returned in callback

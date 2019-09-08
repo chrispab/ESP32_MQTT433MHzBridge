@@ -13,8 +13,8 @@ private:
   bool newLevelFlag;
   u_int currentLevel;
   u_int previousLevel = 500;
-  u_int readIntervalMillis = 5000; //min interval between reading sensor in ms
-  u_int lastReadMillis = -5000;
+  u_int readIntervalMillis = 30000; //min interval between reading sensor in ms
+  u_int lastReadMillis = -30000;
 
   //hysteresis and state related properties
   //u_int thresholdLevel = 600;
