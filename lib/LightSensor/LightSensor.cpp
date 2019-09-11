@@ -34,7 +34,7 @@ bool LightSensor::hasNewLevel()
 
 u_int LightSensor::clearNewLevelFlag()
 {
-    newLevelFlag = false; //indicate new data has been read by the program
+    newLevelFlag = false; //to indicate new data has been read/processed by the program
     return currentLevel;
     //return analogRead(pin);
 }

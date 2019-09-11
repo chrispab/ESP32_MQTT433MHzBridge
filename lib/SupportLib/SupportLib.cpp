@@ -230,9 +230,9 @@ void checkConnections()
     }
 }
 
+
 #include <LightSensor.h>
 extern LightSensor myLightSensor;
-
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 char publishLightStateTopic[] = "433Bridge/LightState";
@@ -244,13 +244,22 @@ void checkLightSensor()
     myLightSensor.getLevel(); // trigger sampling if due
     if (myLightSensor.hasNewLevel())
     {
-        MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
+        //MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
         sprintf(str, "%d", myLightSensor.getLevel());
         MQTTclient.publish(publishLightLevelTopic, str);
-
-        myLightSensor.clearNewLevelFlag();
     }
+    myLightSensor.getState();
+    if (myLightSensor.hasNewState())
+    {
+        MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
+        //sprintf(str, "%d", myLightSensor.getLevel());
+        //MQTTclient.publish(publishLightLevelTopic, str);
+    }
+            myLightSensor.clearNewLevelFlag();
+        myLightSensor.clearNewStateFlag();
+
 };
+
 
 #include <PIRSensor.h>
 extern PIRSensor myPIRSensor;
