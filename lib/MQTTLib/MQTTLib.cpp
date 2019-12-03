@@ -101,8 +101,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   payload[length] = '\0';
 
   char message[] =
-      "MQTT rxed [this/is/the/topic/for/this/mesage] : and finally the "
-      "payload, and a bit extra to make sure there is room in the string";
+      "MQTT rxed [thisisthetopicforthismesage] : and finally the payload, and a bit extra to make sure there is room in the string";
   strcpy(message, "MQTT Rx [");
   strcat(message, topic);
   strcat(message, "]: ");
@@ -115,10 +114,9 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   // get the time mesage published - use now!//then add 3dp precision by
   // interrogating millis() for thousands of a sec (modulo????)
   String published_at = timeClient.getFormattedDateTime();
-
 // TODO remote storage proven - remove it now
-
   //storeREST(topic, (char *)payload, (char *)published_at.c_str());
+
 
   // only proces if topic starts with "433Bridge/c{mnd/"
   if (strstr(topic, "433Bridge/cmnd/") != NULL) {
@@ -153,6 +151,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     MQTTSocketNumber = socketNumber;  // 1-16
     MQTTNewData = true;
   }
+  MQTTNewData = false;
 }
 
 #include <PubSubClient.h>
