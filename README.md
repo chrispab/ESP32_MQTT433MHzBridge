@@ -47,3 +47,7 @@ python ~/Projects/git/ESP32-ZoneController/bin/espota.py -i 192.168.0.230 -I 192
 
 python ~/Projects/git/ESP32-IDF-ZoneController/components/arduino-esp32/tools/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f ~/Projects/git/ESP32_MQTT433MHzBridge/.pio/build/esp32dev/firmware.bin
 ```
+
+/home/chris/Projects/git/ESP32_MQTT433MHzBridge/tools
+
+python ~/Projects/git/ESP32_MQTT433MHzBridge/tools/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f ~/Projects/git/ESP32_MQTT433MHzBridge/.pio/build/esp32dev/firmware.bin

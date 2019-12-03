@@ -65,7 +65,7 @@ void processMQTTMessage(void) {
 }
 
 char *getMQTTDisplayString(char *MQTTStatus) {
-  char msg[] = "This is a message placeholder";
+  char msg[] = "This is a message placeholder with chars for space";
   char socketNumber[] = "This is a also message placeh";
 
   sprintf(socketNumber, "%d", (MQTTSocketNumber));
@@ -86,6 +86,7 @@ char *getMQTTDisplayString(char *MQTTStatus) {
   return MQTTStatus;
 }
 
+
 #include <NTPClient.h>
 extern NTPClient timeClient;
 extern void storeREST(char *, char *, char *);
@@ -100,9 +101,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   //! TODO do some extra checking on rxed topic and payload?
   payload[length] = '\0';
 
-  char message[] =
-      "MQTT rxed [thisisthetopicforthismesage] and finally the payload, and a bit extra to make sure there is room in the string";
-  strcpy(message, "MQTT Rx [");
+  char message[] = "MQTT rxed thisisthetopicforthismesage and finally the payload, and a bit extra to make sure there is room in the string and even more chars";
+  strcpy(message, "MQTT Rxed [");
   strcat(message, topic);
   strcat(message, "]: ");
   // append payload and add \o terminator
@@ -113,38 +113,34 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   //! now store the topic and payload VIA REST POST to remote site DB
   // get the time mesage published - use now!//then add 3dp precision by
   // interrogating millis() for thousands of a sec (modulo????)
-  String published_at = timeClient.getFormattedDateTime();
+  
+  //String published_at = timeClient.getFormattedDateTime();
 // TODO remote storage proven - remove it now
   //storeREST(topic, (char *)payload, (char *)published_at.c_str());
 
 
-  // only proces if topic starts with "433Bridge/c{mnd/"
-  if (strstr(topic, "433Bridge/cmnd/") != NULL) {
+  // only proces if topic starts with "433Bridge/cmnd/Power"
+  if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
     // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload
     // = 1 or 0 either match whole topic string or trim off last 1or 2 chars and
     // convert to a number, convert last 1-2 chars to socket number
-    char lastChar =
-        topic[strlen(topic) - 1];  // lst char will always be a digit char
-    // see if last but 1 is also a digit char - ie number has two digits - 10 to
-    // 16
-    char lastButOneChar = topic[strlen(topic) - 2];
+    char lastChar = topic[strlen(topic) - 1];  // lst char will always be a digit char
+    char lastButOneChar = topic[strlen(topic) - 2];   // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
 
-    // if ((lastButOneChar >= '0') &&
-    //     (lastButOneChar <= '9'))
-    socketNumber = lastChar - '0';
+    socketNumber = lastChar - '0'; //get actual numeric value
     if ((lastButOneChar == '1')) {       // it is a 2 digit number
       socketNumber = socketNumber + 10;  // calc actual int
     }
-    // else
-    // {
-    //     socketNumber = (lastChar - '0');
-    // }
-    // // convert from 1-16 range to 0-15 range sendUnit uses
-    // int socketID = socketNumber - 1;
+
     uint8_t newState = 0;  // default to off
-    if ((payload[0] - '1') == 0) {
+    // if ((payload[0] - '1') == 0) {
+    //   newState = 1;
+    // }
+
+    if ((payload[0]) == 1) {
       newState = 1;
     }
+
     // signal a new command has been rxed and
     // topic and payload also available
     MQTTNewState = newState;          // 0 or 1
