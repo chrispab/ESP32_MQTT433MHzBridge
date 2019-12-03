@@ -15,23 +15,76 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 #include "socketIDFS.h"
 
 // strcpy(socketIDFunctionStrings[0], "blah");
+
+#include <NTPClient.h>
+//extern NTPClient timeClient;
+//extern void storeREST(char *, char *, char *);
+#include "WebSerial.h"
+extern WebSerial myWebSerial;
+// MQTTclient call back if mqtt messsage rxed (cos has been subscribed  to)
+void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
+  uint8_t socketNumber = 0;
+
+  // Power<x> 		Show current power state of relay<x> as On or
+  // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
+  // 1 / on 	Turn relay<x> power On handle message arrived mqtt
+  //! TODO do some extra checking on rxed topic and payload?
+  //payload[length] = '\0';
+
+  //format and display the whole MQTT message and payload
+  char fullMQTTmessage[255];// = "MQTT rxed thisisthetopicforthismesage and finally the payload, and a bit extra to make sure there is room in the string and even more chars";
+  strcpy(fullMQTTmessage, "MQTT Rxed [");
+  strcat(fullMQTTmessage, topic);
+  strcat(fullMQTTmessage, "]: ");
+  // append payload and add \o terminator
+  strncat(fullMQTTmessage, (char *)payload, length);
+  // Serial.println(fullMQTTmessage);
+  myWebSerial.println(fullMQTTmessage);
+
+  //! now store the topic and payload VIA REST POST to remote site DB
+  // get the time mesage published - use now!//then add 3dp precision by
+  // interrogating millis() for thousands of a sec (modulo????)
+  
+  //String published_at = timeClient.getFormattedDateTime();
+// TODO remote storage proven - remove it now
+  //storeREST(topic, (char *)payload, (char *)published_at.c_str());
+
+
+  // only proces if topic starts with "433Bridge/cmnd/Power"
+  if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
+    // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload
+    // = 1 or 0 either match whole topic string or trim off last 1or 2 chars and
+    // convert to a number, convert last 1-2 chars to socket number
+    char lastChar = topic[strlen(topic) - 1];  // lst char will always be a digit char
+    char lastButOneChar = topic[strlen(topic) - 2];   // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
+
+    socketNumber = lastChar - '0'; //get actual numeric value
+    if ((lastButOneChar == '1')) {       // it is a 2 digit number
+      socketNumber = socketNumber + 10;  // calc actual int
+    }
+
+    uint8_t newState = 0;  // default to off
+    // if ((payload[0] - '1') == 0) {
+    //   newState = 1;
+    // }
+
+    if ((payload[0]) == 1) {
+      newState = 1;
+    }
+
+    // signal a new command has been rxed and
+    // topic and payload also available
+    MQTTNewState = newState;          // 0 or 1
+    MQTTSocketNumber = socketNumber;  // 1-16
+    MQTTNewData = true;
+    return;
+  }
+  MQTTNewData = false;
+}
+
+
 void MQTTLibSetup(void) {
-  // socketIDFunctionStrings[0] = "X Lights";
-  // socketIDFunctionStrings[1] = "SKT 2";
-  // socketIDFunctionStrings[2] = "L Lights";
-  // socketIDFunctionStrings[3] = "D Lights";
-  // socketIDFunctionStrings[4] = "C Lights";
-  // socketIDFunctionStrings[5] = "DAB";
-  // socketIDFunctionStrings[6] = "Amp";
-  // socketIDFunctionStrings[7] = "TV";
-  // socketIDFunctionStrings[8] = "CSV Rads";
-  // socketIDFunctionStrings[9] = "Fan";
-  // socketIDFunctionStrings[10] = "SKT 11";
-  // socketIDFunctionStrings[11] = "SKT 12";
-  // socketIDFunctionStrings[12] = "SKT 13";
-  // socketIDFunctionStrings[13] = "Zone 1";
-  // socketIDFunctionStrings[14] = "Zone 3";
-  // socketIDFunctionStrings[15] = "Outer Sensor";
+
 }
 #include "WebSerial.h"
 extern WebSerial myWebSerial;
@@ -42,6 +95,7 @@ void processMQTTMessage(void) {
   char buff[10];
 
   // strcpy(buff, "Socket : ");
+  //if socket number is  valid one - 
   sprintf(buff, "%d", (MQTTSocketNumber));
   // strcat(msg, buff);
   // strcat(msg, "-");
@@ -86,70 +140,6 @@ char *getMQTTDisplayString(char *MQTTStatus) {
   return MQTTStatus;
 }
 
-
-#include <NTPClient.h>
-extern NTPClient timeClient;
-extern void storeREST(char *, char *, char *);
-
-// MQTTclient call back if mqtt messsage rxed
-void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
-  uint8_t socketNumber = 0;
-
-  // Power<x> 		Show current power state of relay<x> as On or
-  // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
-  // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-  //! TODO do some extra checking on rxed topic and payload?
-  payload[length] = '\0';
-
-  char message[] = "MQTT rxed thisisthetopicforthismesage and finally the payload, and a bit extra to make sure there is room in the string and even more chars";
-  strcpy(message, "MQTT Rxed [");
-  strcat(message, topic);
-  strcat(message, "]: ");
-  // append payload and add \o terminator
-  strncat(message, (char *)payload, length);
-  // Serial.println(message);
-  myWebSerial.println(message);
-
-  //! now store the topic and payload VIA REST POST to remote site DB
-  // get the time mesage published - use now!//then add 3dp precision by
-  // interrogating millis() for thousands of a sec (modulo????)
-  
-  //String published_at = timeClient.getFormattedDateTime();
-// TODO remote storage proven - remove it now
-  //storeREST(topic, (char *)payload, (char *)published_at.c_str());
-
-
-  // only proces if topic starts with "433Bridge/cmnd/Power"
-  if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
-    // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload
-    // = 1 or 0 either match whole topic string or trim off last 1or 2 chars and
-    // convert to a number, convert last 1-2 chars to socket number
-    char lastChar = topic[strlen(topic) - 1];  // lst char will always be a digit char
-    char lastButOneChar = topic[strlen(topic) - 2];   // see if last but 1 is also a digit char - ie number has two digits - 10 to 16
-
-    socketNumber = lastChar - '0'; //get actual numeric value
-    if ((lastButOneChar == '1')) {       // it is a 2 digit number
-      socketNumber = socketNumber + 10;  // calc actual int
-    }
-
-    uint8_t newState = 0;  // default to off
-    // if ((payload[0] - '1') == 0) {
-    //   newState = 1;
-    // }
-
-    if ((payload[0]) == 1) {
-      newState = 1;
-    }
-
-    // signal a new command has been rxed and
-    // topic and payload also available
-    MQTTNewState = newState;          // 0 or 1
-    MQTTSocketNumber = socketNumber;  // 1-16
-    MQTTNewData = true;
-    return;
-  }
-  MQTTNewData = false;
-}
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
