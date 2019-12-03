@@ -37,8 +37,13 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   strcat(fullMQTTmessage, topic);
   strcat(fullMQTTmessage, "]: ");
   // append payload and add \o terminator
+  strcat(fullMQTTmessage, "[");
   strncat(fullMQTTmessage, (char *)payload, length);
+  strcat(fullMQTTmessage, "]");
+
   // Serial.println(fullMQTTmessage);
+Serial.println(fullMQTTmessage);
+
   myWebSerial.println(fullMQTTmessage);
 
   //! now store the topic and payload VIA REST POST to remote site DB
