@@ -101,7 +101,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   payload[length] = '\0';
 
   char message[] =
-      "MQTT rxed [thisisthetopicforthismesage] : and finally the payload, and a bit extra to make sure there is room in the string";
+      "MQTT rxed [thisisthetopicforthismesage] and finally the payload, and a bit extra to make sure there is room in the string";
   strcpy(message, "MQTT Rx [");
   strcat(message, topic);
   strcat(message, "]: ");
