@@ -150,6 +150,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     MQTTNewState = newState;          // 0 or 1
     MQTTSocketNumber = socketNumber;  // 1-16
     MQTTNewData = true;
+    return;
   }
   MQTTNewData = false;
 }
