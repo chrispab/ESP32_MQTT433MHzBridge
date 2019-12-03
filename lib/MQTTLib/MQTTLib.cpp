@@ -97,7 +97,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   // Power<x> 		Show current power state of relay<x> as On or
   // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
   // 1 / on 	Turn relay<x> power On handle message arrived mqtt
-  //! do some extra checking on rxed topic and payload?
+  //! TODO do some extra checking on rxed topic and payload?
   payload[length] = '\0';
 
   char message[] =
@@ -116,7 +116,9 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   // interrogating millis() for thousands of a sec (modulo????)
   String published_at = timeClient.getFormattedDateTime();
 
-  storeREST(topic, (char *)payload, (char *)published_at.c_str());
+// TODO remote storage proven - remove it now
+
+  //storeREST(topic, (char *)payload, (char *)published_at.c_str());
 
   // only proces if topic starts with "433Bridge/c{mnd/"
   if (strstr(topic, "433Bridge/cmnd/") != NULL) {

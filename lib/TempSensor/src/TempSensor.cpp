@@ -7,7 +7,7 @@ TempSensor::TempSensor() {
   // init sensor
   // unsigned long currentMillis;
   intervalSensorReadMillis = 30000;
-  previousSensorReadMillis = millis() - intervalSensorReadMillis;
+  previousSensorReadMillis = millis() - intervalSensorReadMillis - 1000;
   Serial.println("==== constructor Sensor Read Millis data ====");
   Serial.println(intervalSensorReadMillis);
   Serial.println(previousSensorReadMillis);
@@ -59,9 +59,9 @@ boolean TempSensor::takeReadings(void) {
     dtostrf(humidity, 4, 1, humidityString);
 
     previousSensorReadMillis = currentMillis;
-    if (temperatureChanged == true) {
+    //if (temperatureChanged == true) {
       return true;
-    }
+    //}
   }
   return false;
 }

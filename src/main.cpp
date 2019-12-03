@@ -137,7 +137,7 @@ char restHost[]="chrisiot.com";
 //RestClient client = RestClient(restHost, 443);
 RestClient client = RestClient(restHost, 80);
 
-
+boolean initit = true;
 /**
  * @brief 
  * 
@@ -338,7 +338,7 @@ void setup()
     myWebhook.trigger("433Bridge BootReboot");
     myLightSensor.getLevel();
         //client.begin(MY_SSID, MY_SSID_PASSWORD);
-
+    initit = true;
 }
 
 /**
@@ -360,8 +360,6 @@ void loop()
     //checkPIRSensor();
     checkConnections(); // and reconnect if reqd
 
-    MQTTclient.loop();    // process any MQTT stuff, returned in callback
-    processMQTTMessage(); // check flags set above and act on
     ArduinoOTA.handle();
     resetWatchdog();
     heartBeatLED.update(); // initialize
@@ -371,11 +369,17 @@ void loop()
 
     broadcastWS();
     //if new readings taken, op to serial etc
+    // TODO make vital readings a priority
+    // and publish
+    //also do every minute when no new reading
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
-        myWebSerial.print("New-MQTT pub: ");
+        myWebSerial.print("New- Temp reading - MQTT pub: ");
         myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
+        //initin = false;
     }
+    MQTTclient.loop();    // process any MQTT stuff, returned in callback
+    processMQTTMessage(); // check flags set above and act on
 
     webSocket.loop();
     broadcastWS();
