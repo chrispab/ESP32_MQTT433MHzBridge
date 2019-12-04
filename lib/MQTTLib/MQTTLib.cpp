@@ -6,8 +6,8 @@ int MQTTSocketNumber = 1;  // 1-16
 
 // MQTT stuff
 // IPAddress mqttBroker(192, 168, 0, 200);
-//char subscribeTopic[] = "433Bridge/cmnd/#";
-char subscribeTopic[] = "#";
+char subscribeTopic[] = "433Bridge/cmnd/#";
+//char subscribeTopic[] = "#";
 
 char publishTempTopic[] = "433Bridge/Temperature";
 char publishHumiTopic[] = "433Bridge/Humidity";
@@ -35,7 +35,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   char fullMQTTmessage[255];// = "MQTT rxed thisisthetopicforthismesage and finally the payload, and a bit extra to make sure there is room in the string and even more chars";
   strcpy(fullMQTTmessage, "MQTT Rxed [");
   strcat(fullMQTTmessage, topic);
-  strcat(fullMQTTmessage, "]: ");
+  strcat(fullMQTTmessage, "]:");
   // append payload and add \o terminator
   strcat(fullMQTTmessage, "[");
   strncat(fullMQTTmessage, (char *)payload, length);
@@ -68,14 +68,24 @@ Serial.println(fullMQTTmessage);
       socketNumber = socketNumber + 10;  // calc actual int
     }
 
-    uint8_t newState = 0;  // default to off
     // if ((payload[0] - '1') == 0) {
     //   newState = 1;
     // }
+  Serial.print("......payload[");
+  for (int i=0;i<length;i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println("]");
+    uint8_t newState = 0;  // default to off
 
-    if ((payload[0]) == 1) {
+    if ((char)(payload[0]) == '1') {
       newState = 1;
     }
+
+      Serial.print(",,,,,,,,,,,,,,,,,,,,,,,,,,[");
+
+  Serial.print(newState);
+  Serial.println("]");
 
     // signal a new command has been rxed and
     // topic and payload also available
@@ -152,12 +162,12 @@ extern PubSubClient MQTTclient;
 // set so ensures initial connect attempt, assume now gives 0
 
 void connectMQTT() {
-  static unsigned long lastReconnectAttemptMillis = 0;
   bool MQTTConnectTimeout = false;
   unsigned long checkPeriodMillis = 20000;
   unsigned long timeOutMillis = 5000;
   unsigned long now;
   unsigned long nowMillis = millis();
+  static unsigned long lastReconnectAttemptMillis = nowMillis - checkPeriodMillis - 1000;
 
   myWebSerial.println("HELLO...");
   myWebSerial.println("nowMillis : ", nowMillis);

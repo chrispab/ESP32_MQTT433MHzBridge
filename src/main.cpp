@@ -335,10 +335,10 @@ void setup()
     resetWatchdog();
 
     //MQTTclient.
-    myWebhook.trigger("433Bridge BootReboot");
+    myWebhook.trigger("433Bridge Boot/Reboot");
     myLightSensor.getLevel();
         //client.begin(MY_SSID, MY_SSID_PASSWORD);
-    initit = true;
+    //initit = true;
 }
 
 /**
