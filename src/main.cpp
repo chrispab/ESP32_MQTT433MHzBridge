@@ -212,7 +212,7 @@ void storeREST(char* topic, char* payload, char* published_at)
 
     String postValue = "";
     postValue.toCharArray(postParameter, 79);
-    unsigned long intervalAPIWriteMillis=20000;
+    //unsigned long intervalAPIWriteMillis=20000;
     unsigned long currentMillis=millis();
     String dateTimeStr="";
      String postStrFull="";
