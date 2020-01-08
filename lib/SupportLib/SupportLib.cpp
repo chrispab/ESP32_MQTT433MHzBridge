@@ -97,6 +97,8 @@ void updateDisplayData()
     getMQTTDisplayString(newMQTTDisplayString);
     RF24getDisplayString(newRF24DisplayString);
 
+//only send data to webserial if any strings have changed
+
     if (
         strcmp(tempDisplayString, newTempDisplayString)
     || strcmp(zone1DisplayString, newZone1DisplayString)
@@ -106,6 +108,7 @@ void updateDisplayData()
         //|| touchedFlag
     )
     {
+ 
         if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
                     myWebSerial.println("MQTT DISP STRING CHANGED");
 
