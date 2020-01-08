@@ -75,9 +75,10 @@ unsigned long previousTempDisplayMillis =
 
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN, OLED_DATA_PIN);
-ZoneController ZCs[3] = {ZoneController(0, 14, "GRG", "GGG"),
+//def zone controllers, 2nd parm is socketID (0-15)
+ZoneController ZCs[3] = {ZoneController(0, 13, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
-                         ZoneController(2, 15, "SHD", "SSS")};
+                         ZoneController(2, 14, "SHD", "SSS")};
 
 WiFiServer server(80);
 
@@ -450,6 +451,11 @@ void resetWatchdog(void)
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
+        //get current time, prepend to message
+        myWebSerial.print("+> Time: ");
+        myWebSerial.print(timeClient.getFormattedTime().c_str());
+        myWebSerial.print(" : ");
+
         myWebSerial.println("Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();
     }

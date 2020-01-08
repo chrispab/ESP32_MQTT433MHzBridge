@@ -77,7 +77,7 @@ void processZoneRF24Message(void)
         {
             ZCs[0].resetZoneDevice();
             //Serial.println("RESET G Watchdog");
-            myWebSerial.println("RESET G Watchdog");
+            myWebSerial.println("+>GGG HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[0].heartBeatText);
         }
@@ -85,7 +85,7 @@ void processZoneRF24Message(void)
         {
             ZCs[1].resetZoneDevice();
             //Serial.println("RESET C Watchdog");
-            myWebSerial.println("RESET C Watchdog");
+            myWebSerial.println("+>CCC HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[1].heartBeatText);
         }
@@ -93,7 +93,7 @@ void processZoneRF24Message(void)
         {
             ZCs[2].resetZoneDevice();
             //Serial.println("RESET S Watchdog");
-            myWebSerial.println("RESET S Watchdog");
+            myWebSerial.println("+>SSS HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[2].heartBeatText);
         }
