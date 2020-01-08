@@ -75,7 +75,8 @@ void broadcastWS()
     if (myWebSerial.hasData())
     {
         String statusString;
-        statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
+//        statusString = timeClient.getFormattedTime() + ": " + myWebSerial.getBuffer();
+        statusString = myWebSerial.getBuffer();
         //broadcast to all clients
         if (webSocket.connectedClients() > 0)
             webSocket.broadcastTXT(statusString);

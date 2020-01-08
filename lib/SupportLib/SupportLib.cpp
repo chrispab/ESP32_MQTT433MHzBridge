@@ -108,33 +108,54 @@ void updateDisplayData()
         //|| touchedFlag
     )
     {
- 
-        if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
-                    myWebSerial.println("MQTT DISP STRING CHANGED");
+        // myWebSerial.println("");
+        //myWebSerial.println("++ Changes START ++");
+
+        if (strcmp(tempDisplayString, newTempDisplayString)){
+            myWebSerial.println(tempDisplayString);
 
         }
-        
+
+        if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
+                    myWebSerial.println("MQTT DISP STRING CHANGED");
+                    myWebSerial.println(MQTTDisplayString);
+
+        }
+
+        if (strcmp(RF24DisplayString, newRF24DisplayString)){
+            myWebSerial.println(RF24DisplayString);
+        }
+        // myWebSerial.print("Up Time : ");
+        // myWebSerial.println(getElapsedTimeStr());
+        myWebSerial.print("Time: ");
+        myWebSerial.println(timeClient.getFormattedTime().c_str());
+
+        if (strcmp(zone1DisplayString, newZone1DisplayString)){
+            myWebSerial.println(zone1DisplayString);
+        }
+        if (strcmp(zone3DisplayString, newZone3DisplayString)){
+            myWebSerial.println(zone3DisplayString);
+        }
+
+
         // copy new data to old vars
         strcpy(tempDisplayString, newTempDisplayString);
         strcpy(humiDisplayString, newHumiDisplayString);
         strcpy(zone1DisplayString, newZone1DisplayString);
         strcpy(zone3DisplayString, newZone3DisplayString);
         strcpy(MQTTDisplayString, newMQTTDisplayString);
-
-        //strcpy(newRF24DisplayString, RF24getDisplayString(newRF24DisplayString));
         strcpy(RF24DisplayString, newRF24DisplayString);
 
-        myWebSerial.println("");
-        myWebSerial.println("!----------! BIG_TEMP Display Refresh");
-        myWebSerial.println(tempDisplayString);
-        myWebSerial.println(MQTTDisplayString);
-        myWebSerial.println(RF24DisplayString);
 
-        myWebSerial.println(getElapsedTimeStr());
-        myWebSerial.println(timeClient.getFormattedTime().c_str());
-        myWebSerial.println(zone1DisplayString);
-        myWebSerial.println(zone3DisplayString);
-        myWebSerial.println("^----------^");
+        // myWebSerial.println(tempDisplayString);
+        // myWebSerial.println(MQTTDisplayString);
+        //myWebSerial.println(RF24DisplayString);
+
+        // myWebSerial.println(getElapsedTimeStr());
+        // myWebSerial.println(timeClient.getFormattedTime().c_str());
+        // myWebSerial.println(zone1DisplayString);
+        // myWebSerial.println(zone3DisplayString);
+        //myWebSerial.println("++ Changes END ++");
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL))
         {
