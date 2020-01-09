@@ -49,8 +49,14 @@ void connectRF24()
 
 extern ZoneController ZCs[];
 #include "WebSerial.h"
+
 extern WebSerial myWebSerial; 
 
+#include <NTPClient.h>
+extern NTPClient timeClient;
+
+#include "SupportLib.h"
+//extern WebSerial myWebSerial; 
 
 void processZoneRF24Message(void)
 {
@@ -73,11 +79,18 @@ void processZoneRF24Message(void)
 
         // who was it from?
         // reset that timer
+        //Zone 1 ??
         if (equalID(receive_payload, ZCs[0].heartBeatText))
         {
             ZCs[0].resetZoneDevice();
             //Serial.println("RESET G Watchdog");
-            myWebSerial.println("+>GGG HeartBeat Rxed, reset Watchdog");
+                    //get current time, prepend to message
+        // myWebSerial.print("T:");
+        // myWebSerial.print(timeClient.getFormattedTime().c_str());
+        // myWebSerial.print(":");
+                myWebSerial.print(getTimeStr());
+
+            myWebSerial.println("+> GGG HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[0].heartBeatText);
         }
@@ -85,7 +98,13 @@ void processZoneRF24Message(void)
         {
             ZCs[1].resetZoneDevice();
             //Serial.println("RESET C Watchdog");
-            myWebSerial.println("+>CCC HeartBeat Rxed, reset Watchdog");
+                    //get current time, prepend to message
+        // myWebSerial.print("T:");
+        // myWebSerial.print(timeClient.getFormattedTime().c_str());
+        // myWebSerial.print(":");
+                        myWebSerial.print(getTimeStr());
+
+            myWebSerial.println("+> CCC HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[1].heartBeatText);
         }
@@ -93,7 +112,13 @@ void processZoneRF24Message(void)
         {
             ZCs[2].resetZoneDevice();
             //Serial.println("RESET S Watchdog");
-            myWebSerial.println("+>SSS HeartBeat Rxed, reset Watchdog");
+                    //get current time, prepend to message
+        // myWebSerial.print("T:");
+        // myWebSerial.print(timeClient.getFormattedTime().c_str());
+        // myWebSerial.print(":");
+                                myWebSerial.print(getTimeStr());
+
+            myWebSerial.println("+> SSS HeartBeat Rxed, reset Watchdog");
 
             strcpy(messageText, ZCs[2].heartBeatText);
         }

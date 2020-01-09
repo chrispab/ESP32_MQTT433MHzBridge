@@ -19,6 +19,8 @@
 #include "sendemail.h"
 #include "pins.h"
 
+#include "SupportLib.h"
+
 //time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -375,7 +377,7 @@ void loop()
     //also do every minute when no new reading
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
-        myWebSerial.print("New- Temp reading - MQTT pub: ");
+        myWebSerial.print("=> New- Temp reading - MQTT pub: ");
         myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
         //initin = false;
     }
@@ -452,11 +454,12 @@ void resetWatchdog(void)
     {
         timerWrite(timer, 0); // reset timer (feed watchdog)
         //get current time, prepend to message
-        myWebSerial.print("+> Time: ");
-        myWebSerial.print(timeClient.getFormattedTime().c_str());
-        myWebSerial.print(" : ");
+        // myWebSerial.print("T:");
+        // myWebSerial.print(timeClient.getFormattedTime().c_str());
+        // myWebSerial.print(":");
+                        myWebSerial.print(getTimeStr());
 
-        myWebSerial.println("Reset Bridge Watchdog");
+        myWebSerial.println("+> Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();
     }
 }

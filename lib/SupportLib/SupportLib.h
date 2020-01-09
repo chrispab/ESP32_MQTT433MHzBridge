@@ -1,6 +1,8 @@
 #ifndef __SUPPORT_LIB
 #define __SUPPORT_LIB
 
+char *getTimeStr();
+
 bool processTouchPads(void);
 char *getElapsedTimeStr();
 void updateDisplayData();
