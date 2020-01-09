@@ -36,9 +36,9 @@ char *getTimeStr()
         // myWebSerial.print(":");
 
 
-        strcpy(timeStr, "T:");
+        strcpy(timeStr, "-");
         strcat(timeStr, timeClient.getFormattedTime().c_str());
-        strcat(timeStr,":-: ");
+        strcat(timeStr,":_");
     // static unsigned long startMillis = millis();
 
     // unsigned long rawTime = (millis() - startMillis) / 1000;
