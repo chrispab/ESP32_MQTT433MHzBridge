@@ -1,5 +1,6 @@
-//#define DEBUG
-#define RELEASE
+// //#define DEBUG
+// #define RELEASE
+#include "config.h"
 
 #include "Arduino.h"
 #include "version.h"
@@ -354,7 +355,7 @@ char tempString[] = "12345678901234567890";
 // rest vars
 void loop()
 {
-#ifdef DEBUG
+#ifdef DEBUG_WSERIAL
     Serial.print("1..");
 #endif
 
@@ -377,9 +378,13 @@ void loop()
     //also do every minute when no new reading
     if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic, publishHumiTopic))
     {
+            // Serial.print("1..");
+#ifdef DEBUG_WSERIAL
         myWebSerial.print("=> New- Temp reading - MQTT pub: ");
         myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
         //initin = false;
+#endif
+
     }
     MQTTclient.loop();    // process any MQTT stuff, returned in callback
     processMQTTMessage(); // check flags set above and act on

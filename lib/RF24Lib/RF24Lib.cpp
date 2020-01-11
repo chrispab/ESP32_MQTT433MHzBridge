@@ -90,7 +90,7 @@ void processZoneRF24Message(void)
         // myWebSerial.print(":");
                 myWebSerial.print(getTimeStr());
 
-            myWebSerial.println("+> GGG HeartBeat Rxed, reset Watchdog");
+            myWebSerial.println("+> GGG HeartBeat Rxed");
 
             strcpy(messageText, ZCs[0].heartBeatText);
         }
@@ -104,7 +104,7 @@ void processZoneRF24Message(void)
         // myWebSerial.print(":");
                         myWebSerial.print(getTimeStr());
 
-            myWebSerial.println("+> CCC HeartBeat Rxed, reset Watchdog");
+            myWebSerial.println("+> CCC HeartBeat Rxed");
 
             strcpy(messageText, ZCs[1].heartBeatText);
         }
@@ -118,7 +118,7 @@ void processZoneRF24Message(void)
         // myWebSerial.print(":");
                                 myWebSerial.print(getTimeStr());
 
-            myWebSerial.println("+> SSS HeartBeat Rxed, reset Watchdog");
+            myWebSerial.println("+> SSS HeartBeat Rxed");
 
             strcpy(messageText, ZCs[2].heartBeatText);
         }

@@ -43,9 +43,11 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
 
   // Serial.println(fullMQTTmessage);
 Serial.println(fullMQTTmessage);
+#ifdef DEBUG_WSERIAL
 
   myWebSerial.println(fullMQTTmessage);
-
+    // Serial.print("1..");
+#endif
   //! now store the topic and payload VIA REST POST to remote site DB
   // get the time mesage published - use now!//then add 3dp precision by
   // interrogating millis() for thousands of a sec (modulo????)

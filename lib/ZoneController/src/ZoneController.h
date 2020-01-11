@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <My433Transmitter.h>
+#include "config.h"
 
 class ZoneController
 {
@@ -28,9 +29,11 @@ public:
 
 private:
   //single for all instances - share this data
-  static const unsigned int goodSecsMax = 75;                         //20
-  static const unsigned long maxMillisNoAckFromPi = 1000UL * 420UL;   //300 max millisces to wait if no ack from pi before power cycling pi
-  static const unsigned long waitForPiPowerUpMillis = 1000UL * 180UL; //120
+  static const unsigned int goodSecsMax = ZONE_WAIT_BEFORE_FLAG_AWAY;                         //20
+  // static const unsigned long maxMillisNoAckFromPi = 1000UL * 420UL;   //300 max millisces to wait if no ack from pi before power cycling pi
+  // static const unsigned long waitForPiPowerUpMillis = 1000UL * 180UL; //120
+  static const unsigned long maxMillisNoAckFromPi = ZONE_HEARTBEAT_TIMEOUT_MS;   //300 max millisces to wait if no ack from pi before power cycling pi
+  static const unsigned long waitForPiPowerUpMillis = ZONE_COLD_BOOT_TIME_MS; //120
 
   uint8_t id_number;
   uint8_t zone;

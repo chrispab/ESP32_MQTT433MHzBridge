@@ -1,3 +1,5 @@
+#include "config.h"
+ 
 #include <NewRemoteTransmitter.h>
 
 #include <My433Transmitter.h>
@@ -25,6 +27,9 @@ extern WebSerial myWebSerial;
  */
 void My433Transmitter::operateSocket(uint8_t socketID, uint8_t state)
 {
+
+    // only op text to web serial if debug mode is on
+
     // this is a blocking routine !!!!!!!
     char msg[60] = "=> Operate Socket: ";
     char buff[10];
@@ -47,7 +52,10 @@ void My433Transmitter::operateSocket(uint8_t socketID, uint8_t state)
         strcat(msg, " - ON");
     }
     //Serial.println(msg);
+
+    #ifdef DEBUG_WSERIAL
     myWebSerial.println(msg);
+#endif
 
     warnLED.fullOn();
 

@@ -36,9 +36,9 @@ char *getTimeStr()
         // myWebSerial.print(":");
 
 
-        strcpy(timeStr, "-");
+        strcpy(timeStr, "");
         strcat(timeStr, timeClient.getFormattedTime().c_str());
-        strcat(timeStr,":_");
+        strcat(timeStr,": ");
     // static unsigned long startMillis = millis();
 
     // unsigned long rawTime = (millis() - startMillis) / 1000;
@@ -136,13 +136,12 @@ void updateDisplayData()
     || strcmp(zone1DisplayString, newZone1DisplayString)
     || strcmp(zone3DisplayString, newZone3DisplayString)
     || strcmp(MQTTDisplayString, newMQTTDisplayString)
-    || strcmp(RF24DisplayString, newRF24DisplayString)
+    //|| strcmp(RF24DisplayString, newRF24DisplayString)
         //|| touchedFlag
     )
     {
         // myWebSerial.print("Up Time : ");
         // myWebSerial.println(getElapsedTimeStr());
-        myWebSerial.print(getTimeStr());
         // myWebSerial.print("T:");
         // myWebSerial.print(timeClient.getFormattedTime().c_str());
         // myWebSerial.print(":");
@@ -150,26 +149,40 @@ void updateDisplayData()
         //myWebSerial.println("++ Changes START ++");
 
         if (strcmp(tempDisplayString, newTempDisplayString)){
-            myWebSerial.println(newTempDisplayString);
+                    myWebSerial.print(getTimeStr());
+
+            myWebSerial.print(newTempDisplayString);
+                        myWebSerial.println("");
 
         }
 
         if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
                     //myWebSerial.println("MQTT DISP STRING CHANGED");
-                    myWebSerial.println(newMQTTDisplayString);
+                            myWebSerial.print(getTimeStr());
+
+                    myWebSerial.print(newMQTTDisplayString);
+                                myWebSerial.println("");
 
         }
 
-        if (strcmp(RF24DisplayString, newRF24DisplayString)){
-            //myWebSerial.println(RF24DisplayString);
-        }
+        // if (strcmp(RF24DisplayString, newRF24DisplayString)){
+        //     myWebSerial.print(newRF24DisplayString);
+        // }
 
 
         if (strcmp(zone1DisplayString, newZone1DisplayString)){
-            myWebSerial.println(newZone1DisplayString);
+                    myWebSerial.print(getTimeStr());
+
+            myWebSerial.print(newZone1DisplayString);
+                        myWebSerial.println("");
+
         }
         if (strcmp(zone3DisplayString, newZone3DisplayString)){
-            myWebSerial.println(newZone3DisplayString);
+                    myWebSerial.print(getTimeStr());
+
+            myWebSerial.print(newZone3DisplayString);
+                        myWebSerial.println("");
+
         }
 
 
@@ -273,7 +286,10 @@ void checkConnections()
         }
         else
         {
+            #ifdef DEBUG_WSERIAL
+
             myWebSerial.println("OK - WiFi is connected");
+            #endif
         }
 
         if (!MQTTclient.connected())
@@ -283,7 +299,10 @@ void checkConnections()
         }
         else
         {
+            #ifdef DEBUG_WSERIAL
+
             myWebSerial.println("OK - MQTT is connected");
+            #endif
         }
         previousConnCheckMillis = currentMillis;
     }
