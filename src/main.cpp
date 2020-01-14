@@ -430,6 +430,8 @@ void loop()
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
         myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+            // myWebSerial.print("=> New- Temp reading - MQTT pub: ");
+
     }
     broadcastWS();
     webSocket.loop();

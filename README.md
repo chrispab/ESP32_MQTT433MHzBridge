@@ -56,6 +56,8 @@ python ~/Projects/git/ESP32_MQTT433MHzBridge/tools/espota.py -i 192.168.0.230 -I
 
 CQ71:
 python tools/espota.py -i 192.168.0.230 -I 192.168.0.20 -p 3232 -P 3232 -a iotsharing -f .pio/build/esp32dev/firmware.bin
+
+python tools/espota.py -i 192.168.0.230 -I 192.168.0.57 -p 3232 -P 3232 -a iotsharing -f .pio/build/esp32dev/firmware.bin
 ```
 
 

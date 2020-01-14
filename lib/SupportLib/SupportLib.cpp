@@ -159,6 +159,7 @@ void updateDisplayData()
         if (strcmp(MQTTDisplayString, newMQTTDisplayString)){
                     //myWebSerial.println("MQTT DISP STRING CHANGED");
                             myWebSerial.print(getTimeStr());
+                            myWebSerial.print("Tx 433MHz: ");
 
                     myWebSerial.print(newMQTTDisplayString);
                                 myWebSerial.println("");
