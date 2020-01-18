@@ -1,3 +1,5 @@
+#ifndef __WEBSOCKETLIB_H__
+#define __WEBSOCKETLIB_H__
 // #include <RF24.h>
 
 #include <WebSocketsServer.h>
@@ -13,5 +15,6 @@ void broadcastWS(void);
 void operateSocket(uint8_t socketID, uint8_t state);
 void MQTTLibSetup(void);
 
+#endif // __WEBSOCKETLIB_H__
 
 
