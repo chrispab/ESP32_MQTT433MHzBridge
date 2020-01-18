@@ -1,3 +1,5 @@
+#ifndef __MQTTLIB_H__
+#define __MQTTLIB_H__
 // #include <RF24.h>
 
 #include <WebSocketsServer.h>
@@ -11,6 +13,7 @@ void connectMQTT();
 char *getMQTTDisplayString(char *MQTTStatus);
 void processMQTTMessage(void);
 
+#endif // __MQTTLIB_H__
 
 
 
