@@ -126,8 +126,8 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 //!! poss fixed - !!RETEST
 
 //#define myWEBHOOk "https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
-#include <IFTTTWebhook.h>
-IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
+// #include <IFTTTWebhook.h>
+// IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
@@ -339,7 +339,7 @@ void setup()
     resetWatchdog();
 
     //MQTTclient.
-    myWebhook.trigger("433Bridge Boot/Reboot");
+    // myWebhook.trigger("433Bridge Boot/Reboot");
     myLightSensor.getLevel();
         //client.begin(MY_SSID, MY_SSID_PASSWORD);
     //initit = true;
@@ -422,14 +422,14 @@ void loop()
     processZoneRF24Message(); // process any zone watchdog messages
     if (ZCs[0].manageRestarts(transmitter) == true)
     {
-        myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
+        // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
     }
     broadcastWS();
     // disbale zone 2 restarts for now
     ZCs[1].resetZoneDevice();
     if (ZCs[2].manageRestarts(transmitter) == true)
     {
-        myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+        // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
             // myWebSerial.print("=> New- Temp reading - MQTT pub: ");
 
     }
