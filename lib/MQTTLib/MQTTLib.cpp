@@ -7,6 +7,8 @@ int MQTTSocketNumber = 1;  // 1-16
 // MQTT stuff
 // IPAddress mqttBroker(192, 168, 0, 200);
 char subscribeTopic[] = "433Bridge/cmnd/#";
+char subscribeTopic2[] = "Zone1/HeartBeat";
+char subscribeTopic3[] = "Zone3/HeartBeat";
 //char subscribeTopic[] = "#";
 
 char publishTempTopic[] = "433Bridge/Temperature";
@@ -21,6 +23,15 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 //extern void storeREST(char *, char *, char *);
 #include "WebSerial.h"
 extern WebSerial myWebSerial;
+
+//support for hearbeat from MQTT message
+#include "ZoneController.h"
+extern ZoneController ZCs[];
+//#include "SupportLib.h"
+static char messageText[21];
+extern char *getTimeStr();
+
+
 // MQTTclient call back if mqtt messsage rxed (cos has been subscribed  to)
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   uint8_t socketNumber = 0;
@@ -56,6 +67,21 @@ Serial.println(fullMQTTmessage);
 // TODO remote storage proven - remove it now
   //storeREST(topic, (char *)payload, (char *)published_at.c_str());
 
+//look for and process MQTT strings - if subscribed to, to act as additional heartbeat from zones
+  if (strstr(topic, "Zone1/HeartBeat") != NULL)
+  {
+    ZCs[0].resetZoneDevice();
+    myWebSerial.print(getTimeStr());
+    myWebSerial.println("+> GGG MQTT HeartBeat Rxed");
+    //strcpy(messageText, ZCs[0].heartBeatText);
+  }
+  if (strstr(topic, "Zone3/HeartBeat") != NULL)
+  {
+    ZCs[2].resetZoneDevice();
+    myWebSerial.print(getTimeStr());
+    myWebSerial.println("+> SSS MQTT HeartBeat Rxed");
+    //strcpy(messageText, ZCs[0].heartBeatText);
+  }
 
   // only proces if topic starts with "433Bridge/cmnd/Power"
   if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
@@ -193,6 +219,9 @@ void connectMQTT() {
       {
         myWebSerial.println("connected to MQTT server");
         MQTTclient.subscribe(subscribeTopic);
+        MQTTclient.subscribe(subscribeTopic2);
+        MQTTclient.subscribe(subscribeTopic3);
+        
       } else {
         myWebSerial.println("MQTT connection failed, rc=");
         Serial.println(MQTTclient.state());

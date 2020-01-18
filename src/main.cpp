@@ -102,14 +102,13 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 //#define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
 
-#include "WebSocketLib.h"
+// #include "WebSocketLib.h"
 
 extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
 
 #include "WiFiLib.h"
 #include "WebPageLib.h"
 
-#include "SupportLib.h"
 extern boolean processTouchPads(void);
 extern char *getElapsedTimeStr();
 extern void updateDisplayData();
