@@ -28,7 +28,7 @@ extern WebSerial myWebSerial;
 #include "ZoneController.h"
 extern ZoneController ZCs[];
 //#include "SupportLib.h"
-static char messageText[21];
+// static char messageText[21];
 extern char *getTimeStr();
 
 

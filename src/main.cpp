@@ -150,7 +150,7 @@ boolean initit = true;
 hw_timer_t *timer = NULL;
 const int wdtTimeoutS = 60;
 const int wdtTimeoutMs = wdtTimeoutS * 1000; //time in ms to trigger the watchdog
-unsigned long resetWatchdogIntervalMs = 20000;
+unsigned long resetWatchdogIntervalMs = 30000;
 
 void IRAM_ATTR resetModule()
 {
