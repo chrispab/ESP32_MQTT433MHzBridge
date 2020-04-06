@@ -13,6 +13,7 @@ char subscribeTopic3[] = "Zone3/HeartBeat";
 
 char publishTempTopic[] = "433Bridge/Temperature";
 char publishHumiTopic[] = "433Bridge/Humidity";
+char publishLWTTopic[] = "433Bridge/LWT";
 
 #include "socketIDFS.h"
 
@@ -210,17 +211,16 @@ void connectMQTT() {
 
   if ((nowMillis - lastReconnectAttemptMillis) > checkPeriodMillis) {
     myWebSerial.println("ready to try MQTT reconnectMQTT...");
-    while (!MQTTclient.connected() &&
-           !MQTTConnectTimeout)  // loop till connected or timed out
+    while (!MQTTclient.connected() && !MQTTConnectTimeout)  // loop till connected or timed out
     {
       myWebSerial.println("Attempting MQTT connection...");
       // if (MQTTclient.connect("433BridgeMQTTClient"))  // failure will insert a
                                                       // delay,poss 15 secs
       // boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
-      if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, false, "Offline")) 
+      if (MQTTclient.connect("433BridgeMQTTClient", publishLWTTopic, 1, false, "Offline")) 
       {
         myWebSerial.println("connected to MQTT server");
-        MQTTclient.publish("433Bridge/LWT", "Online");
+        MQTTclient.publish(publishLWTTopic, "Online");
         MQTTclient.subscribe(subscribeTopic);
         MQTTclient.subscribe(subscribeTopic2);
         MQTTclient.subscribe(subscribeTopic3);
@@ -239,5 +239,7 @@ void connectMQTT() {
     (!MQTTConnectTimeout)
         ? myWebSerial.println("MQTT Connection made!")
         : myWebSerial.println("MQTT Connection attempt Time Out!");
+
+    MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
   }
 }
