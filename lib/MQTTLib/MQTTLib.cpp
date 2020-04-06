@@ -217,7 +217,7 @@ void connectMQTT() {
       // if (MQTTclient.connect("433BridgeMQTTClient"))  // failure will insert a
                                                       // delay,poss 15 secs
       // boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
-      if (MQTTclient.connect("433BridgeMQTTClient", publishLWTTopic, 1, false, "Offline")) 
+      if (MQTTclient.connect("433BridgeMQTTClient", publishLWTTopic, 0, false, "Offline")) 
       {
         myWebSerial.println("connected to MQTT server");
         MQTTclient.publish(publishLWTTopic, "Online");
