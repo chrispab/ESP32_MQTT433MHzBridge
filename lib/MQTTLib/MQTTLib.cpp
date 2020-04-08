@@ -242,4 +242,6 @@ void connectMQTT() {
 
     MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
   }
+  MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
+
 }
