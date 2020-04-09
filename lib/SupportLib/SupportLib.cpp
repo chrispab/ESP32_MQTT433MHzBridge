@@ -305,7 +305,8 @@ void checkConnections()
 
             myWebSerial.println("OK - MQTT is connected");
             #endif
-            MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
+            myWebSerial.println("-->MQTT publish -> 433Bridge/LWT/Online");
+            MQTTclient.publish("433Bridge/LWT", "Online");//ensure send online
 
         }
         previousConnCheckMillis = currentMillis;
