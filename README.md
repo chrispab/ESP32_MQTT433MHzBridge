@@ -68,3 +68,7 @@ python tools/espota.py -i 192.168.0.230 -I 192.168.0.35 -p 3232 -P 3232 -a iotsh
 
 for main on wifi
 python tools/espota.py -i 192.168.0.230 -I 192.168.0.32 -p 3232 -P 3232 -a iotsharing -f .pio/build/esp32doit-devkit-v1/firmware.bin
+
+
+dell
+python tools/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f .pio/build/esp32doit-devkit-v1/firmware.bin
