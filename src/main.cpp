@@ -1,7 +1,5 @@
 // //#define DEBUG
 // #define RELEASE
-#include "config.h"
-
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <NewRemoteTransmitter.h>
@@ -9,23 +7,24 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <stdlib.h>  // for dtostrf(FLOAT,WIDTH,PRECSISION,BUFFER);
+
 #include "Arduino.h"
 #include "Display.h"
 #include "LedFader.h"
 #include "MyOTA.h"
+#include "SupportLib.h"
 #include "TempSensor.h"
 #include "ZoneController.h"
+#include "config.h"
 #include "pins.h"
 #include "secret.h"
 #include "sendemail.h"
 #include "version.h"
 
-#include "SupportLib.h"
-
 // time stuff
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#define NTP_OFFSET 60*60       // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000  // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;

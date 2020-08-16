@@ -269,7 +269,7 @@ void updateDisplayData()
 extern unsigned long currentMillis;
 extern unsigned long previousConnCheckMillis;
 extern unsigned long intervalConnCheckMillis;
-extern char* publishLWTTopic;
+// extern char* publishLWTTopic;
 
 #include "WiFiLib.h"
 
@@ -305,8 +305,8 @@ void checkConnections()
 
             myWebSerial.println("OK - MQTT is connected");
             #endif
-            myWebSerial.println("-->MQTT publish -> 433Bridge/LWT/Online");
-            MQTTclient.publish("433Bridge/LWT", "Online");//ensure send online
+            // myWebSerial.println("-->MQTT publish -> 433Bridge/LWT/Online");
+            // MQTTclient.publish("433Bridge/LWT", "Online", true);//ensure send online
 
         }
         previousConnCheckMillis = currentMillis;
