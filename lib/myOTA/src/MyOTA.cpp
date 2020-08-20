@@ -10,11 +10,19 @@ void setupOTA(void)
     /* we use mDNS instead of IP of ESP32 directly */
     //hostname.local
     ArduinoOTA.setHostname("MQTT433Bridge");
-    ArduinoOTA.setPassword("iotsharing");
+    // ArduinoOTA.setPassword("iotsharing");
 
     /* this callback function will be invoked when updating start */
     ArduinoOTA.onStart([]() {
-        Serial.println("Start updating");
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH)
+            type = "sketch";
+        else // U_SPIFFS
+            type = "filesystem";
+
+        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+        Serial.println("Start updating " + type);
+        // Serial.println("Start updating");
         myDisplay.wipe();
         myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
         myDisplay.writeLine(4, "OTA-U");
@@ -27,13 +35,14 @@ void setupOTA(void)
         myDisplay.writeLine(1, "Done OTA update");
         myDisplay.writeLine(3, "Reboot ESP");
         myDisplay.refresh();
-        delay(200);
+        delay(500);
     });
     /* this callback function will be invoked when a number of chunks of software was flashed
   so we can use it to calculate the progress of flashing */
     //char str[12];
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
         //Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     });
 
     /* this callback function will be invoked when updating error */
