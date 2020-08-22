@@ -19,6 +19,10 @@
  * SOFTWARE.
  */
 
+// modded from https://github.com/arduino-libraries/NTPClient
+//to allow adding :  String NTPClient::getFormattedDate(unsigned long secs) {
+
+
 #include "NTPClient.h"
 
 NTPClient::NTPClient(UDP& udp) {
