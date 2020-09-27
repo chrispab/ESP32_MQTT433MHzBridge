@@ -51,7 +51,7 @@ TempSensor DHT22Sensor;
 
 // MQTT stuff
 #include <PubSubClient.h>
-IPAddress mqttBroker(192, 168, 0, 200);
+IPAddress mqttBroker(192, 168, 0, MQTT_LAST_OCTET);
 WiFiClient WiFiEClient;
 PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 
