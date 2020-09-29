@@ -51,7 +51,9 @@ void My433Transmitter::operateSocket(uint8_t socketID, uint8_t state)
     {
         strcat(msg, " - ON");
     }
-    //Serial.println(msg);
+        Serial.print("operateSocket: ");
+
+    Serial.println(msg);
 
     #ifdef DEBUG_WSERIAL
     myWebSerial.println(msg);

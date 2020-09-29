@@ -1,5 +1,5 @@
 #include "WebSocketLib.h"
-
+#include "config.h"
 bool MQTTNewData = false;
 int MQTTNewState = 0;      // 0 or 1
 int MQTTSocketNumber = 1;  // 1-16
@@ -55,7 +55,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   strncat(fullMQTTmessage, (char *)payload, length);
   strcat(fullMQTTmessage, "]");
 
-  // Serial.println(fullMQTTmessage);
+  Serial.print("fullMQTTmessage: ");
   Serial.println(fullMQTTmessage);
 #ifdef DEBUG_WSERIAL
 
@@ -89,6 +89,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
   if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
     // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload
     // = 1 or 0 either match whole topic string or trim off last 1or 2 chars and
+    //! now superceded, so payload will be "ON" or "OFF"
     // convert to a number, convert last 1-2 chars to socket number
     char lastChar =
         topic[strlen(topic) - 1];  // lst char will always be a digit char
@@ -104,19 +105,21 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // if ((payload[0] - '1') == 0) {
     //   newState = 1;
     // }
+
+    //display payload
     Serial.print("......payload[");
     for (int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
     }
     Serial.println("]");
-    uint8_t newState = 0;  // default to off
 
-    if ((char)(payload[0]) == '1') {
+
+    uint8_t newState = 0;  // default to off
+    if ((char)(payload[1]) == 'N') { // the N in "ON"
       newState = 1;
     }
 
-    Serial.print(",,,,,,,,,,,,,,,,,,,,,,,,,,[");
-
+    Serial.print("new state: [");
     Serial.print(newState);
     Serial.println("]");
 

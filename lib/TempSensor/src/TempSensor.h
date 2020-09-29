@@ -27,6 +27,7 @@ private:
   //static float humidity;
   char temperatureString[20];
   char humidityString[20];
+  boolean temperatureChanged;
 };
 
 #endif // TempSensor_h

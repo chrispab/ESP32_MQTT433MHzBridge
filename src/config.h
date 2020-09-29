@@ -23,4 +23,7 @@
 
 #define MQTT_LAST_OCTET 100
 
+// char publishTempTopic[] = "433Bridge/Temperature";
+// char publishHumiTopic[] = "433Bridge/Humidity";
+
 #endif
