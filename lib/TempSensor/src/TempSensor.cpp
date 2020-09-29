@@ -6,7 +6,7 @@
 TempSensor::TempSensor() {
     // init sensor
     // unsigned long currentMillis;
-    intervalSensorReadMillis = 30000;
+    intervalSensorReadMillis = 10000;
     previousSensorReadMillis = millis() - intervalSensorReadMillis - 1000;
     Serial.println("==== constructor Sensor Read Millis data ====");
     Serial.println(intervalSensorReadMillis);
@@ -19,6 +19,12 @@ boolean TempSensor::takeReadings(void) {
     static float prevTemperature;
     static float prevHumidity;
 
+    u_long maxTimeoutMillis = 5 * 60 * 1000;
+    static u_long lastTrueMillis = millis() - maxTimeoutMillis - 1000;
+
+    bool maxTimeoutReached;
+    u_long nowMillis = millis();
+
     currentMillis = millis();
 
     temperatureChanged = false;
@@ -28,13 +34,12 @@ boolean TempSensor::takeReadings(void) {
     // max interval before forced read
 
     // throttle here and only read if passed read interval
+    //!sample every intervalSensorReadMillis
     if (currentMillis - previousSensorReadMillis > intervalSensorReadMillis) {
         // Serial.println("Taking New sensor readings......");
 
         this->readSensor();  // update temperature and humidity properties
-        if (temperature != prevTemperature) {
-            temperatureChanged = true;
-        }
+
         //prevTemperature = temperature;  // get last temp
         //prevHumidity = humidity;        // get last temp
 
@@ -42,17 +47,17 @@ boolean TempSensor::takeReadings(void) {
             Serial.println(getStatusString());
         }
         // prevTemp = temperature;//get last temp
-        if (isnan(temperature)) {  // current reading bad
-            // replace with old reading
+        if (isnan(temperature)) {  // current reading bad// replace with old reading
             temperature = prevTemperature;
             Serial.println("reading BAD from SENSOR..using old TEMP value");
         }
-        if (isnan(humidity)) {  // current reading bad
-            // replace with old reading
+        if (isnan(humidity)) {  // current reading bad// replace with old reading
             humidity = prevHumidity;
             Serial.println("reading BAD from SENSOR..using old HUMIDITY value");
         }
-
+        if (temperature != prevTemperature) {
+            temperatureChanged = true;
+        }
         prevTemperature = temperature;  // keep readings just made for next execution
         prevHumidity = humidity;
         // update other props
@@ -60,7 +65,11 @@ boolean TempSensor::takeReadings(void) {
         dtostrf(humidity, 4, 1, humidityString);
 
         previousSensorReadMillis = currentMillis;
-        if (temperatureChanged == true) {
+
+        //only return true( a new, diff from last) or if not been true for maxTimeBetweenSampleTrue
+        maxTimeoutReached = ((nowMillis - lastTrueMillis) > maxTimeoutMillis) ? true : false;
+        if ((temperatureChanged) || (maxTimeoutReached)) {
+            lastTrueMillis = millis();
             return true;
         }
     }
