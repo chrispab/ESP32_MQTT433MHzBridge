@@ -6,7 +6,7 @@
 TempSensor::TempSensor() {
     // init sensor
     // unsigned long currentMillis;
-    intervalSensorReadMillis = 10000;
+    intervalSensorReadMillis = 15 * 1000;
     previousSensorReadMillis = millis() - intervalSensorReadMillis - 1000;
     Serial.println("==== constructor Sensor Read Millis data ====");
     Serial.println(intervalSensorReadMillis);
@@ -23,7 +23,7 @@ boolean TempSensor::takeReadings(void) {
     static u_long lastTrueMillis = millis() - maxTimeoutMillis - 1000;
 
     bool maxTimeoutReached;
-    u_long nowMillis = millis();
+    // u_long nowMillis = millis();
 
     currentMillis = millis();
 
@@ -67,9 +67,9 @@ boolean TempSensor::takeReadings(void) {
         previousSensorReadMillis = currentMillis;
 
         //only return true( a new, diff from last) or if not been true for maxTimeBetweenSampleTrue
-        maxTimeoutReached = ((nowMillis - lastTrueMillis) > maxTimeoutMillis) ? true : false;
+        maxTimeoutReached = ((currentMillis - lastTrueMillis) > maxTimeoutMillis) ? true : false;
         if ((temperatureChanged) || (maxTimeoutReached)) {
-            lastTrueMillis = millis();
+            lastTrueMillis = currentMillis;
             return true;
         }
     }
