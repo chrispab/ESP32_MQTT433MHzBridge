@@ -25,7 +25,7 @@
 // time stuff
 #include <NTPClient.h>
 // #include <WiFiUdp.h>
-#define NTP_OFFSET 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 0 //60 * 60      // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000  // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
