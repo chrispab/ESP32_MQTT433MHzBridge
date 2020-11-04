@@ -112,7 +112,7 @@ void checkForPageRequest(void)
     }
 }
 
-void WiFiLocalWebPageCtrl(void)
+void WiFiLocalWebPageCtrl(void)//! old?
 {
     static char tempDisplayString[30];
     static char humiDisplayString[30];

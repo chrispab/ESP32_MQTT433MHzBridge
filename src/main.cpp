@@ -425,7 +425,7 @@ void loop() {
     heartBeatLED.update();  // initialize
     webSocket.loop();
 
-    timeClient.update();
+    timeClient.update();//! move?
 
     broadcastWS();
     // if new readings taken, op to serial etc
@@ -477,10 +477,10 @@ void loop() {
     // {
     //     displayMode = BIG_TEMP;
     // }
-    ArduinoOTA.handle();
+    // ArduinoOTA.handle();
 
     updateDisplayData();
-    ArduinoOTA.handle();
+    // ArduinoOTA.handle();
 
     webSocket.loop();
     broadcastWS();
