@@ -12,6 +12,7 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
 void connectMQTT();
 char *getMQTTDisplayString(char *MQTTStatus);
 void processMQTTMessage(void);
+boolean reconnectMQTT(void);
 
 #endif // __MQTTLIB_H__
 

@@ -25,7 +25,7 @@
 // time stuff
 #include <NTPClient.h>
 // #include <WiFiUdp.h>
-#define NTP_OFFSET 0 //60 * 60      // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 0            //60 * 60      // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000  // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
@@ -425,7 +425,7 @@ void loop() {
     heartBeatLED.update();  // initialize
     webSocket.loop();
 
-    timeClient.update();//! move?
+    timeClient.update();  //! move?
 
     broadcastWS();
     // if new readings taken, op to serial etc
@@ -439,19 +439,15 @@ void loop() {
         MQTTclient.publish(publishTempTopic, DHT22Sensor.getTemperatureString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
-    // MQTTclient.publish(publishTempTopic, DHT22Sensor.getTempDisplayString(tempString));
 
-    //   if (DHT22Sensor.publishReadings(MQTTclient, publishTempTopic,
-    //                                   publishHumiTopic)) {
-    //     // Serial.print("1..");
-    // #ifdef DEBUG_WSERIAL
-    //     myWebSerial.print("=> New- Temp reading - MQTT pub: ");
-    //     myWebSerial.println(DHT22Sensor.getTempDisplayString(tempString));
-    //     // initin = false;
-    // #endif
-    //   }
-
-    MQTTclient.loop();     // process any MQTT stuff, returned in callback
+    // MQTTclient.loop();     // process any MQTT stuff, returned in callback
+    if (!MQTTclient.connected()) {
+        // Attempt to reconnect
+        reconnectMQTT();  // Attempt to reconnect
+    } else {
+        // Client is connected
+        MQTTclient.loop();  // process any MQTT stuff, returned in callback
+    }
     processMQTTMessage();  // check flags set above and act on
 
     webSocket.loop();
@@ -459,28 +455,7 @@ void loop() {
     // MQTTclient.loop(); // process any MQTT stuff, returned in callback
     ArduinoOTA.handle();
 
-    // touchedFlag = touchPad1.getState();
-    // (touchPad1.getState()) ? displayMode = MULTI : displayMode = BIG_TEMP;
-
-    // if (touchPad2.getState())
-    // {
-    //     if (millis() % 2000 == 0)
-    //     {
-    //         warnLED.fullOn();
-    //         delay(10);
-    //         warnLED.fullOff();
-    //         //!  MQTTclient.publish("433Bridge/Button1", "1");
-    //     }
-    //     displayMode = MULTI;
-    // }
-    // else
-    // {
-    //     displayMode = BIG_TEMP;
-    // }
-    // ArduinoOTA.handle();
-
     updateDisplayData();
-    // ArduinoOTA.handle();
 
     webSocket.loop();
     broadcastWS();
@@ -500,10 +475,7 @@ void loop() {
 
     ArduinoOTA.handle();
 
-    // WiFiLocalWebPageCtrl();
     checkForPageRequest();
-    // webSocket.loop();
-    // broadcastWS();
 }
 
 /**

@@ -1,4 +1,4 @@
-#define SW_VERSION "V5.36 Br: netdown"
+#define SW_VERSION "V5.37 Br: netdown"
 #define TITLE_LINE1 "     ESP32"
 #define TITLE_LINE2 "MQTT 433MhZ Bridge"
 #define TITLE_LINE3 "Zone RF24 Dog"

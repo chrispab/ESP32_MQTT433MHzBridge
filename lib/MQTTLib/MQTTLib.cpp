@@ -226,13 +226,9 @@ void connectMQTT() {
             // a delay,poss 15 secs boolean connect(const char* id, const char*
             // willTopic, uint8_t willQos, boolean willRetain, const char*
             // willMessage);
-            if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, true,
-                                   "Offline")) {
+            if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, true, "Offline")) {
                 myWebSerial.println("connected to MQTT server");
-
-                MQTTclient.publish("433Bridge/LWT", "Online",
-                                   true);  // ensure send online
-
+                MQTTclient.publish("433Bridge/LWT", "Online", true);  // ensure send online
                 // MQTTclient.publish(publishLWTTopic, "Online");
                 MQTTclient.subscribe(subscribeTopic);
                 MQTTclient.subscribe(subscribeTopic2);
@@ -258,4 +254,28 @@ void connectMQTT() {
     }
 
     // MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
+}
+
+long lastReconnectAttempt = 0;
+
+boolean reconnectMQTT() {
+    long now = millis();
+    if (now - lastReconnectAttempt > 5000) {
+        lastReconnectAttempt = now;
+        Serial.println("MQTT is not connected.. trying to connect now");
+
+        // Attempt to reconnect
+        if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, true, "Offline")) {
+            myWebSerial.println("connected to MQTT server");
+            MQTTclient.publish("433Bridge/LWT", "Online", true);  // ensure send online
+            // MQTTclient.publish(publishLWTTopic, "Online");
+            MQTTclient.subscribe(subscribeTopic);
+            MQTTclient.subscribe(subscribeTopic2);
+            MQTTclient.subscribe(subscribeTopic3);
+
+            Serial.println("MQTT is now connected....");
+            lastReconnectAttempt = 0;
+        }
+    }
+    return MQTTclient.connected();
 }

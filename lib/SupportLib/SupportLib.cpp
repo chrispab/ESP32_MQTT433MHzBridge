@@ -294,21 +294,21 @@ void checkConnections()
             #endif
         }
 
-        if (!MQTTclient.connected())
-        {
-            myWebSerial.println("MQTTClient Needs reconnecting");
-            connectMQTT();
-        }
-        else
-        {
-            #ifdef DEBUG_WSERIAL
+        // if (!MQTTclient.connected())
+        // {
+        //     myWebSerial.println("MQTTClient Needs reconnecting");
+        //     connectMQTT();
+        // }
+        // else
+        // {
+        //     #ifdef DEBUG_WSERIAL
 
-            myWebSerial.println("OK - MQTT is connected");
-            #endif
-            // myWebSerial.println("-->MQTT publish -> 433Bridge/LWT/Online");
-            // MQTTclient.publish("433Bridge/LWT", "Online", true);//ensure send online
+        //     myWebSerial.println("OK - MQTT is connected");
+        //     #endif
+        //     // myWebSerial.println("-->MQTT publish -> 433Bridge/LWT/Online");
+        //     // MQTTclient.publish("433Bridge/LWT", "Online", true);//ensure send online
 
-        }
+        // }
         previousConnCheckMillis = currentMillis;
     }
 }
