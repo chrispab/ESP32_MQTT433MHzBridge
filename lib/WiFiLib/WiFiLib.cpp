@@ -23,7 +23,7 @@ void connectWiFi()
 
     bool wifiConnectTimeout = false;
     unsigned long startMillis;
-    unsigned long timeOutMillis = 5000;
+    unsigned long timeOutMillis = 3000;
 
     WiFi.begin(ssid, pass);//move out or if
 

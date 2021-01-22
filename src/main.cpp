@@ -418,7 +418,7 @@ void loop() {
     // doRest();
     checkLightSensor();
     // checkPIRSensor();
-    checkConnections();  // and reconnect if reqd
+    checkWifi();  // and reconnect if reqd
 
     ArduinoOTA.handle();
     resetWatchdog();

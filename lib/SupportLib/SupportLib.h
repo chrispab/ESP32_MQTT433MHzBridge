@@ -6,7 +6,7 @@ char *getTimeStr();
 bool processTouchPads(void);
 char *getElapsedTimeStr();
 void updateDisplayData();
-void checkConnections();
+void checkWifi();
 void checkLightSensor();
 void checkPIRSensor();
 
