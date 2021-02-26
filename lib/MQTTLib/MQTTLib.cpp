@@ -256,6 +256,39 @@ void connectMQTT() {
     // MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
 }
 
+//! publish telemetry every 5 mins , e.g. rssi info
+long lastTelemetryPublish = 0-120000;
+void publishTelemetry() {
+    long now = millis();
+    if (now - lastTelemetryPublish > 120000) {
+        lastTelemetryPublish = now;
+        // Serial.println("MQTT is not connected.. trying to connect now");
+
+        // Attempt to reconnect
+        // if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, true, "Offline")) {
+        //     myWebSerial.println("connected to MQTT server");
+
+        // String pubString = "{" report ":{" light ": " " + String(lightRead) + " "}}";
+        char message_buff[10];
+        // long rssi = WiFi.RSSI();
+        String pubString = String(100 + WiFi.RSSI()); 
+        pubString.toCharArray(message_buff, pubString.length() + 1);
+        //Serial.println(pubString);
+        //client.publish("io.m2m/arduino/lightsensor", message_buff);
+
+        MQTTclient.publish("433Bridge/rssi", message_buff);  // ensure send online
+                                                     // MQTTclient.publish(publishLWTTopic, "OnlWiFi.RSSI()ine");
+                                                     // MQTTclient.subscribe(subscribeTopic);
+                                                     // MQTTclient.subscribe(subscribeTopic2);
+                                                     // MQTTclient.subscribe(subscribeTopic3);
+
+        // Serial.println("MQTT is now connected....");
+        // lastReconnectAttempt = 0;
+        // }
+    }
+    // return MQTTclient.connected();
+}
+
 long lastReconnectAttempt = 0;
 
 boolean reconnectMQTT() {

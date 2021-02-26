@@ -14,6 +14,7 @@ char *getMQTTDisplayString(char *MQTTStatus);
 void processMQTTMessage(void);
 boolean reconnectMQTT(void);
 
+void publishTelemetry(void);
 #endif // __MQTTLIB_H__
 
 

@@ -440,6 +440,9 @@ void loop() {
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
 
+    //! send out telemetry every 5 mins
+    publishTelemetry();
+
     // MQTTclient.loop();     // process any MQTT stuff, returned in callback
     if (!MQTTclient.connected()) {
         // Attempt to reconnect
@@ -477,6 +480,7 @@ void loop() {
 
     checkForPageRequest();
 }
+
 
 /**
  * @brief
