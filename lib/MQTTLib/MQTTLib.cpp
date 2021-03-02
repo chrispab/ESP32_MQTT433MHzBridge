@@ -276,12 +276,12 @@ int getQuality() {
 
 
 
-
+unsigned long telePeriodMs = 240000;
 //! publish telemetry every 5 mins , e.g. rssi info
-long lastTelemetryPublish = 0-120000;
+unsigned long lastTelemetryPublish = 0-telePeriodMs;
 void publishTelemetry() {
-    long now = millis();
-    if (now - lastTelemetryPublish > 120000) {
+    unsigned long now = millis();
+    if (now - lastTelemetryPublish > telePeriodMs) {
         lastTelemetryPublish = now;
         // Serial.println("MQTT is not connected.. trying to connect now");
 
