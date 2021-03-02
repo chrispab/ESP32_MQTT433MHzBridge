@@ -256,6 +256,27 @@ void connectMQTT() {
     // MQTTclient.publish(publishLWTTopic, "Online");//ensure send online
 }
 
+
+/*
+   Return the quality (Received Signal Strength Indicator)
+   of the WiFi network.
+   Returns a number between 0 and 100 if WiFi is connected.
+   Returns -1 if WiFi is disconnected.
+*/
+int getQuality() {
+  if (WiFi.status() != WL_CONNECTED)
+    return -1;
+  int dBm = WiFi.RSSI();
+  if (dBm <= -100)
+    return 0;
+  if (dBm >= -50)
+    return 100;
+  return 2 * (dBm + 100);
+}
+
+
+
+
 //! publish telemetry every 5 mins , e.g. rssi info
 long lastTelemetryPublish = 0-120000;
 void publishTelemetry() {
@@ -271,7 +292,7 @@ void publishTelemetry() {
         // String pubString = "{" report ":{" light ": " " + String(lightRead) + " "}}";
         char message_buff[10];
         // long rssi = WiFi.RSSI();
-        String pubString = String(100 + WiFi.RSSI()); 
+        String pubString = String(getQuality()); 
         pubString.toCharArray(message_buff, pubString.length() + 1);
         //Serial.println(pubString);
         //client.publish("io.m2m/arduino/lightsensor", message_buff);
