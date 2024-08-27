@@ -4,7 +4,7 @@
 #include "WebSerial.h"
 //#include <WebSocketsServer.h>
 #include "version.h"
-
+#include "secret.h"
 extern WebSocketsServer webSocket;
 
 extern WebSerial myWebSerial;
@@ -27,6 +27,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     {
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+
+        webSocket.sendTXT(num, "Bridge connected to wifi SSID: ");
+        webSocket.sendTXT(num, MY_SSID);
+        webSocket.sendTXT(num, "<br>");
+        
         webSocket.sendTXT(num, "Connected to Bridge webSocket server<br>");
         webSocket.sendTXT(num, SW_VERSION);
         webSocket.sendTXT(num, "<br>");
