@@ -25,7 +25,7 @@
 // time stuff
 #include <NTPClient.h>
 // #include <WiFiUdp.h>
-#define NTP_OFFSET 0            //60 * 60      // In seconds, 0 for GMT, 60*60 for BST
+#define NTP_OFFSET 0            // 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
 #define NTP_INTERVAL 60 * 1000  // In miliseconds
 #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
@@ -101,7 +101,7 @@ WebSerial myWebSerial;
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-//#define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
+// #define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
 
 // #include "WebSocketLib.h"
 
@@ -126,10 +126,10 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 // hang on wifi connect etc
 //!! poss fixed - !!RETEST
 
-//#define myWEBHOOk
+// #define myWEBHOOk
 //"https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
-// #include <IFTTTWebhook.h>
-// IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
+//  #include <IFTTTWebhook.h>
+//  IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
@@ -397,7 +397,7 @@ void setup() {
 
     // MQTTclient.
     // myWebhook.trigger("433Bridge Boot/Reboot");
-    myLightSensor.getLevel();
+    myLightSensor.readLevel();
     // client.begin(MY_SSID, MY_SSID_PASSWORD);
     // initit = true;
 }
@@ -409,85 +409,91 @@ void setup() {
 // text buffer for main loop
 char tempString[] = "12345678901234567890";
 
-// rest vars
+/**
+ * @brief Main loop function for the ESP32 MQTT 433MHz Bridge.
+ *
+ * This function is called repeatedly and handles the core logic of the device, including:
+ * - Debug output to serial if enabled.
+ * - Checking and processing sensor data (light sensor, DHT22 temperature/humidity).
+ * - Maintaining WiFi connection and handling OTA updates.
+ * - Updating watchdog and heartbeat LED.
+ * - Managing WebSocket communication and broadcasting updates.
+ * - Updating NTP time client.
+ * - Publishing telemetry data at regular intervals.
+ * - Handling MQTT connection, publishing sensor readings, and processing incoming messages.
+ * - Updating display data.
+ * - Processing RF24 zone watchdog messages and managing zone device restarts.
+ * - Checking for incoming web page requests.
+ *
+ * The function ensures that all critical tasks are performed in a timely manner, prioritizing vital sensor readings and maintaining connectivity with MQTT and WebSocket clients.
+ */
 void loop() {
 #ifdef DEBUG_WSERIAL
     Serial.print("1..");
 #endif
 
-    // doRest();
+    // Sensor and connectivity checks
     checkLightSensor();
     // checkPIRSensor();
-    checkWifi();  // and reconnect if reqd
+    checkWifi();
 
+    // Core maintenance
     ArduinoOTA.handle();
     resetWatchdog();
-    heartBeatLED.update();  // initialize
-    webSocket.loop();
+    heartBeatLED.update();
 
-    timeClient.update();  //! move?
-
-    broadcastWS();
-    // if new readings taken, op to serial etc
-    // TODO make vital readings a priority
-    // and publish
-    // also do every minute when no new reading
-
-    // DHT22Sensor.publishReadings(MQTTclient, publishTempTopic,publishHumiTopic);
+    // Time and telemetry
+    timeClient.update();
     if (DHT22Sensor.takeReadings()) {
         Serial.println("=======> New- Temp reading - MQTT pub: ");
         MQTTclient.publish(publishTempTopic, DHT22Sensor.getTemperatureString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
+    publishTelemetryIfDue();
 
-    //! send out telemetry every 5 mins
-    publishTelemetry();
-
-    // MQTTclient.loop();     // process any MQTT stuff, returned in callback
+    // MQTT handling
     if (!MQTTclient.connected()) {
-        // Attempt to reconnect
-        reconnectMQTT();  // Attempt to reconnect
+        reconnectMQTT();
     } else {
-        // Client is connected
-        MQTTclient.loop();  // process any MQTT stuff, returned in callback
+        MQTTclient.loop();
     }
-    processMQTTMessage();  // check flags set above and act on
+    processMQTTMessage();
 
+    // WebSocket and broadcast (once per loop)
     webSocket.loop();
     broadcastWS();
-    // MQTTclient.loop(); // process any MQTT stuff, returned in callback
-    ArduinoOTA.handle();
 
+    // Display update
     updateDisplayData();
 
-    webSocket.loop();
-    broadcastWS();
-    processZoneRF24Message();  // process any zone watchdog messages
-    if (ZCs[0].manageRestarts(transmitter) == true) {
+    // RF24 zone management
+    processZoneRF24Message();
+    if (ZCs[0].manageRestarts(transmitter)) {
         // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
     }
-    broadcastWS();
-    // disbale zone 2 restarts for now
-    ZCs[1].resetZoneDevice();
-    if (ZCs[2].manageRestarts(transmitter) == true) {
+    ZCs[1].resetZoneDevice(); // If you want to keep this always-on reset
+    if (ZCs[2].manageRestarts(transmitter)) {
         // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
-        // myWebSerial.print("=> New- Temp reading - MQTT pub: ");
     }
-    broadcastWS();
-    webSocket.loop();
 
-    ArduinoOTA.handle();
+    // Final WebSocket/broadcast (optional, can be removed if not needed)
+    // webSocket.loop();
+    // broadcastWS();
 
+    // OTA (already handled above, can remove this duplicate)
+    // ArduinoOTA.handle();
+
+    // Web page requests
     checkForPageRequest();
 }
 
-
 /**
- * @brief
+ * @brief Reset the watchdog timer to prevent the ESP32 from rebooting.
  *
+ * This function resets the watchdog timer at specified intervals to ensure
+ * that the ESP32 does not reboot due to inactivity. It prints a message to
+ * the WebSerial indicating that the watchdog has been reset.
  */
-// extern unsigned long resetWatchdogIntervalMs;
-
 void resetWatchdog(void) {
     static unsigned long lastResetWatchdogMillis = millis();
 
@@ -499,6 +505,7 @@ void resetWatchdog(void) {
                         // myWebSerial.print(timeClient.getFormattedTime().c_str());
                         // myWebSerial.print(":");
         myWebSerial.print(getTimeStr());
+        Serial.print(getTimeStr());
 
         myWebSerial.println("+> Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();

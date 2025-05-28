@@ -1,5 +1,5 @@
 #include "SupportLib.h"
-//extern displayModes displayMode;
+// extern displayModes displayMode;
 enum displayModes displayMode;
 
 #include "TempSensor.h"
@@ -24,8 +24,8 @@ extern Display myDisplay;
 boolean touchedFlag = false;
 /**
  * @brief Get the clock Time Str pointer
- * 
- * @return char* 
+ *
+ * @return char*
  */
 char *getTimeStr() {
     static char timeStr[20];
@@ -55,8 +55,8 @@ char *getTimeStr() {
 }
 /**
  * @brief Get the Elapsed Time Str pointer
- * 
- * @return char* 
+ *
+ * @return char*
  */
 char *getElapsedTimeStr() {
     static char elapsedTimeStr[20] = "Test Time";
@@ -81,8 +81,8 @@ char *getElapsedTimeStr() {
 extern bool touchedFlag;
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  */
 #include "LedFader.h"
 extern LedFader warnLED;
@@ -106,7 +106,7 @@ static char newRF24DisplayString[] = "12345678901234567890";
 void updateDisplayData() {
     char justTempString[20];
     char strx[30];
-    //blip red led if zones display has changed
+    // blip red led if zones display has changed
     if (
         strcmp(zone1DisplayString, ZCs[0].getDisplayString(newZone1DisplayString)) ||
         strcmp(zone3DisplayString, ZCs[2].getDisplayString(newZone3DisplayString))) {
@@ -115,13 +115,13 @@ void updateDisplayData() {
         warnLED.fullOff();
     }
 
-    //update the status strings
+    // update the status strings
     DHT22Sensor.getTempDisplayString(newTempDisplayString);
-    DHT22Sensor.getHumiDisplayString(newHumiDisplayString);  //get current humi reading
+    DHT22Sensor.getHumiDisplayString(newHumiDisplayString);  // get current humi reading
     getMQTTDisplayString(newMQTTDisplayString);
     RF24getDisplayString(newRF24DisplayString);
 
-    //only send data to webserial if any strings have changed
+    // only send data to webserial if any strings have changed
 
     if (
         strcmp(tempDisplayString, newTempDisplayString) || strcmp(zone1DisplayString, newZone1DisplayString) || strcmp(zone3DisplayString, newZone3DisplayString) || strcmp(MQTTDisplayString, newMQTTDisplayString)
@@ -134,7 +134,7 @@ void updateDisplayData() {
         // myWebSerial.print(timeClient.getFormattedTime().c_str());
         // myWebSerial.print(":");
         // myWebSerial.println("");
-        //myWebSerial.println("++ Changes START ++");
+        // myWebSerial.println("++ Changes START ++");
 
         if (strcmp(tempDisplayString, newTempDisplayString)) {
             myWebSerial.print(getTimeStr());
@@ -144,7 +144,7 @@ void updateDisplayData() {
         }
 
         if (strcmp(MQTTDisplayString, newMQTTDisplayString)) {
-            //myWebSerial.println("MQTT DISP STRING CHANGED");
+            // myWebSerial.println("MQTT DISP STRING CHANGED");
             myWebSerial.print(getTimeStr());
             myWebSerial.print("-> Tx 433MHz: ");
 
@@ -179,32 +179,32 @@ void updateDisplayData() {
 
         // myWebSerial.println(tempDisplayString);
         // myWebSerial.println(MQTTDisplayString);
-        //myWebSerial.println(RF24DisplayString);
+        // myWebSerial.println(RF24DisplayString);
 
         // myWebSerial.println(getElapsedTimeStr());
         // myWebSerial.println(timeClient.getFormattedTime().c_str());
         // myWebSerial.println(zone1DisplayString);
         // myWebSerial.println(zone3DisplayString);
-        //myWebSerial.println("++ Changes END ++");
+        // myWebSerial.println("++ Changes END ++");
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL)) {
             myDisplay.clearBuffer();
             myDisplay.setFont(BIG_TEMP_FONT);
 
-            //just get the temp bit of displaystring
-            //end of string is 'C', need to get string from that pos
+            // just get the temp bit of displaystring
+            // end of string is 'C', need to get string from that pos
             strcpy(justTempString, &tempDisplayString[6]);
-            //myDisplay.writeLine(4, justTempString);
-            //change the 'o'C to a proper 'degrees C' character
-            // strcat(messageString, "\xb0"); // degree symbol
+            // myDisplay.writeLine(4, justTempString);
+            // change the 'o'C to a proper 'degrees C' character
+            //  strcat(messageString, "\xb0"); // degree symbol
             justTempString[4] = '\xb0';
-            //x,y
+            // x,y
             myDisplay.drawStr(0, 38, justTempString);
-            //myDisplay.refresh();
+            // myDisplay.refresh();
 
             myDisplay.setFont(SYS_FONT);
 
-            //myDisplay.drawStr(0, 47, MQTTDisplayString);
+            // myDisplay.drawStr(0, 47, MQTTDisplayString);
             strcpy(strx, MQTTDisplayString);
             strcat(MQTTDisplayString, "::.");
             strcat(MQTTDisplayString, RF24DisplayString);
@@ -212,7 +212,7 @@ void updateDisplayData() {
             timeClient.update();
             strcpy(MQTTDisplayString, strx);
 
-            //Serial.println(timeClient.getFormattedTime());
+            // Serial.println(timeClient.getFormattedTime());
 
             myDisplay.drawStr(0, 55, zone1DisplayString);
             myDisplay.drawStr(80, 55, getElapsedTimeStr());
@@ -276,23 +276,22 @@ extern PubSubClient MQTTclient;
 char publishLightStateTopic[] = "433Bridge/LightState";
 char publishLightLevelTopic[] = "433Bridge/LightLevel";
 void checkLightSensor() {
-    char str[21];
+    char str[8];
 
-    myLightSensor.getLevel();  // trigger sampling if due
+    myLightSensor.readLevel();  // trigger sampling if due
     if (myLightSensor.hasNewLevel()) {
-        //MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
         sprintf(str, "%d", myLightSensor.getLevel());
+        Serial.print("myLightSensor.getLevel()");
+        Serial.print(str);
+
         MQTTclient.publish(publishLightLevelTopic, str);
+        myLightSensor.clearNewLevelFlag();
     }
-    myLightSensor.getState();
     if (myLightSensor.hasNewState()) {
         MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
-        //sprintf(str, "%d", myLightSensor.getLevel());
-        //MQTTclient.publish(publishLightLevelTopic, str);
+        myLightSensor.clearNewStateFlag();
     }
-    myLightSensor.clearNewLevelFlag();
-    myLightSensor.clearNewStateFlag();
-};
+}
 
 #include <PIRSensor.h>
 extern PIRSensor myPIRSensor;
@@ -300,14 +299,14 @@ extern PIRSensor myPIRSensor;
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 char publishPIRStateTopic[] = "433Bridge/PIRState";
-//char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
+// char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
 void checkPIRSensor() {
-    //char str[21];
+    // char str[21];
     myPIRSensor.getState();  // trigger sampling if due
     if (myPIRSensor.hasNewState()) {
         MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
-        //sprintf(str, "%d", myPIRSensor.getLevel());
-        //MQTTclient.publish(publishPIRLevelTopic, str);
+        // sprintf(str, "%d", myPIRSensor.readLevel());
+        // MQTTclient.publish(publishPIRLevelTopic, str);
 
         myPIRSensor.clearNewStateFlag();
     }
