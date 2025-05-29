@@ -1,4 +1,4 @@
-// //#define DEBUG
+#include "debug.h"
 // #define RELEASE
 #include <Arduino.h>
 #include <ArduinoOTA.h>
@@ -429,7 +429,7 @@ char tempString[] = "12345678901234567890";
  */
 void loop() {
 #ifdef DEBUG_WSERIAL
-    Serial.print("1..");
+    DEBUG_PRINT("1..");
 #endif
 
     // Sensor and connectivity checks
@@ -443,9 +443,28 @@ void loop() {
     heartBeatLED.update();
 
     // Time and telemetry
-    timeClient.update();
+    if (WiFi.status() == WL_CONNECTED) {
+        static unsigned long lastNTPCheck = 0;
+        static bool timeUpdatedFromInternet = false;
+        if (millis() - lastNTPCheck >= 60000) {  // 60 seconds
+            lastNTPCheck = millis();
+            IPAddress ntpServerIP;
+            if (WiFi.hostByName(NTP_ADDRESS, ntpServerIP)) {
+                timeUpdatedFromInternet = timeClient.update();
+                if (timeUpdatedFromInternet) {
+                    DEBUG_PRINT("NTP Time updated: ");
+                    DEBUG_PRINTLN(timeClient.getFormattedTime());
+                } else {
+                    DEBUG_PRINTLN("NTP Time update failed.");
+                    DEBUG_PRINTLN(timeClient.getFormattedTime());
+                }
+            } else {
+                DEBUG_PRINTLN("Failed to resolve NTP server address.");
+            }
+        }
+    }
     if (DHT22Sensor.takeReadings()) {
-        Serial.println("=======> New- Temp reading - MQTT pub: ");
+        DEBUG_PRINTLN("=======> New- Temp reading - MQTT pub: ");
         MQTTclient.publish(publishTempTopic, DHT22Sensor.getTemperatureString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
@@ -471,7 +490,7 @@ void loop() {
     if (ZCs[0].manageRestarts(transmitter)) {
         // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
     }
-    ZCs[1].resetZoneDevice(); // If you want to keep this always-on reset
+    ZCs[1].resetZoneDevice();  // If you want to keep this always-on reset
     if (ZCs[2].manageRestarts(transmitter)) {
         // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
     }
@@ -498,14 +517,9 @@ void resetWatchdog(void) {
     static unsigned long lastResetWatchdogMillis = millis();
 
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs) {
-        timerWrite(timer,
-                   0);  // reset timer (feed watchdog)
-                        // get current time, prepend to message
-                        // myWebSerial.print("T:");
-                        // myWebSerial.print(timeClient.getFormattedTime().c_str());
-                        // myWebSerial.print(":");
+        timerWrite(timer, 0);  // reset timer (feed watchdog)
         myWebSerial.print(getTimeStr());
-        Serial.print(getTimeStr());
+        DEBUG_PRINT(getTimeStr());
 
         myWebSerial.println("+> Reset Bridge Watchdog");
         lastResetWatchdogMillis = millis();

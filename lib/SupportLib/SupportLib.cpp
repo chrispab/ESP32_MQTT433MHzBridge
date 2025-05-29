@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "SupportLib.h"
 // extern displayModes displayMode;
 enum displayModes displayMode;
@@ -209,7 +210,7 @@ void updateDisplayData() {
             strcat(MQTTDisplayString, "::.");
             strcat(MQTTDisplayString, RF24DisplayString);
             myDisplay.drawStr(0, 47, MQTTDisplayString);
-            timeClient.update();
+            // timeClient.update();
             strcpy(MQTTDisplayString, strx);
 
             // Serial.println(timeClient.getFormattedTime());
@@ -229,13 +230,13 @@ void updateDisplayData() {
             myDisplay.refresh();
             myWebSerial.println("");
 
-            Serial.println("!----------! MULTI Display Refresh");
-            Serial.println(tempDisplayString);
-            Serial.println(humiDisplayString);
-            Serial.println(MQTTDisplayString);
-            Serial.println(zone1DisplayString);
-            Serial.println(zone3DisplayString);
-            Serial.println("^----------^");
+            DEBUG_PRINTLN("!----------! MULTI Display Refresh");
+            DEBUG_PRINTLN(tempDisplayString);
+            DEBUG_PRINTLN(humiDisplayString);
+            DEBUG_PRINTLN(MQTTDisplayString);
+            DEBUG_PRINTLN(zone1DisplayString);
+            DEBUG_PRINTLN(zone3DisplayString);
+            DEBUG_PRINTLN("^----------^");
         }
     }
 }
@@ -253,15 +254,14 @@ extern PubSubClient MQTTclient;
 void checkWifi() {
     currentMillis = millis();
     if ((currentMillis - previousConnCheckMillis) > intervalConnCheckMillis) {
-        Serial.println("Checking if wifi is connected");
+        DEBUG_PRINTLN("Checking if wifi is connected");
 
         if (!WiFi.isConnected()) {  //!= WL_CONNECTED)
             myWebSerial.println("Wifi Needs reconnecting");
             connectWiFi();
         } else {
-            Serial.println("OK - WiFi is connected");
+            DEBUG_PRINTLN("OK - WiFi is connected");
 #ifdef DEBUG_WSERIAL
-
             myWebSerial.println("OK - WiFi is connected");
 #endif
         }
@@ -275,14 +275,20 @@ extern LightSensor myLightSensor;
 extern PubSubClient MQTTclient;
 char publishLightStateTopic[] = "433Bridge/LightState";
 char publishLightLevelTopic[] = "433Bridge/LightLevel";
+/**
+ * @brief Checks the light sensor and publishes its state and level to MQTT.
+ *
+ * This function reads the light sensor level and state, and if there are new readings,
+ * it publishes them to the specified MQTT topics.
+ */
 void checkLightSensor() {
     char str[8];
 
     myLightSensor.readLevel();  // trigger sampling if due
     if (myLightSensor.hasNewLevel()) {
         sprintf(str, "%d", myLightSensor.getLevel());
-        Serial.print("myLightSensor.getLevel()");
-        Serial.print(str);
+        DEBUG_PRINT("myLightSensor.getLevel(): ");
+        DEBUG_PRINTLN(str);
 
         MQTTclient.publish(publishLightLevelTopic, str);
         myLightSensor.clearNewLevelFlag();
