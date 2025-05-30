@@ -1,5 +1,6 @@
-#include "debug.h"
 #include "SupportLib.h"
+
+#include "debug.h"
 // extern displayModes displayMode;
 enum displayModes displayMode;
 
@@ -305,15 +306,21 @@ extern PIRSensor myPIRSensor;
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 char publishPIRStateTopic[] = "433Bridge/PIRState";
-// char publishPIRLevelTopic[] = "433Bridge/PIRLevel";
-void checkPIRSensor() {
-    // char str[21];
-    myPIRSensor.getState();  // trigger sampling if due
+
+bool checkPIRSensor() {
+    static unsigned long lastCheck = 0;
+    unsigned long now = millis();
+    if (now - lastCheck < 1000) return myPIRSensor.getState();
+    lastCheck = now;
+
+    myPIRSensor.readState();  // trigger sampling if due
     if (myPIRSensor.hasNewState()) {
         MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
         // sprintf(str, "%d", myPIRSensor.readLevel());
         // MQTTclient.publish(publishPIRLevelTopic, str);
-
+        DEBUG_PRINT("myPIRSensor.getState(): ");
+        DEBUG_PRINTLN(myPIRSensor.getState());
         myPIRSensor.clearNewStateFlag();
     }
-};
+    return myPIRSensor.getState();
+}

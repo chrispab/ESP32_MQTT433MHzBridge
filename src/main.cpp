@@ -111,12 +111,19 @@ extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 #include "WebPageLib.h"
 #include "WiFiLib.h"
 
-extern boolean processTouchPads(void);
+// extern boolean processTouchPads(void);
+// extern char *getElapsedTimeStr();
+// extern void updateDisplayData();
+// extern void checkConnections();
+// extern displayModes displayMode;
+// extern boolean touchedFlag;  // = false;
+// Remove any previous externs for processTouchPads and touchedFlag
+extern bool processTouchPads(void);
 extern char *getElapsedTimeStr();
 extern void updateDisplayData();
 extern void checkConnections();
 extern displayModes displayMode;
-extern boolean touchedFlag;  // = false;
+extern bool touchedFlag;  // = false;
 
 #include "TouchPad.h"
 TouchPad touchPad1 = TouchPad(TOUCH_SENSOR_1);
@@ -142,7 +149,7 @@ char restHost[] = "chrisiot.com";
 // RestClient client = RestClient(restHost, 443);
 RestClient client = RestClient(restHost, 80);
 
-boolean initit = true;
+bool initit = true;
 /**
  * @brief
  *
@@ -278,14 +285,12 @@ void storeREST(char *topic, char *payload, char *published_at) {
         "iiKpjoYX4Ersd3tXqFuj0AdkM7xzLjzPWHJhFleHjrrMwNuITD2-"
         "YXHGqjznCr5mCsfgTxfW0h3sEpKTv3DBukGScPmPFzPn-hL0-"
         "tmDZHImuQAwT6aDVjdEMJfSgtrkGDmF1CaXPi27JL8TjbCvGA2cyuNp6wpuutsqi9UuKTt_"
-        "gQbrH9hsVxOwgS3GST2GMhWlbGx9vWkrilUWnkOVpSR0RzLzRLb-8se4BPOsi3Jer_"
-        "h1pXNSKlOYylpeRZm_9Qd_"
-        "ooI6YI7PIuU0ZN9hj5QDeRbq2JVfXMnBgI9X9x9cJEpWu7vuWtJCntVTvSVJqaBVoh0SCQn9"
-        "yzpPfj5wJjuw1EZN-w8nphb5vgw-LTfjv4QeBdZ9Vo9VoUrUnNng6Ki3_"
-        "uNzbvZOiCDQ8sKWBBHPQ421Rv-Z2UFghNAsG7_GL9_"
-        "n6etFrKch34CGIAqPjcF1fJhTv3ERQh3ep5Ym_"
-        "LsWxCYFv7WkKOAP1mxoPWNPtBvQ9ms5SHYZNnUtOzPTL6HDWuAllwZFOyVj7YmCZm1imN4d1"
-        "dvUlhCAfkgd33ZNPREaGxjJyAyRMYE9D_Y7K0pnMNg");
+        "gQbrH9hsVxOwgS3GST2GMhWlbGx9vWkrilUWnkOVpSR0RzLzRLb-8se4BPOsi3Jer_h1pXN"
+        "SKlOYylpeRZm_9Qd_ooI6YI7PIuU0ZN9hj5QDeRbq2JVfXMnBgI9X9x9cJEpWu7vuWtJCnt"
+        "VTvSVJqaBVoh0SCQn9yzpPfj5wJjuw1EZN-w8nphb5vgw-LTfjv4QeBdZ9Vo9VoUrUnNng6"
+        "Ki3_uNzbvZOiCDQ8sKWBBHPQ421Rv-Z2UFghNAsG7_GL9_n6etFrKch34CGIAqPjcF1fJhT"
+        "v3ERQh3ep5Ym_LsWxCYFv7WkKOAP1mxoPWNPtBvQ9ms5SHYZNnUtOzPTL6HDWuAllwZFOyV"
+        "j7YmCZm1imN4d1dvUlhCAfkgd33ZNPREaGxjJyAyRMYE9D_Y7K0pnMNg");
 
     // build the POST string
     //"/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
@@ -409,6 +414,9 @@ void setup() {
 // text buffer for main loop
 char tempString[] = "12345678901234567890";
 
+// Variable to track when to turn off the display after motion
+// unsigned long displayOnUntil = 0;
+
 /**
  * @brief Main loop function for the ESP32 MQTT 433MHz Bridge.
  *
@@ -427,14 +435,36 @@ char tempString[] = "12345678901234567890";
  *
  * The function ensures that all critical tasks are performed in a timely manner, prioritizing vital sensor readings and maintaining connectivity with MQTT and WebSocket clients.
  */
+
+// static unsigned long displayOnUntil = 0; // Variable to track when to turn off the display after motion
+// Add these static variables at the top of your file or before loop()
+static unsigned long displayOnUntil = 0;
+static bool displayIsOn = false;
+
+// New function to handle display on/off based on motion
+void handleMotionDisplay(bool motion) {
+    if (motion) {
+        displayOnUntil = millis() + 5000;  // 5 seconds
+        if (!displayIsOn) {
+            myDisplay.display();  // or myDisplay.displayOn()
+            displayIsOn = true;
+        }
+    }
+    if (displayIsOn && millis() > displayOnUntil) {
+        myDisplay.noDisplay();  // or myDisplay.displayOff()
+        displayIsOn = false;
+    }
+}
+
 void loop() {
-#ifdef DEBUG_WSERIAL
-    DEBUG_PRINT("1..");
-#endif
 
     // Sensor and connectivity checks
     checkLightSensor();
-    // checkPIRSensor();
+
+    // In your loop() replace the old logic with:
+    bool motion = checkPIRSensor();
+    handleMotionDisplay(motion);
+
     checkWifi();
 
     // Core maintenance

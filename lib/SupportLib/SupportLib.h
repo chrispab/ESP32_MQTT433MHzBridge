@@ -8,7 +8,7 @@ char *getElapsedTimeStr();
 void updateDisplayData();
 void checkWifi();
 void checkLightSensor();
-void checkPIRSensor();
+bool checkPIRSensor();
 
 
 
