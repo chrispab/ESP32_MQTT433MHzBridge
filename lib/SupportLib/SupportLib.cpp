@@ -282,7 +282,7 @@ char publishLightLevelTopic[] = "433Bridge/LightLevel";
  * This function reads the light sensor level and state, and if there are new readings,
  * it publishes them to the specified MQTT topics.
  */
-void checkLightSensor() {
+void processLightSensor() {
     char str[8];
 
     myLightSensor.readLevel();  // trigger sampling if due

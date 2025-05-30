@@ -3,12 +3,12 @@
 
 char *getTimeStr();
 
-bool processTouchPads(void);
+// bool processTouchPads(void);
 char *getElapsedTimeStr();
 void updateDisplayData();
 void checkWifi();
-void checkLightSensor();
 bool checkPIRSensor();
+void processLightSensor();
 
 
 

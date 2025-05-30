@@ -442,7 +442,8 @@ static unsigned long displayOnUntil = 0;
 static bool displayIsOn = false;
 
 // New function to handle display on/off based on motion
-void handleMotionDisplay(bool motion) {
+void processPir() {
+    bool motion = checkPIRSensor();
     if (motion) {
         displayOnUntil = millis() + 5000;  // 5 seconds
         if (!displayIsOn) {
@@ -456,23 +457,7 @@ void handleMotionDisplay(bool motion) {
     }
 }
 
-void loop() {
-
-    // Sensor and connectivity checks
-    checkLightSensor();
-
-    // In your loop() replace the old logic with:
-    bool motion = checkPIRSensor();
-    handleMotionDisplay(motion);
-
-    checkWifi();
-
-    // Core maintenance
-    ArduinoOTA.handle();
-    resetWatchdog();
-    heartBeatLED.update();
-
-    // Time and telemetry
+void processTime() {
     if (WiFi.status() == WL_CONNECTED) {
         static unsigned long lastNTPCheck = 0;
         static bool timeUpdatedFromInternet = false;
@@ -493,19 +478,57 @@ void loop() {
             }
         }
     }
+}
+
+void processTemperatureSensor() {
     if (DHT22Sensor.takeReadings()) {
         DEBUG_PRINTLN("=======> New- Temp reading - MQTT pub: ");
         MQTTclient.publish(publishTempTopic, DHT22Sensor.getTemperatureString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
-    publishTelemetryIfDue();
+}
 
-    // MQTT handling
+void processRF24ZoneWatchdog() {
+    processZoneRF24Message();
+    if (ZCs[0].manageRestarts(transmitter)) {
+        // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
+    }
+    ZCs[1].resetZoneDevice();  // If you want to keep this always-on reset
+    if (ZCs[2].manageRestarts(transmitter)) {
+        // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+    }
+}
+
+void checkMQTT() {
     if (!MQTTclient.connected()) {
         reconnectMQTT();
     } else {
         MQTTclient.loop();
     }
+}
+
+void loop() {
+    // Sensor and connectivity checks
+    processLightSensor();
+
+    processPir();
+
+    checkWifi();
+
+    // Core maintenance
+    ArduinoOTA.handle();
+    resetWatchdog();
+    heartBeatLED.update();
+
+    // Time and telemetry
+    processTime();
+
+    processTemperatureSensor();
+    
+    publishTelemetryIfDue();
+
+    // MQTT handling
+    checkMQTT();
     processMQTTMessage();
 
     // WebSocket and broadcast (once per loop)
@@ -516,21 +539,7 @@ void loop() {
     updateDisplayData();
 
     // RF24 zone management
-    processZoneRF24Message();
-    if (ZCs[0].manageRestarts(transmitter)) {
-        // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
-    }
-    ZCs[1].resetZoneDevice();  // If you want to keep this always-on reset
-    if (ZCs[2].manageRestarts(transmitter)) {
-        // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
-    }
-
-    // Final WebSocket/broadcast (optional, can be removed if not needed)
-    // webSocket.loop();
-    // broadcastWS();
-
-    // OTA (already handled above, can remove this duplicate)
-    // ArduinoOTA.handle();
+    processRF24ZoneWatchdog();
 
     // Web page requests
     checkForPageRequest();
