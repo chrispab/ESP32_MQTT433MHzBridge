@@ -91,7 +91,7 @@ WiFiServer server(80);
 // 2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
 #define HEART_BEAT_TIME 500
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 25, HEART_BEAT_TIME, true);
+LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, HEART_BEAT_TIME, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
 #include <WebSerial.h>
@@ -420,7 +420,6 @@ char tempString[] = "12345678901234567890";
 static unsigned long displayOnUntil = millis() + 10000;
 static bool displayIsOn = true;
 
-
 void processPir() {
     bool motion = checkPIRSensor();
     if (motion) {
@@ -428,6 +427,7 @@ void processPir() {
         if (!displayIsOn) {
             myDisplay.display();  // or myDisplay.displayOn()
             displayIsOn = true;
+            myWebSerial.println("Motion detected!");
         }
     }
     if (displayIsOn && millis() > displayOnUntil) {
@@ -503,7 +503,7 @@ void loop() {
     processTime();
 
     processTemperatureSensor();
-    
+
     publishTelemetryIfDue();
 
     // MQTT handling
