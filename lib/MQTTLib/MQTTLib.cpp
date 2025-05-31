@@ -1,6 +1,6 @@
-#include "debug.h"
 #include "WebSocketLib.h"
 #include "config.h"
+#include "debug.h"
 bool MQTTNewData = false;
 int MQTTNewState = 0;      // 0 or 1
 int MQTTSocketNumber = 1;  // 1-16
@@ -108,12 +108,15 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
         // }
 
         // display payload
-        Serial.print("......payload[");
-        for (int i = 0; i < length; i++) {
-            Serial.print((char)payload[i]);
-        }
-        Serial.println("]");
+        // Serial.print("......payload[");
+        DEBUG_PRINT("......payload[");
 
+        for (int i = 0; i < length; i++) {
+            // Serial.print((char)payload[i]);
+            DEBUG_PRINT((char)payload[i]);
+        }
+        // Serial.println("]");
+        DEBUG_PRINTLN("]");
         uint8_t newState = 0;             // default to off
         if ((char)(payload[1]) == 'N') {  // the N in "ON"
             newState = 1;
@@ -123,9 +126,12 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
             newState = 1;
         }
 
-        Serial.print("new state: [");
-        Serial.print(newState);
-        Serial.println("]");
+        // Serial.print("new state: [");
+        DEBUG_PRINT("new state: [");
+        // Serial.print(newState);
+        DEBUG_PRINT(newState);
+        // Serial.println("]");
+        DEBUG_PRINTLN("]");
 
         // signal a new command has been rxed and
         // topic and payload also available
@@ -295,7 +301,6 @@ void publishTelemetryIfDue() {
         // long rssi = WiFi.RSSI();
         // String pubString = String(getQuality());
         pubString.toCharArray(message_buff, pubString.length() + 1);
-
 
         MQTTclient.publish("433Bridge/rssi", message_buff);  // ensure send online
                                                              // MQTTclient.publish(publishLWTTopic, "OnlWiFi.RSSI()ine");
