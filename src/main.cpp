@@ -417,29 +417,8 @@ char tempString[] = "12345678901234567890";
 // Variable to track when to turn off the display after motion
 // unsigned long displayOnUntil = 0;
 
-/**
- * @brief Main loop function for the ESP32 MQTT 433MHz Bridge.
- *
- * This function is called repeatedly and handles the core logic of the device, including:
- * - Debug output to serial if enabled.
- * - Checking and processing sensor data (light sensor, DHT22 temperature/humidity).
- * - Maintaining WiFi connection and handling OTA updates.
- * - Updating watchdog and heartbeat LED.
- * - Managing WebSocket communication and broadcasting updates.
- * - Updating NTP time client.
- * - Publishing telemetry data at regular intervals.
- * - Handling MQTT connection, publishing sensor readings, and processing incoming messages.
- * - Updating display data.
- * - Processing RF24 zone watchdog messages and managing zone device restarts.
- * - Checking for incoming web page requests.
- *
- * The function ensures that all critical tasks are performed in a timely manner, prioritizing vital sensor readings and maintaining connectivity with MQTT and WebSocket clients.
- */
-
-// static unsigned long displayOnUntil = 0; // Variable to track when to turn off the display after motion
-// Add these static variables at the top of your file or before loop()
-static unsigned long displayOnUntil = 0;
-static bool displayIsOn = false;
+static unsigned long displayOnUntil = millis() + 10000;
+static bool displayIsOn = true;
 
 
 void processPir() {
