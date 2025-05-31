@@ -441,11 +441,11 @@ char tempString[] = "12345678901234567890";
 static unsigned long displayOnUntil = 0;
 static bool displayIsOn = false;
 
-// New function to handle display on/off based on motion
+
 void processPir() {
     bool motion = checkPIRSensor();
     if (motion) {
-        displayOnUntil = millis() + 5000;  // 5 seconds
+        displayOnUntil = millis() + 3000;  // 5 seconds
         if (!displayIsOn) {
             myDisplay.display();  // or myDisplay.displayOn()
             displayIsOn = true;

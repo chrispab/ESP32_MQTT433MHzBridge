@@ -82,7 +82,7 @@ void WebSerial::println(const char *lineText, unsigned long uLongNumber)
 
 void WebSerial::print(const char *lineText)
 {
-    Serial.println(lineText);
+    Serial.print(lineText);
 
     int newLineLen = strlen(lineText);
 
