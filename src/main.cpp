@@ -133,10 +133,6 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 // hang on wifi connect etc
 //!! poss fixed - !!RETEST
 
-// #define myWEBHOOk
-//"https://maker.ifttt.com/trigger/ESP32BridgeBoot/with/key/dF1NEy_aQ5diUyluM3EKcd"
-//  #include <IFTTTWebhook.h>
-//  IFTTTWebhook myWebhook(IFTTT_API_KEY, IFTTT_EVENT_NAME);
 
 #include "PIRSensor.h"
 PIRSensor myPIRSensor(PIR_PIN);
@@ -514,7 +510,7 @@ void loop() {
     // MQTT handling
     if (MQTTclient.connected()) {
         MQTTclient.loop();
-        processMQTTMessage();
+        processMQTTRecievedMessageAction();
     } else {
         reconnectMQTT();
     }

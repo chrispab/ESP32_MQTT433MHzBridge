@@ -11,7 +11,7 @@ void broadcastWS(void);
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length);
 void connectMQTT();
 char *getMQTTDisplayString(char *MQTTStatus);
-void processMQTTMessage(void);
+void processMQTTRecievedMessageAction(void);
 boolean reconnectMQTT(void);
 
 void publishTelemetryIfDue(void);

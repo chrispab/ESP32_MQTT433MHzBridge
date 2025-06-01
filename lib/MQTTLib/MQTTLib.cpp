@@ -36,6 +36,21 @@ extern ZoneController ZCs[];
 extern char *getTimeStr();
 
 // MQTTclient call back handler if mqtt messsage rxed (cos has been subscribed  to)
+
+/**
+ * @brief Callback function to handle incoming MQTT messages.
+ *
+ * This function is called whenever an MQTT message is received. It processes the topic and payload,
+ * logs the full message, and performs specific actions based on the topic content:
+ *   - Logs the received topic and payload for debugging.
+ *   - Handles heartbeat messages for specific zones (e.g., "Zone1/HeartBeat", "Zone3/HeartBeat") by resetting zone devices and logging the event.
+ *   - Processes commands for relay power control if the topic matches "433Bridge/cmnd/Power", extracting the socket number and desired state ("ON"/"OFF" or "1"/"0").
+ *   - Sets global flags and variables (MQTTNewState, MQTTSocketNumber, MQTTNewData) to signal that a new command has been received.
+ *
+ * @param topic   The topic string of the received MQTT message.
+ * @param payload The payload of the MQTT message as a byte array.
+ * @param length  The length of the payload.
+ */
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     uint8_t socketNumber = 0;
 
@@ -139,34 +154,42 @@ void MQTTLibSetup(void) {}
 extern WebSerial myWebSerial;
 #include "My433Transmitter.h"
 extern My433Transmitter transmitter;
-void processMQTTMessage(void) {
-    // char msg[40] = "SSS == Operate Socket: ";
-    char buff[10];
 
-    // strcpy(buff, "Socket : ");
-    // if socket number is  valid one -
-    sprintf(buff, "%d", (MQTTSocketNumber));
-    // strcat(msg, buff);
-    // strcat(msg, "-");
+/**
+ * @brief Processes a newly received MQTT message and performs the corresponding action.
+ *
+ * This function checks if new MQTT data has been received (indicated by the MQTTNewData flag).
+ * If so, it performs the following actions:
+ *   - Operates the specified socket (indexed by MQTTSocketNumber - 1) with the new state.
+ *   - Prints debug information about the socket number and new state.
+ *   - Resets the MQTTNewData flag to indicate the data has been processed.
+ *
+ * This function should be called regularly to handle incoming MQTT messages and trigger hardware actions.
+ */
+void processMQTTRecievedMessageAction(void) {
 
     if (MQTTNewData) {
-        digitalWrite(ESP32_ONBOARD_BLUE_LED_PIN, MQTTNewState);
-        // Serial
-        // myWebSerial.println("process MQTT - MQTTSocketNumber...");
-
-        // myWebSerial.println(buff);
-
-        //                     myWebSerial.println("process MQTT -
-        //                     MQTTNewState...");
-        // sprintf(buff, "%d", (MQTTNewState));
-
-        // myWebSerial.println(buff);
-
         transmitter.operateSocket(MQTTSocketNumber - 1, MQTTNewState);
+        DEBUG_PRINTLN(stringToPrint("MQTTSocketNumber: ", String(MQTTSocketNumber).c_str()));
+        DEBUG_PRINTLN(stringToPrint("MQTTNewState: ", String(MQTTNewState).c_str()));
         MQTTNewData = false;  // indicate not new data now, processed
     }
 }
 
+/**
+ * @brief Constructs a display string representing the current MQTT socket state.
+ *
+ * This function builds a human-readable status string based on the current MQTT socket number,
+ * its associated function, and its state (ON/OFF). The resulting string is copied into the
+ * provided MQTTStatus buffer and a pointer to this buffer is returned.
+ *
+ * @param MQTTStatus A character buffer where the resulting display string will be stored.
+ *                   The buffer must be large enough to hold the resulting string.
+ * @return char* Pointer to the MQTTStatus buffer containing the formatted display string.
+ *
+ * @note This function relies on the global variables MQTTSocketNumber, MQTTNewState, and
+ *       socketIDFunctionStrings. Ensure these are properly initialized before calling.
+ */
 char *getMQTTDisplayString(char *MQTTStatus) {
     char msg[] = "This is a message placeholder with chars for space";
     char socketNumber[] = "This is a also message placeh";
@@ -194,6 +217,19 @@ extern PubSubClient MQTTclient;
 
 // set so ensures initial connect attempt, assume now gives 0
 
+/**
+ * @brief Attempts to connect to the MQTT server with a timeout and retry mechanism.
+ *
+ * This function manages the MQTT connection process. It checks if enough time has passed
+ * since the last connection attempt before trying to reconnect. If not already connected,
+ * it repeatedly attempts to connect to the MQTT server within a specified timeout period.
+ * Upon successful connection, it publishes an "Online" message to the LWT topic and subscribes
+ * to predefined topics. If the connection fails, it logs the failure and retries until the
+ * timeout is reached. Connection status and debug information are output via myWebSerial.
+ *
+ * @note This function should be called periodically (e.g., in the main loop) to maintain
+ *       a persistent MQTT connection.
+ */
 void connectMQTT() {
     bool MQTTConnectTimeout = false;
     unsigned long checkPeriodMillis = 20000;
@@ -208,11 +244,6 @@ void connectMQTT() {
     myWebSerial.println("Last reconn attempt : ", lastReconnectAttemptMillis);
     myWebSerial.println("checkPeriodMillis : ", checkPeriodMillis);
 
-    // do on start up
-    // if (lastReconnectAttemptMillis == 0)
-    // {
-    //     nowMillis = checkPeriodMillis + 1;
-    // }
 
     if ((nowMillis - lastReconnectAttemptMillis) > checkPeriodMillis) {
         myWebSerial.println("ready to try MQTT reconnectMQTT...");
