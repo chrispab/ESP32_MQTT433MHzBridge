@@ -487,12 +487,18 @@ void checkMQTT() {
 }
 
 void loop() {
+    unsigned long currentMillis = millis();
+
     // Sensor and connectivity checks
-    processLightSensor();
+    if (currentMillis % 1000 == 0) {  // Check sensors every second
+        processTemperatureSensor();
+        processLightSensor();
+        processPir();
+    }
 
-    processPir();
-
-    checkWifi();
+    if (currentMillis % 5000 == 0) {  // Check WiFi every 5 seconds
+        checkWifi();
+    }
 
     // Core maintenance
     ArduinoOTA.handle();
@@ -500,22 +506,27 @@ void loop() {
     heartBeatLED.update();
 
     // Time and telemetry
-    processTime();
-
-    processTemperatureSensor();
-
-    publishTelemetryIfDue();
+    if (currentMillis % 60000 == 0) {  // Update time and telemetry every minute
+        processTime();
+        publishTelemetryIfDue();
+    }
 
     // MQTT handling
-    checkMQTT();
-    processMQTTMessage();
+    if (MQTTclient.connected()) {
+        MQTTclient.loop();
+        processMQTTMessage();
+    } else {
+        reconnectMQTT();
+    }
 
     // WebSocket and broadcast (once per loop)
     webSocket.loop();
     broadcastWS();
 
     // Display update
-    updateDisplayData();
+    if (displayIsOn) {
+        updateDisplayData();
+    }
 
     // RF24 zone management
     processRF24ZoneWatchdog();
@@ -537,9 +548,9 @@ void resetWatchdog(void) {
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs) {
         timerWrite(timer, 0);  // reset timer (feed watchdog)
         myWebSerial.print(getTimeStr());
-        DEBUG_PRINT(getTimeStr());
-
         myWebSerial.println("+> Reset Bridge Watchdog");
+        // DEBUG_PRINT(getTimeStr());
+
         lastResetWatchdogMillis = millis();
     }
 }

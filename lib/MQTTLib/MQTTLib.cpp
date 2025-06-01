@@ -1,6 +1,8 @@
 #include "WebSocketLib.h"
 #include "config.h"
 #include "debug.h"
+extern char *stringToPrint(const char *literal, const char *value);
+
 bool MQTTNewData = false;
 int MQTTNewState = 0;      // 0 or 1
 int MQTTSocketNumber = 1;  // 1-16
@@ -33,7 +35,7 @@ extern ZoneController ZCs[];
 //  static char messageText[21];
 extern char *getTimeStr();
 
-// MQTTclient call back if mqtt messsage rxed (cos has been subscribed  to)
+// MQTTclient call back handler if mqtt messsage rxed (cos has been subscribed  to)
 void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     uint8_t socketNumber = 0;
 
@@ -41,7 +43,6 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // Off Power<x> 	0 / off 	Turn relay<x> power Off Power<x>
     // 1 / on 	Turn relay<x> power On handle message arrived mqtt
     //! TODO do some extra checking on rxed topic and payload?
-    // payload[length] = '\0';
 
     // format and display the whole MQTT message and payload
     char fullMQTTmessage[255];  // = "MQTT rxed thisisthetopicforthismesage and
@@ -56,13 +57,8 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     strncat(fullMQTTmessage, (char *)payload, length);
     strcat(fullMQTTmessage, "]");
 
-    DEBUG_PRINTLN("fullMQTTmessage: ");
-    DEBUG_PRINTLN(fullMQTTmessage);
-#ifdef DEBUG_WSERIAL
+    DEBUG_PRINTLN(stringToPrint("fullMQTTmessage: ", fullMQTTmessage));
 
-    myWebSerial.println(fullMQTTmessage);
-    // Serial.print("1..");
-#endif
     //! now store the topic and payload VIA REST POST to remote site DB
     // get the time mesage published - use now!//then add 3dp precision by
     // interrogating millis() for thousands of a sec (modulo????)
@@ -88,56 +84,51 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
 
     // only proces if topic starts with "433Bridge/cmnd/Power"
     if (strstr(topic, "433Bridge/cmnd/Power") != NULL) {
-        // e.g incoming topic = "433Bridge/cmnd/Power1" to "...Power16", and payload
-        // = 1 or 0 either match whole topic string or trim off last 1or 2 chars and
-        //! now superceded, so payload will be "ON" or "OFF"
-        // convert to a number, convert last 1-2 chars to socket number
-        char lastChar =
-            topic[strlen(topic) - 1];  // lst char will always be a digit char
-        char lastButOneChar =
-            topic[strlen(topic) - 2];  // see if last but 1 is also a digit char -
-                                       // ie number has two digits - 10 to 16
+        // payload will be "ON" or "OFF"
+        //  convert to a number, convert last 1-2 chars to socket number
+
+        // lst char will always be a digit char
+        char lastChar = topic[strlen(topic) - 1];
+
+        // see if last but 1 is also a digit char -
+        // ie number has two digits - 10 to 16
+        char lastButOneChar = topic[strlen(topic) - 2];
 
         socketNumber = lastChar - '0';         // get actual numeric value
         if ((lastButOneChar == '1')) {         // it is a 2 digit number
             socketNumber = socketNumber + 10;  // calc actual int
         }
 
-        // if ((payload[0] - '1') == 0) {
-        //   newState = 1;
-        // }
+        String payloadStr = String((char *)payload, length);
+        // convert payload to a string
+        DEBUG_PRINTLN(stringToPrint("payloadStr: ", payloadStr.c_str()));
 
-        // display payload
-        // Serial.print("......payload[");
-        DEBUG_PRINT("......payload[");
-
-        for (int i = 0; i < length; i++) {
-            // Serial.print((char)payload[i]);
-            DEBUG_PRINT((char)payload[i]);
-        }
-        // Serial.println("]");
-        DEBUG_PRINTLN("]");
-        uint8_t newState = 0;             // default to off
-        if ((char)(payload[1]) == 'N') {  // the N in "ON"
+        uint8_t newState = 0;  // default to off
+        if (payloadStr.equalsIgnoreCase("ON")) {
             newState = 1;
         }
+        // check for "OFF"
+        if (payloadStr.equalsIgnoreCase("OFF")) {
+            newState = 0;
+        }
+
         // or with 0 or 1 integers
         if ((payload[0] - '1') == 0) {
             newState = 1;
         }
+        // if 0
+        if ((payload[0] - '0') == 0) {
+            newState = 0;
+        }
 
-        // Serial.print("new state: [");
-        DEBUG_PRINT("new state: [");
-        // Serial.print(newState);
-        DEBUG_PRINT(newState);
-        // Serial.println("]");
-        DEBUG_PRINTLN("]");
-
+        DEBUG_PRINTLN(stringToPrint("MQTT Rxed - newState: ", String(newState).c_str()));
         // signal a new command has been rxed and
         // topic and payload also available
         MQTTNewState = newState;          // 0 or 1
         MQTTSocketNumber = socketNumber;  // 1-16
         MQTTNewData = true;
+        // Exit early as a valid command has been processed
+        // Exit early after processing a valid command to avoid unnecessary checks
         return;
     }
     MQTTNewData = false;
@@ -283,40 +274,34 @@ int getWiFiSignalQuality() {
 //   return 2 * (dBm - RSSI_MIN);
 // }
 
-unsigned long telePeriodMs = 240000;
+// unsigned long telePeriodMs = 240000;
+unsigned long telePeriodMs = 30000;
+
 //! publish telemetry every 5 mins , e.g. rssi info
 unsigned long lastTelemetryPublish = 0 - telePeriodMs;
 void publishTelemetryIfDue() {
     unsigned long now = millis();
     if (now - lastTelemetryPublish > telePeriodMs) {
         lastTelemetryPublish = now;
-        // Serial.println("MQTT is not connected.. trying to connect now");
 
         // Attempt to reconnect
         // if (MQTTclient.connect("433BridgeMQTTClient", "433Bridge/LWT", 1, true, "Offline")) {
         //     myWebSerial.println("connected to MQTT server");
 
         String pubString = String(getWiFiSignalQuality());
-        char message_buff[10];
+        // char message_buff[10];
         // long rssi = WiFi.RSSI();
         // String pubString = String(getQuality());
-        pubString.toCharArray(message_buff, pubString.length() + 1);
+        // pubString.toCharArray(message_buff, pubString.length() + 1);
 
-        MQTTclient.publish("433Bridge/rssi", message_buff);  // ensure send online
-                                                             // MQTTclient.publish(publishLWTTopic, "OnlWiFi.RSSI()ine");
-                                                             // MQTTclient.subscribe(subscribeTopic);
-                                                             // MQTTclient.subscribe(subscribeTopic2);
-                                                             // MQTTclient.subscribe(subscribeTopic3);
+        MQTTclient.publish("433Bridge/rssi", pubString.c_str());  // ensure send online
+                                                                  // MQTTclient.publish(publishLWTTopic, "OnlWiFi.RSSI()ine");
+                                                                  // MQTTclient.subscribe(subscribeTopic);
+                                                                  // MQTTclient.subscribe(subscribeTopic2);
+                                                                  // MQTTclient.subscribe(subscribeTopic3);
 
-        // print to serial
-        DEBUG_PRINT("Published telemetry: 433Bridge/rssi = ");
-        DEBUG_PRINT(message_buff);
-
-        // Serial.println("MQTT is now connected....");
-        // lastReconnectAttempt = 0;
-        // }
+        DEBUG_PRINTLN(stringToPrint("Published telemetry: (WiFi Signal Quality) 433Bridge/rssi = ", pubString.c_str()));
     }
-    // return MQTTclient.connected();
 }
 
 long lastReconnectAttempt = 0;

@@ -9,6 +9,7 @@ void updateDisplayData();
 void checkWifi();
 bool checkPIRSensor();
 void processLightSensor();
+char* stringToPrint(const char* literal, const char* value);
 
 
 

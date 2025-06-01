@@ -252,6 +252,15 @@ extern unsigned long intervalConnCheckMillis;
 #include "WiFiLib.h"
 extern PubSubClient MQTTclient;
 
+char* stringToPrint(const char* literal, const char* value) {
+    static char buffer[64]; // Adjust size as needed
+    buffer[0] = '\0'; // Ensure buffer is empty
+    strncat(buffer, literal, sizeof(buffer) - 1);
+    strncat(buffer, value, sizeof(buffer) - strlen(buffer) - 1);
+    return buffer;
+}
+
+
 void checkWifi() {
     currentMillis = millis();
     if ((currentMillis - previousConnCheckMillis) > intervalConnCheckMillis) {
@@ -288,8 +297,12 @@ void processLightSensor() {
     myLightSensor.readLevel();  // trigger sampling if due
     if (myLightSensor.hasNewLevel()) {
         sprintf(str, "%d", myLightSensor.getLevel());
-        DEBUG_PRINT("myLightSensor.getLevel(): ");
-        DEBUG_PRINTLN(str);
+        // DEBUG_PRINT("myLightSensor.getLevel(): ");
+        // DEBUG_PRINTLN(str);
+        
+        DEBUG_PRINTLN(stringToPrint("myLightSensor.getLevel(): ",str));
+        // DEBUG_PRINTLN(stringToPrint("myLightSensor.getState(): ", myLightSensor.getState() ? "true" : "false"));
+
 
         MQTTclient.publish(publishLightLevelTopic, str);
         myLightSensor.clearNewLevelFlag();
@@ -318,8 +331,10 @@ bool checkPIRSensor() {
         MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
         // sprintf(str, "%d", myPIRSensor.readLevel());
         // MQTTclient.publish(publishPIRLevelTopic, str);
-        DEBUG_PRINT("myPIRSensor.getState(): ");
-        DEBUG_PRINTLN(myPIRSensor.getState());
+        // DEBUG_PRINT("myPIRSensor.getState(): ");
+        // DEBUG_PRINTLN(myPIRSensor.getState());
+        DEBUG_PRINTLN(stringToPrint("myPIRSensor.getState(): ",myPIRSensor.getState() ? "true" : "false"));
+
         myPIRSensor.clearNewStateFlag();
     }
     return myPIRSensor.getState();
