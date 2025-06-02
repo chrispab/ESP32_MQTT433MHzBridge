@@ -328,6 +328,11 @@ void storeREST(char *topic, char *payload, char *published_at) {
     // }
 }
 
+#define SENSOR_INTERVAL_MS 1000
+#define WIFI_CHECK_INTERVAL_MS 5000
+#define TELEMETRY_INTERVAL_MS 60000
+#define DISPLAY_ON_TIME_MS 5000
+
 void setup() {
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
@@ -380,7 +385,8 @@ void setup() {
     myDisplay.refresh();
     timeClient.begin();
     timeClient.update();
-    Serial.println(timeClient.getFormattedTime());
+    // Serial.println(timeClient.getFormattedTime());
+    DEBUG_PRINTLN(timeClient.getFormattedTime());
     delay(200);
 
     // Send Email
@@ -419,7 +425,7 @@ static bool displayIsOn = true;
 void processPir() {
     bool motion = checkPIRSensor();
     if (motion) {
-        displayOnUntil = millis() + 3000;  // 5 seconds
+        displayOnUntil = millis() + DISPLAY_ON_TIME_MS;
         if (!displayIsOn) {
             myDisplay.display();  // or myDisplay.displayOn()
             displayIsOn = true;
@@ -486,13 +492,19 @@ void loop() {
     unsigned long currentMillis = millis();
 
     // Sensor and connectivity checks
-    if (currentMillis % 1000 == 0) {  // Check sensors every second
+    // Use static to preserve lastSensorCheck value between loop() calls
+    static unsigned long lastSensorCheck = 0;
+    if (currentMillis - lastSensorCheck >= SENSOR_INTERVAL_MS) {
+        lastSensorCheck = currentMillis;
         processTemperatureSensor();
         processLightSensor();
         processPir();
     }
 
-    if (currentMillis % 5000 == 0) {  // Check WiFi every 5 seconds
+    // Use static to preserve lastWiFiCheck value between loop() calls
+    static unsigned long lastWiFiCheck = 0;
+    if (currentMillis - lastWiFiCheck >= WIFI_CHECK_INTERVAL_MS) {
+        lastWiFiCheck = currentMillis;
         checkWifi();
     }
 
@@ -501,19 +513,17 @@ void loop() {
     resetWatchdog();
     heartBeatLED.update();
 
-    // Time and telemetry
-    if (currentMillis % 60000 == 0) {  // Update time and telemetry every minute
+    // Use static to preserve lastTelemetryCheck value between loop() calls
+    static unsigned long lastTelemetryCheck = 0;
+    if (currentMillis - lastTelemetryCheck >= TELEMETRY_INTERVAL_MS) {
+        lastTelemetryCheck = currentMillis;
         processTime();
         publishTelemetryIfDue();
     }
 
     // MQTT handling
-    if (MQTTclient.connected()) {
-        MQTTclient.loop();
-        processMQTTRecievedMessageAction();
-    } else {
-        reconnectMQTT();
-    }
+    checkMQTT();
+    processMQTTRecievedMessageAction();
 
     // WebSocket and broadcast (once per loop)
     webSocket.loop();
