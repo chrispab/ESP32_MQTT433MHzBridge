@@ -165,7 +165,7 @@ String NTPClient::getFormattedTime(unsigned long secs) {
   unsigned long seconds = rawTime % 60;
   String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
 
-  return hoursStr + ":" + minuteStr + ":" + secondStr;
+  return String(hoursStr + ":" + minuteStr + ":" + secondStr);
 }
 
 // Based on https://github.com/PaulStoffregen/Time/blob/master/Time.cpp

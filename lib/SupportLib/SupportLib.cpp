@@ -31,28 +31,16 @@ boolean touchedFlag = false;
  */
 char *getTimeStr() {
     static char timeStr[20];
-    // myWebSerial.print("T:");
-    // myWebSerial.print(timeClient.getFormattedTime().c_str());
-    // myWebSerial.print(":");
-
-    strcpy(timeStr, "");
-    strcat(timeStr, timeClient.getFormattedTime().c_str());
-    strcat(timeStr, ": ");
-    // static unsigned long startMillis = millis();
-
-    // unsigned long rawTime = (millis() - startMillis) / 1000;
-
-    // unsigned long hours = (rawTime) / 3600;
-    // String hoursStr = hours < 10 ? "0" + String(hours) : String(hours);
-
-    // unsigned long minutes = (rawTime % 3600) / 60;
-    // String minuteStr = minutes < 10 ? "0" + String(minutes) : String(minutes);
-
-    // unsigned long seconds = rawTime % 60;
-    // String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
-
-    // strcpy(elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
-
+    char formatted[8]; 
+    strcpy(formatted, timeClient.getFormattedTime().c_str());
+    // DEBUG_PRINT("Formatted time: ");
+    // DEBUG_PRINTLN(formatted);
+    // Defensive: ensure buffer is not overrun
+    strncpy(timeStr, formatted, sizeof(timeStr) - 3); // leave space for ": " and null
+    // DEBUG_PRINT("Time string: ");
+    // DEBUG_PRINTLN(timeStr);
+    timeStr[sizeof(timeStr) - 3] = '\0';
+    strncat(timeStr, ": ", sizeof(timeStr) - strlen(timeStr) - 1);
     return timeStr;
 }
 /**
@@ -65,18 +53,11 @@ char *getElapsedTimeStr() {
     static unsigned long startMillis = millis();
 
     unsigned long rawTime = (millis() - startMillis) / 1000;
-
     unsigned long hours = (rawTime) / 3600;
-    String hoursStr = hours < 10 ? "0" + String(hours) : String(hours);
-
     unsigned long minutes = (rawTime % 3600) / 60;
-    String minuteStr = minutes < 10 ? "0" + String(minutes) : String(minutes);
-
     unsigned long seconds = rawTime % 60;
-    String secondStr = seconds < 10 ? "0" + String(seconds) : String(seconds);
-
-    strcpy(elapsedTimeStr, (hoursStr + ":" + minuteStr + ":" + secondStr).c_str());
-
+    // Format with snprintf for buffer safety
+    snprintf(elapsedTimeStr, sizeof(elapsedTimeStr), "%02lu:%02lu:%02lu", hours, minutes, seconds);
     return elapsedTimeStr;
 }
 

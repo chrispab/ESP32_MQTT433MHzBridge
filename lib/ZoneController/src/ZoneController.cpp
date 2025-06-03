@@ -177,6 +177,8 @@ char *ZoneController::getDisplayString(char *statusMessage)
         strcat(str_output, buf);
         strcat(str_output, ")");
     }
+    // Buffer safety: Ensure statusMessage is large enough (at least 32 bytes recommended)
+    // If you change the format, update this size accordingly.
     strcpy(statusMessage, str_output); // copy status mess to loc
     return statusMessage;              // return pointer to status message
 }
