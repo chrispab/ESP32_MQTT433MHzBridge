@@ -1,6 +1,6 @@
-
 #include "ZoneController.h"
 #include <My433Transmitter.h>
+#include "debug.h"
 
 // check a unit and see if restart reqd
 ZoneController::ZoneController(int zoneID, int remoteSocketID,
@@ -75,8 +75,8 @@ boolean ZoneController::manageRestarts(My433Transmitter transmitter)
             if (rebootMillisLeft == 0)
             { // reboot stuff completed here
                 lastGoodAckMillis = millis();
-                Serial.print("Assume Pi back up:");
-                Serial.println(id_number);
+                DEBUG_PRINTLN("Assume Pi back up:");
+                DEBUG_PRINTLN(id_number);
                 // printD("Assume pi back up");
                 // printD2Str("Assume up:", name);
                 isRebooting = false; // signal device has stopped rebooting

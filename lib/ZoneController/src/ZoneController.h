@@ -10,12 +10,31 @@ class ZoneController
 
 public:
   ZoneController(int zoneID, int socketID, const char *name, const char *heartBeatText);
+
+  /**
+   * @brief Manages restarts for the zone controller, including power cycling logic.
+   * @param transmitter The 433MHz transmitter object to control power cycling.
+   * @return true if a restart was triggered, false otherwise.
+   */
   boolean manageRestarts(My433Transmitter transmitter);
+
+  /**
+   * @brief Power cycles the zone device using the transmitter.
+   * @param transmitter The 433MHz transmitter object.
+   */
   void powerCycle(My433Transmitter transmitter);
+
+  /**
+   * @brief Resets the zone device state.
+   */
   void resetZoneDevice(void);
+
+  /**
+   * @brief Returns a display string representing the current status of the zone controller.
+   * @param statusMessage Buffer to store the status message.
+   * @return Pointer to the status message buffer.
+   */
   char *getDisplayString(char *statusMessage);
-
-
 
   char heartBeatText[4]; // allow enough space for text plus 1 extra for null terminator
   unsigned long lastGoodAckMillis;

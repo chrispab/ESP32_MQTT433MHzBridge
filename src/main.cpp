@@ -166,12 +166,18 @@ void IRAM_ATTR resetModule() {
 
 //------------------------------------------------------------
 unsigned long previousAPIWriteMillis = 0;
+/**
+ * @brief Periodically sends a REST API POST request with the current time.
+ *
+ * Uses the RestClient to send a POST request to a configured endpoint every 20 seconds.
+ * Handles buffer safety and prints debug output for status codes.
+ */
 void doRest() {
     char postParameter[79];
     char postMessage[255];
 
     String postValue = "";
-    postValue.toCharArray(postParameter, 79);
+    postValue.toCharArray(postParameter, sizeof(postParameter));
     unsigned long intervalAPIWriteMillis = 20000;
     unsigned long currentMillis = millis();
     String dateTimeStr = "";
@@ -179,7 +185,7 @@ void doRest() {
 
     String postStr1 = "";
     String postStr2 = "";
-    // do every 5 secs
+    // do every 20 secs
     if (currentMillis - previousAPIWriteMillis > intervalAPIWriteMillis) {
         client.setHeader("Accept: application/json");
 
@@ -215,39 +221,34 @@ void doRest() {
         postStr1 =
             "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
         dateTimeStr = timeClient.getFormattedDateTime(0);
-        // postStr2 =
-        // "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
         postStrFull = postStr1 + dateTimeStr;
-        // replace any spaces (esp the one bet date and time) with %20
         postStrFull.replace(" ", "%20");
-        postStrFull.toCharArray(postMessage, 255);
-        // int statusCode =
-        // client.post("/api/todo?topic=/test/topic&content={content:body}&published_at=2019-08-12
-        // 21:12:26.987", postParameter); int statusCode =
-        // client.post("/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123",
-        // postParameter);
+        postStrFull.toCharArray(postMessage, sizeof(postMessage));
         int statusCode = client.post(postMessage, postParameter);
-        // int statusCode = client.post("/api/todo?topic=/test/topic&amp;
-        // content={content:body}&amp; published_at=2019-08-12 21:12:26.123",
-        // postParameter); POST
-        // /api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123
-        // HTTP/1.1\r\n
-
-        Serial.print("Status code from server: ");
-        Serial.println(statusCode);
+        DEBUG_PRINT("Status code from server: ");
+        DEBUG_PRINTLN(statusCode);
+        if (statusCode < 200 || statusCode >= 300) {
+            DEBUG_PRINTLN("[REST] Warning: Non-success status code returned.");
+        }
         previousAPIWriteMillis = currentMillis;
     }
 }
 
-// extern void storeREST(topic, payload, published_at);
-// unsigned long previousAPIWriteMillis =0;
+/**
+ * @brief Sends a REST API POST request with topic, payload, and timestamp.
+ *
+ * @param topic        The topic string for the REST API.
+ * @param payload      The payload string for the REST API.
+ * @param published_at The timestamp string for the REST API.
+ *
+ * Handles buffer safety and prints debug output for status codes.
+ */
 void storeREST(char *topic, char *payload, char *published_at) {
     char postParameter[79];
     char postMessage[255];
 
     String postValue = "";
-    postValue.toCharArray(postParameter, 79);
-    // unsigned long intervalAPIWriteMillis=20000;
+    postValue.toCharArray(postParameter, sizeof(postParameter));
     unsigned long currentMillis = millis();
     String dateTimeStr = "";
     String postStrFull = "";
@@ -258,8 +259,6 @@ void storeREST(char *topic, char *payload, char *published_at) {
     String postPayload = "";
     String published_atStr = "";
 
-    // do every 5 secs
-    //  if ( currentMillis - previousAPIWriteMillis > intervalAPIWriteMillis){
     client.setHeader("Accept: application/json");
 
     // local auth token
@@ -308,24 +307,14 @@ void storeREST(char *topic, char *payload, char *published_at) {
     postStrFull.replace("{", "%7B");
     postStrFull.replace("}", "%7D");
 
-    postStrFull.toCharArray(postMessage, 255);
-    // int statusCode =
-    // client.post("/api/todo?topic=/test/topic&content={content:body}&published_at=2019-08-12
-    // 21:12:26.987", postParameter); int statusCode =
-    // client.post("/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123",
-    // postParameter);
+    postStrFull.toCharArray(postMessage, sizeof(postMessage));
     int statusCode = client.post(postMessage, postParameter);
-    // int statusCode = client.post("/api/todo?topic=/test/topic&amp;
-    // content={content:body}&amp; published_at=2019-08-12 21:12:26.123",
-    // postParameter); POST
-    // /api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=2019-08-12%2021:12:26.123
-    // HTTP/1.1\r\n
-
-    Serial.print("Status code from server: ");
-    Serial.println(statusCode);
+    DEBUG_PRINT("Status code from server: ");
+    DEBUG_PRINTLN(statusCode);
+    if (statusCode < 200 || statusCode >= 300) {
+        DEBUG_PRINTLN("[REST] Warning: Non-success status code returned.");
+    }
     previousAPIWriteMillis = currentMillis;
-
-    // }
 }
 
 #define SENSOR_INTERVAL_MS 1000

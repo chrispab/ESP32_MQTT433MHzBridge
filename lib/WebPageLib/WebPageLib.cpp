@@ -1,6 +1,7 @@
 //#include "WebSocketLib.h"
 #include "WebPageLib.h"
 #include "../../src/secret.h"
+#include "../../src/debug.h"
 
 
 extern WiFiServer  server;
@@ -35,7 +36,7 @@ void checkForPageRequest(void)
     //client = server.available();
     if (client)
     {                                  // if you get a client,
-        Serial.println("New Client."); // print a message out the serial port
+        DEBUG_PRINTLN("New Client."); // print a message out the serial port
         String currentLine = "";       // make a String to hold incoming data from the client
         while (client.connected())
         { // loop while the client's connected
@@ -108,7 +109,7 @@ void checkForPageRequest(void)
         }
         // close the connection:
         client.stop();
-        Serial.println("Client Disconnected.");
+        DEBUG_PRINTLN("Client Disconnected.");
     }
 }
 
@@ -124,7 +125,7 @@ void WiFiLocalWebPageCtrl(void)//! old?
     //client = server.available();
     if (client)
     {                                  // if you get a client,
-        Serial.println("New Client."); // print a message out the serial port
+        DEBUG_PRINTLN("New Client."); // print a message out the serial port
         String currentLine = "";       // make a String to hold incoming data from the client
         while (client.connected())
         { // loop while the client's connected
@@ -194,6 +195,6 @@ void WiFiLocalWebPageCtrl(void)//! old?
         }
         // close the connection:
         client.stop();
-        Serial.println("Client Disconnected.");
+        DEBUG_PRINTLN("Client Disconnected.");
     }
 }
