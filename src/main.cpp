@@ -320,7 +320,7 @@ void storeREST(char *topic, char *payload, char *published_at) {
 #define SENSOR_INTERVAL_MS 1000
 #define WIFI_CHECK_INTERVAL_MS 5000
 #define TELEMETRY_INTERVAL_MS 60000
-#define DISPLAY_ON_TIME_MS 5000
+#define DISPLAY_ON_TIME_MS 2500
 
 void setup() {
     Serial.begin(115200);
@@ -454,6 +454,10 @@ void processTemperatureSensor() {
     if (DHT22Sensor.takeReadings()) {
         DEBUG_PRINTLN("=======> New- Temp reading - MQTT pub: ");
         MQTTclient.publish(publishTempTopic, DHT22Sensor.getTemperatureString());
+        DEBUG_PRINT("new temp reading: ");
+        DEBUG_PRINTLN(DHT22Sensor.getTemperatureString());
+        DEBUG_PRINT("new humidity reading: ");
+        DEBUG_PRINTLN(DHT22Sensor.getHumidityString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
 }
@@ -481,10 +485,10 @@ void loop() {
     unsigned long currentMillis = millis();
 
     // Sensor and connectivity checks
-    // Use static to preserve lastSensorCheck value between loop() calls
-    static unsigned long lastSensorCheck = 0;
-    if (currentMillis - lastSensorCheck >= SENSOR_INTERVAL_MS) {
-        lastSensorCheck = currentMillis;
+    // Use static to preserve lastTemperatureSensorCheck value between loop() calls
+    static unsigned long lastTemperatureSensorCheck = 0;
+    if (currentMillis - lastTemperatureSensorCheck >= SENSOR_INTERVAL_MS) {
+        lastTemperatureSensorCheck = currentMillis;
         processTemperatureSensor();
         processLightSensor();
         processPir();
