@@ -1,4 +1,7 @@
-// #include "debug.h"
+#include "debug.h"
+#include "config.h"
+#include "version.h"
+
 // #define RELEASE
 #include <Arduino.h>
 #include <ArduinoOTA.h>
@@ -16,11 +19,9 @@
 #include "SupportLib.h"
 #include "TempSensor.h"
 #include "ZoneController.h"
-#include "config.h"
 #include "pins.h"
 #include "secret.h"
 #include "sendemail.h"
-#include "version.h"
 
 // time stuff
 #include <NTPClient.h>

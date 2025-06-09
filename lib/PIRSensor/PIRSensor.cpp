@@ -28,6 +28,7 @@ bool PIRSensor::updateStateIfDue(void) {
     return getState();
 }
 
+
 bool PIRSensor::processPIRSensor(PubSubClient& MQTTclient) {
 
     // DEBUG_PRINTLN("PIRSensor::checkPIRSensor() called");
