@@ -1,4 +1,4 @@
-#include "debug.h"
+// #include "debug.h"
 // #define RELEASE
 #include <Arduino.h>
 #include <ArduinoOTA.h>
@@ -393,7 +393,7 @@ void setup() {
 
     // MQTTclient.
     // myWebhook.trigger("433Bridge Boot/Reboot");
-    myLightSensor.readLevel();
+    myLightSensor.readLevelIfDue();
     // client.begin(MY_SSID, MY_SSID_PASSWORD);
     // initit = true;
 }
@@ -412,7 +412,7 @@ static unsigned long displayOnUntil = millis() + 10000;
 static bool displayIsOn = true;
 
 void processPir() {
-    bool motion = checkPIRSensor();
+    bool motion = myPIRSensor.processPIRSensor(MQTTclient);
     if (motion) {
         displayOnUntil = millis() + DISPLAY_ON_TIME_MS;
         if (!displayIsOn) {
@@ -490,7 +490,8 @@ void loop() {
     if (currentMillis - lastTemperatureSensorCheck >= SENSOR_INTERVAL_MS) {
         lastTemperatureSensorCheck = currentMillis;
         processTemperatureSensor();
-        processLightSensor();
+        // processLightSensor();
+        myLightSensor.process(MQTTclient);
         processPir();
     }
 

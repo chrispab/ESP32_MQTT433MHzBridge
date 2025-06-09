@@ -1,5 +1,7 @@
+// #include "debug.h"
+#include "config.h"
 #include "LightSensor.h"
-////
+#include "SupportLib.h"
 
 LightSensor::LightSensor(uint8_t ADC_Pin) : pin(ADC_Pin) {
     state = false;
@@ -19,7 +21,7 @@ LightSensor::LightSensor(uint8_t ADC_Pin) : pin(ADC_Pin) {
  *
  * @return u_int The current light sensor level.
  */
-u_int LightSensor::readLevel() {
+u_int LightSensor::readLevelIfDue() {
     u_int nowMs = millis();
     // only read a new sample if time is due
     if (nowMs > (lastReadMillis + readIntervalMillis)) {
@@ -80,4 +82,31 @@ bool LightSensor::getState() {
 
 int LightSensor::getLevel() {
     return currentLevel;
+}
+
+/**
+ * @param MQTTclient Reference to a PubSubClient instance used for publishing sensor data
+ *                   to an MQTT broker. This client handles the connection and communication
+ *                   with the MQTT server, allowing the LightSensor to send updates or readings.
+ */
+void LightSensor::process(PubSubClient& MQTTclient) {
+    char str[8];
+
+    readLevelIfDue();  // sample ldr value if due
+    if (hasNewLevel()) {
+        sprintf(str, "%d", getLevel());
+        // DEBUG_PRINT("myLightSensor.getLevel(): ");
+        // DEBUG_PRINTLN(str);
+        
+        DEBUG_PRINTLN(stringToPrint("myLightSensor.getLevel(): ",str));
+        // DEBUG_PRINTLN(stringToPrint("myLightSensor.getState(): ", myLightSensor.getState() ? "true" : "false"));
+
+
+        MQTTclient.publish(publishLightLevelTopic, str);
+        clearNewLevelFlag();
+    }
+    if (hasNewState()) {
+        MQTTclient.publish(publishLightStateTopic, getState() ? "true" : "false");
+        clearNewStateFlag();
+    }
 }

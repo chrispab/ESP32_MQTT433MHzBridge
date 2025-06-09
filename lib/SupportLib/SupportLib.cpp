@@ -264,8 +264,7 @@ void checkWifi() {
 extern LightSensor myLightSensor;
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
-char publishLightStateTopic[] = "433Bridge/LightState";
-char publishLightLevelTopic[] = "433Bridge/LightLevel";
+
 /**
  * @brief Checks the light sensor and publishes its state and level to MQTT.
  *
@@ -275,7 +274,7 @@ char publishLightLevelTopic[] = "433Bridge/LightLevel";
 void processLightSensor() {
     char str[8];
 
-    myLightSensor.readLevel();  // trigger sampling if due
+    myLightSensor.readLevelIfDue();  // trigger sampling if due
     if (myLightSensor.hasNewLevel()) {
         sprintf(str, "%d", myLightSensor.getLevel());
         // DEBUG_PRINT("myLightSensor.getLevel(): ");
@@ -299,24 +298,25 @@ extern PIRSensor myPIRSensor;
 
 #include <PubSubClient.h>
 extern PubSubClient MQTTclient;
-char publishPIRStateTopic[] = "433Bridge/PIRState";
+// char publishPIRStateTopic[] = "433Bridge/PIRState";
 
-bool checkPIRSensor() {
-    static unsigned long lastCheck = 0;
-    unsigned long now = millis();
-    if (now - lastCheck < 1000) return myPIRSensor.getState();
-    lastCheck = now;
+// bool checkPIRSensor() {
+//     static unsigned long lastCheck = 0;
+//     unsigned long now = millis();
+//     if (now - lastCheck < 1000) return myPIRSensor.getState();
+//     lastCheck = now;
 
-    myPIRSensor.readState();  // trigger sampling if due
-    if (myPIRSensor.hasNewState()) {
-        MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
-        // sprintf(str, "%d", myPIRSensor.readLevel());
-        // MQTTclient.publish(publishPIRLevelTopic, str);
-        // DEBUG_PRINT("myPIRSensor.getState(): ");
-        // DEBUG_PRINTLN(myPIRSensor.getState());
-        DEBUG_PRINTLN(stringToPrint("myPIRSensor.getState(): ",myPIRSensor.getState() ? "true" : "false"));
+//     myPIRSensor.readStateIfDue();  // trigger sampling if due
+//     if (myPIRSensor.hasNewState()) {
+//         MQTTclient.publish(publishPIRStateTopic, myPIRSensor.getState() ? "true" : "false");
+//         // sprintf(str, "%d", myPIRSensor.readLevel());
+//         // MQTTclient.publish(publishPIRLevelTopic, str);
+//         // DEBUG_PRINT("myPIRSensor.getState(): ");
+//         // DEBUG_PRINTLN(myPIRSensor.getState());
+//         DEBUG_PRINT(timeClient.getFormattedTime().c_str());
+//         DEBUG_PRINTLN(stringToPrint("myPIRSensor.getState(): ",myPIRSensor.getState() ? "true" : "false"));
 
-        myPIRSensor.clearNewStateFlag();
-    }
-    return myPIRSensor.getState();
-}
+//         myPIRSensor.clearNewStateFlag();
+//     }
+//     return myPIRSensor.getState();
+// }

@@ -1,11 +1,23 @@
+#include "debug.h"
+// #include <NTPClient.h>
+// extern NTPClient timeClient;
 #ifndef __SETTINGS_H
 #define __SETTINGS_H
 
 //#define DEBUG_WSERIAL
 
+// - Use `extern` in headers for global variables.
+// - Provide the actual definition in a single `.cpp` file.
+extern char publishLightStateTopic[];
+extern char publishLightLevelTopic[];
+extern char publishPIRStateTopic[];
+
+
+
 #define RELEASE
 
 
+#define LIGHT_SENSOR_READ_INTERVAL 30000  // ms
 
 #define LIGHT_SENSOR_LOWER_THRESHOLD 1500
 #define LIGHT_SENSOR_UPPER_THRESHOLD 1900

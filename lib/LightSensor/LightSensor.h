@@ -5,6 +5,9 @@
 #include <config.h>
 
 #include "IOBase.h"
+#include <PubSubClient.h>
+
+#define LIGHT_SENSOR_READ_INTERVAL 30000  // ms
 
 class LightSensor : public IOBase {
    private:
@@ -13,13 +16,14 @@ class LightSensor : public IOBase {
     bool newLevelFlag;
     u_int currentLevel;
     u_int previousLevel = 500;
-    u_int readIntervalMillis = 30000;  // min interval between reading sensor in ms
-    u_int lastReadMillis = -30000;
+    u_int readIntervalMillis = LIGHT_SENSOR_READ_INTERVAL;  // min interval between reading sensor in ms
+    u_int lastReadMillis = 0 - LIGHT_SENSOR_READ_INTERVAL;
 
     // hysteresis and state related properties
     // u_int thresholdLevel = 600;
     int lowerThresholdLevel = LIGHT_SENSOR_LOWER_THRESHOLD;
     int upperThresholdLevel = LIGHT_SENSOR_UPPER_THRESHOLD;
+
     // bool trigger = false;
 
     // int currentLevel;
@@ -28,8 +32,9 @@ class LightSensor : public IOBase {
 
    public:
     LightSensor(uint8_t pin);
-    u_int readLevel();
+    // u_int readLevel();
     void clearNewLevelFlag();
+    u_int readLevelIfDue();
     bool hasNewLevel();
     // void setThresholdLevel();
     // int getLightSensor();
@@ -37,6 +42,9 @@ class LightSensor : public IOBase {
 
     bool getState();
     int getLevel();
+    void process(PubSubClient& MQTTclient);
+    // void process(PubSubClient MQTTclient);
+    // void process();
     // int getLowerThresholdLevel();
     // int getUpperThresholdLevel();
 };

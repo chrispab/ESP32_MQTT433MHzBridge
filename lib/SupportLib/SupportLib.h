@@ -1,6 +1,9 @@
 #ifndef __SUPPORT_LIB
 #define __SUPPORT_LIB
 
+#include <NTPClient.h>
+extern NTPClient timeClient;
+
 /**
  * @brief Get the current time as a formatted string.
  * @return Pointer to a static buffer containing the formatted time string.
