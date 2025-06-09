@@ -1,8 +1,8 @@
 #include "debug.h"
 // #include <NTPClient.h>
 // extern NTPClient timeClient;
-#ifndef __SETTINGS_H
-#define __SETTINGS_H
+#ifndef __CONFIG_H
+#define __CONFIG_H
 #define PIR_READ_INTERVAL 1000  // ms, minimum interval between reading sensor
 
 //#define DEBUG_WSERIAL
