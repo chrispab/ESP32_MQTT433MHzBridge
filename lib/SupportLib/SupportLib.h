@@ -26,15 +26,15 @@ void updateDisplayData();
  */
 void checkWifi();
 
-/**
- * @brief Check the PIR sensor and update state if motion is detected.
- */
-bool checkPIRSensor();
+// /**
+//  * @brief Check the PIR sensor and update state if motion is detected.
+//  */
+// bool checkPIRSensor();
 
-/**
- * @brief Process the light sensor and publish updates if needed.
- */
-void processLightSensor();
+// /**
+//  * @brief Process the light sensor and publish updates if needed.
+//  */
+// void processLightSensor();
 
 /**
  * @brief Convert a literal and value to a formatted string.
