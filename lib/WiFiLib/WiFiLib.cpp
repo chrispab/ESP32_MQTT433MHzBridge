@@ -1,4 +1,6 @@
-//#include "WebSocketLib.h"
+#include "debug.h"
+#include "config.h"
+
 #include "WiFiLib.h"
 #include "../../src/secret.h"
 
@@ -13,7 +15,31 @@ extern WebSerial myWebSerial;
 #include "WebSerial.h"
 extern WiFiServer server;
 
+u_long previousConnCheckMillis = 0;
+// u_long intervalConnCheckMillis = 30000;
 
+#ifndef WIFI_CONNECTION_CHECK_INTERVAL
+#define WIFI_CONNECTION_CHECK_INTERVAL 30000
+#endif
+
+
+void checkWifi() {
+    unsigned long currentMillis = millis();
+    if ((currentMillis - previousConnCheckMillis) > WIFI_CONNECTION_CHECK_INTERVAL) {
+        DEBUG_PRINTLN("Checking if wifi is connected");
+
+        if (!WiFi.isConnected()) {  //!= WL_CONNECTED)
+            myWebSerial.println("Wifi Needs reconnecting");
+            connectWiFi();
+        } else {
+            DEBUG_PRINTLN("OK - WiFi is connected");
+// #ifdef DEBUG_WSERIAL
+//             myWebSerial.println("OK - WiFi is connected");
+// #endif
+        }
+        previousConnCheckMillis = currentMillis;
+    }
+}
 
 
 void connectWiFi()

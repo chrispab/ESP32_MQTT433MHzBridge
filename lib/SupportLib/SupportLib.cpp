@@ -242,28 +242,28 @@ char* stringToPrint(const char* literal, const char* value) {
 }
 
 
-void checkWifi() {
-    currentMillis = millis();
-    if ((currentMillis - previousConnCheckMillis) > intervalConnCheckMillis) {
-        DEBUG_PRINTLN("Checking if wifi is connected");
+// void checkWifi() {
+//     currentMillis = millis();
+//     if ((currentMillis - previousConnCheckMillis) > intervalConnCheckMillis) {
+//         DEBUG_PRINTLN("Checking if wifi is connected");
 
-        if (!WiFi.isConnected()) {  //!= WL_CONNECTED)
-            myWebSerial.println("Wifi Needs reconnecting");
-            connectWiFi();
-        } else {
-            DEBUG_PRINTLN("OK - WiFi is connected");
-#ifdef DEBUG_WSERIAL
-            myWebSerial.println("OK - WiFi is connected");
-#endif
-        }
-        previousConnCheckMillis = currentMillis;
-    }
-}
+//         if (!WiFi.isConnected()) {  //!= WL_CONNECTED)
+//             myWebSerial.println("Wifi Needs reconnecting");
+//             connectWiFi();
+//         } else {
+//             DEBUG_PRINTLN("OK - WiFi is connected");
+// // #ifdef DEBUG_WSERIAL
+// //             myWebSerial.println("OK - WiFi is connected");
+// // #endif
+//         }
+//         previousConnCheckMillis = currentMillis;
+//     }
+// }
 
-#include <LightSensor.h>
-extern LightSensor myLightSensor;
-#include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+// #include <LightSensor.h>
+// extern LightSensor myLightSensor;
+// #include <PubSubClient.h>
+// extern PubSubClient MQTTclient;
 
 /**
  * @brief Checks the light sensor and publishes its state and level to MQTT.
@@ -271,33 +271,33 @@ extern PubSubClient MQTTclient;
  * This function reads the light sensor level and state, and if there are new readings,
  * it publishes them to the specified MQTT topics.
  */
-void processLightSensor() {
-    char str[8];
+// void processLightSensor() {
+//     char str[8];
 
-    myLightSensor.readLevelIfDue();  // trigger sampling if due
-    if (myLightSensor.hasNewLevel()) {
-        sprintf(str, "%d", myLightSensor.getLevel());
-        // DEBUG_PRINT("myLightSensor.getLevel(): ");
-        // DEBUG_PRINTLN(str);
+//     myLightSensor.readLevelIfDue();  // trigger sampling if due
+//     if (myLightSensor.hasNewLevel()) {
+//         sprintf(str, "%d", myLightSensor.getLevel());
+//         // DEBUG_PRINT("myLightSensor.getLevel(): ");
+//         // DEBUG_PRINTLN(str);
         
-        DEBUG_PRINTLN(stringToPrint("myLightSensor.getLevel(): ",str));
-        // DEBUG_PRINTLN(stringToPrint("myLightSensor.getState(): ", myLightSensor.getState() ? "true" : "false"));
+//         DEBUG_PRINTLN(stringToPrint("myLightSensor.getLevel(): ",str));
+//         // DEBUG_PRINTLN(stringToPrint("myLightSensor.getState(): ", myLightSensor.getState() ? "true" : "false"));
 
 
-        MQTTclient.publish(publishLightLevelTopic, str);
-        myLightSensor.clearNewLevelFlag();
-    }
-    if (myLightSensor.hasNewState()) {
-        MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
-        myLightSensor.clearNewStateFlag();
-    }
-}
+//         MQTTclient.publish(publishLightLevelTopic, str);
+//         myLightSensor.clearNewLevelFlag();
+//     }
+//     if (myLightSensor.hasNewState()) {
+//         MQTTclient.publish(publishLightStateTopic, myLightSensor.getState() ? "true" : "false");
+//         myLightSensor.clearNewStateFlag();
+//     }
+// }
 
-#include <PIRSensor.h>
-extern PIRSensor myPIRSensor;
+// #include <PIRSensor.h>
+// extern PIRSensor myPIRSensor;
 
-#include <PubSubClient.h>
-extern PubSubClient MQTTclient;
+// #include <PubSubClient.h>
+// extern PubSubClient MQTTclient;
 // char publishPIRStateTopic[] = "433Bridge/PIRState";
 
 // bool checkPIRSensor() {

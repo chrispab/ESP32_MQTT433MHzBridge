@@ -4,5 +4,5 @@
 
 void connectWiFi();
 void printWifiStatus();
-
+void checkWifi();
 

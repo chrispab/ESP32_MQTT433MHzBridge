@@ -39,7 +39,7 @@ extern char publishTempTopic[];  // = "433Bridge/Temperature";
 extern char publishHumiTopic[];  // = "433Bridge/Humidity";
 extern bool MQTTNewData;
 // forward decs
-void checkConnections(void);
+// void checkConnections(void);
 // void updateDisplayData(void);
 void resetWatchdog(void);
 // boolean processTouchPads(void);
@@ -70,7 +70,7 @@ LightSensor myLightSensor(LDR_PIN);
 
 // Global vars
 unsigned long currentMillis = 0;
-unsigned long previousConnCheckMillis = 0;
+// unsigned long previousConnCheckMillis = 0;
 unsigned long intervalConnCheckMillis = 30000;
 
 unsigned long intervalTempDisplayMillis = 60000;

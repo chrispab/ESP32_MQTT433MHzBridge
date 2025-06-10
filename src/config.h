@@ -6,6 +6,7 @@
 
 #define PIR_READ_INTERVAL 999  // ms, minimum interval between reading sensor
 
+#define WIFI_CONNECTION_CHECK_INTERVAL 30000 // ms, interval to check wifi connection
 //#define DEBUG_WSERIAL
 
 // - Use `extern` in headers for global variables.
