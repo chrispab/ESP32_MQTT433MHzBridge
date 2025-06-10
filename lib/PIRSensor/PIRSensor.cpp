@@ -1,8 +1,8 @@
+#include "config.h"
 #include "PIRSensor.h"
 #include <NTPClient.h>
 
 #include "SupportLib.h"
-#include "config.h"
 extern NTPClient timeClient;
 
 PIRSensor::PIRSensor(uint8_t IPPin) : pin(IPPin) {
@@ -17,7 +17,8 @@ bool PIRSensor::getState() const {
 bool PIRSensor::updateStateIfDue(void) {
     unsigned long nowMs = millis();
 
-    if ((nowMs - lastReadMillis) > readIntervalMillis) {
+    if ((nowMs - lastReadMillis) > PIR_READ_INTERVAL) {
+        // DEBUG_PRINTLN(stringToPrint("PIRSensor::updateStateIfDue, PIR_READ_INTERVAL: ", String(readIntervalMillis).c_str()));
         bool currentState = digitalRead(pin);
         if (currentState != state) {
             state = currentState;

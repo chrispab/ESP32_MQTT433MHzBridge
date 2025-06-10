@@ -3,7 +3,8 @@
 // extern NTPClient timeClient;
 #ifndef __CONFIG_H
 #define __CONFIG_H
-#define PIR_READ_INTERVAL 1000  // ms, minimum interval between reading sensor
+
+#define PIR_READ_INTERVAL 999  // ms, minimum interval between reading sensor
 
 //#define DEBUG_WSERIAL
 
