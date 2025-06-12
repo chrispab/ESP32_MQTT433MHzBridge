@@ -1,9 +1,8 @@
 #include <RF24Lib.h>
+
 #include "ZoneController.h"
 
-
-
-//RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
+// RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
 uint8_t writePipeLocS[] = "NodeS";
 uint8_t readPipeLocS[] = "Node0";
 uint8_t writePipeLocC[] = "NodeC";
@@ -20,16 +19,15 @@ void setPipes(uint8_t *writingPipe, uint8_t *readingPipe);
 int equalID(char *receive_payload, const char *targetID);
 static char messageText[21];
 
-char*  RF24getDisplayString(char *statusMessage){
-//    char str_output[20] = {0};
-    //strcpy(statusMessage, str_output); // copy status mess to loc
-    strcpy(statusMessage, messageText); // copy status mess to loc
+char *RF24getDisplayString(char *statusMessage) {
+    //    char str_output[20] = {0};
+    // strcpy(statusMessage, str_output); // copy status mess to loc
+    strcpy(statusMessage, messageText);  // copy status mess to loc
 
-    return statusMessage;              // return pointer to status message
+    return statusMessage;  // return pointer to status message
 }
 
-void connectRF24()
-{
+void connectRF24() {
     rf24Radio.begin();
     // enable dynamic payloads
     rf24Radio.enableDynamicPayloads();
@@ -42,33 +40,29 @@ void connectRF24()
     rf24Radio.printDetails();
     // autoACK enabled by default
     setPipes(writePipeLocC,
-             readPipeLocC); // SHOULD NEVER NEED TO CHANGE PIPES
+             readPipeLocC);  // SHOULD NEVER NEED TO CHANGE PIPES
     rf24Radio.startListening();
 }
-
 
 extern ZoneController ZCs[];
 #include "WebSerial.h"
 
-extern WebSerial myWebSerial; 
+extern WebSerial myWebSerial;
 
 #include <NTPClient.h>
 extern NTPClient timeClient;
 
 #include "SupportLib.h"
-//extern WebSerial myWebSerial; 
+// extern WebSerial myWebSerial;
 
-void processZoneRF24Message(void)
-{
-    while (rf24Radio.available())
-    { // Read all available payloads
+void processZoneRF24Message(void) {
+    while (rf24Radio.available()) {  // Read all available payloads
 
         // Grab the message and process
         uint8_t len = rf24Radio.getDynamicPayloadSize();
 
         // If a corrupt dynamic payload is received, it will be flushed
-        if (!len)
-        {
+        if (!len) {
             return;
         }
 
@@ -79,76 +73,64 @@ void processZoneRF24Message(void)
 
         // who was it from?
         // reset that timer
-        //Zone 1 ??
-        if (equalID(receive_payload, ZCs[0].heartBeatText))
-        {
+        // Zone 1 ??
+        if (equalID(receive_payload, ZCs[0].heartBeatText)) {
             ZCs[0].resetZoneDevice();
-            //Serial.println("RESET G Watchdog");
-                    //get current time, prepend to message
-        // myWebSerial.print("T:");
-        // myWebSerial.print(timeClient.getFormattedTime().c_str());
-        // myWebSerial.print(":");
-                myWebSerial.print(getTimeStr());
+            // Serial.println("RESET G Watchdog");
+            // get current time, prepend to message
+            // myWebSerial.print("T:");
+            // myWebSerial.print(timeClient.getFormattedTime().c_str());
+            // myWebSerial.print(":");
+            myWebSerial.print(timeClient.getTimeStr());
 
             myWebSerial.println("+> GGG RF24 HeartBeat Rxed");
 
             strcpy(messageText, ZCs[0].heartBeatText);
-        }
-        else if (equalID(receive_payload, ZCs[1].heartBeatText))
-        {
+        } else if (equalID(receive_payload, ZCs[1].heartBeatText)) {
             ZCs[1].resetZoneDevice();
-            //Serial.println("RESET C Watchdog");
-                    //get current time, prepend to message
-        // myWebSerial.print("T:");
-        // myWebSerial.print(timeClient.getFormattedTime().c_str());
-        // myWebSerial.print(":");
-                        myWebSerial.print(getTimeStr());
+            // Serial.println("RESET C Watchdog");
+            // get current time, prepend to message
+            // myWebSerial.print("T:");
+            // myWebSerial.print(timeClient.getFormattedTime().c_str());
+            // myWebSerial.print(":");
+            myWebSerial.print(timeClient.getTimeStr());
 
             myWebSerial.println("+> CCC RF24 HeartBeat Rxed");
 
             strcpy(messageText, ZCs[1].heartBeatText);
-        }
-        else if (equalID(receive_payload, ZCs[2].heartBeatText))
-        {
+        } else if (equalID(receive_payload, ZCs[2].heartBeatText)) {
             ZCs[2].resetZoneDevice();
-            //Serial.println("RESET S Watchdog");
-                    //get current time, prepend to message
-        // myWebSerial.print("T:");
-        // myWebSerial.print(timeClient.getFormattedTime().c_str());
-        // myWebSerial.print(":");
-                                myWebSerial.print(getTimeStr());
+            // Serial.println("RESET S Watchdog");
+            // get current time, prepend to message
+            // myWebSerial.print("T:");
+            // myWebSerial.print(timeClient.getFormattedTime().c_str());
+            // myWebSerial.print(":");
+            myWebSerial.print(timeClient.getTimeStr());
 
             myWebSerial.println("+> SSS RF24 HeartBeat Rxed");
 
             strcpy(messageText, ZCs[2].heartBeatText);
-        }
-        else
-        {
+        } else {
             Serial.println("NO MATCH");
             strcpy(messageText, "NO MATCH");
         }
     }
 }
 
-void setPipes(uint8_t *writingPipe, uint8_t *readingPipe)
-{
+void setPipes(uint8_t *writingPipe, uint8_t *readingPipe) {
     // config rf24Radio to comm with a node
     rf24Radio.stopListening();
     rf24Radio.openWritingPipe(writingPipe);
     rf24Radio.openReadingPipe(1, readingPipe);
 }
 
-int equalID(char *receive_payload, const char *targetID)
-{
+int equalID(char *receive_payload, const char *targetID) {
     // check if same 1st 3 chars
     if ((receive_payload[0] == targetID[0]) &&
         (receive_payload[1] == targetID[1]) &&
-        (receive_payload[2] == targetID[2]))
-    {
+        (receive_payload[2] == targetID[2])) {
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }

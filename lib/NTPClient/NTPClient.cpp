@@ -267,3 +267,44 @@ void NTPClient::sendNTPPacket() {
 void NTPClient::setEpochTime(unsigned long secs) {
   this->_currentEpoc = secs;
 }
+
+/**
+ * @brief Returns the current formatted time as a string with a suffix.
+ *
+ * This function retrieves the current time from the global `timeClient` object,
+ * formats it as a string, and appends ": " to the end. The result is stored in
+ * a static buffer, so each call will overwrite the previous value.
+ *
+ * @note The returned pointer refers to a static buffer which is overwritten on each call.
+ * @note The function ensures that the buffer is not overrun by carefully managing string lengths.
+ *
+ * @return A pointer to a static character array containing the formatted time string with a ": " suffix.
+ */
+char *NTPClient::getTimeStr() {
+    static char timeStr[20];
+    char formatted[8]; 
+    strcpy(formatted, getFormattedTime().c_str());
+    // DEBUG_PRINT("Formatted time: ");
+    // DEBUG_PRINTLN(formatted);
+    // Defensive: ensure buffer is not overrun
+    strncpy(timeStr, formatted, sizeof(timeStr) - 3); // leave space for ": " and null
+    // DEBUG_PRINT("Time string: ");
+    // DEBUG_PRINTLN(timeStr);
+    timeStr[sizeof(timeStr) - 3] = '\0';
+    strncat(timeStr, ": ", sizeof(timeStr) - strlen(timeStr) - 1);
+    return timeStr;
+}
+
+
+char *NTPClient::getElapsedTimeStr() {
+    static char elapsedTimeStr[20] = "Test Time";
+    static unsigned long startMillis = millis();
+
+    unsigned long rawTime = (millis() - startMillis) / 1000;
+    unsigned long hours = (rawTime) / 3600;
+    unsigned long minutes = (rawTime % 3600) / 60;
+    unsigned long seconds = rawTime % 60;
+    // Format with snprintf for buffer safety
+    snprintf(elapsedTimeStr, sizeof(elapsedTimeStr), "%02lu:%02lu:%02lu", hours, minutes, seconds);
+    return elapsedTimeStr;
+}

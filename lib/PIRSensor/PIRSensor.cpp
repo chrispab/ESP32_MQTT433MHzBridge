@@ -40,7 +40,8 @@ bool PIRSensor::processPIRSensor(PubSubClient& MQTTclient) {
         MQTTclient.publish(publishPIRStateTopic, getState() ? "true" : "false"); // Publish state to the defined topic
         DEBUG_PRINT(timeClient.getFormattedTime().c_str());
         // The stringToPrint function formats and combines the given strings for debugging purposes.
-        DEBUG_PRINTLN(stringToPrint("myPIRSensor.getState(): ", getState() ? "true" : "false"));
+        String debugMsg = String("myPIRSensor.getState(): ") + (getState() ? "true" : "false");
+        DEBUG_PRINTLN(debugMsg.c_str());
 
         clearNewStateFlag();
     }

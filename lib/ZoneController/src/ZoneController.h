@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <My433Transmitter.h>
 #include "config.h"
+#include <debug.h>
+// #include "debug.h"
 
 class ZoneController
 {

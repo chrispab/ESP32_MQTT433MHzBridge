@@ -1,13 +1,24 @@
-/*
-
- */
-
 #ifndef Display_h
 #define Display_h
+
+#include <ZoneController.h>
+#include <TempSensor.h>
+#include <WebSerial.h>
+#include <LedFader.h>
+#include <NTPClient.h>
 
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+enum displayModes {
+    NORMAL,
+    BIG_TEMP,
+    MULTI
+};
+// #define SYS_FONT u8g2_font_8x13_tf
+#define SYS_FONT u8g2_font_6x12_tf        // 7 px high
+#define BIG_TEMP_FONT u8g2_font_fub30_tf  // 30px hieght
+// 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 
 /**
  */
@@ -17,6 +28,9 @@ class Display : public U8G2 {
             uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE);
 
     void writeLine(int lineNumber, const char *lineText);
+    void updateDisplayData(ZoneController* ZCs, TempSensor &DHT22Sensor,
+                                WebSerial &myWebSerial, LedFader &warnLED,
+                                NTPClient &timeClient, int displayMode);
     void refresh(void);
     void wipe(void);
 };

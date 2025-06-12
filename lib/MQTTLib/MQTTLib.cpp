@@ -23,7 +23,7 @@ char publishHumiTopic[] = "433Bridge/Humidity";
 // strcpy(socketIDFunctionStrings[0], "blah");
 
 #include <NTPClient.h>
-// extern NTPClient timeClient;
+extern NTPClient timeClient;
 // extern void storeREST(char *, char *, char *);
 #include "WebSerial.h"
 extern WebSerial myWebSerial;
@@ -33,7 +33,7 @@ extern WebSerial myWebSerial;
 extern ZoneController ZCs[];
 // #include "SupportLib.h"
 //  static char messageText[21];
-extern char *getTimeStr();
+// extern char *getTimeStr();
 
 // MQTTclient call back handler if mqtt messsage rxed (cos has been subscribed  to)
 
@@ -86,13 +86,13 @@ void MQTTRxcallback(char *topic, byte *payload, unsigned int length) {
     // heartbeat from zones
     if (strstr(topic, "Zone1/HeartBeat") != NULL) {
         ZCs[0].resetZoneDevice();
-        myWebSerial.print(getTimeStr());
+        myWebSerial.print(timeClient.getTimeStr());
         myWebSerial.println("+> GGG MQTT HeartBeat Rxed");
         // strcpy(messageText, ZCs[0].heartBeatText);
     }
     if (strstr(topic, "Zone3/HeartBeat") != NULL) {
         ZCs[2].resetZoneDevice();
-        myWebSerial.print(getTimeStr());
+        myWebSerial.print(timeClient.getTimeStr());
         myWebSerial.println("+> SSS MQTT HeartBeat Rxed");
         // strcpy(messageText, ZCs[0].heartBeatText);
     }

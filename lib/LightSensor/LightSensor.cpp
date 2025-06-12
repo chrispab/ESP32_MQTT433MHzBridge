@@ -98,7 +98,8 @@ void LightSensor::process(PubSubClient& MQTTclient) {
         // DEBUG_PRINT("myLightSensor.getLevel(): ");
         // DEBUG_PRINTLN(str);
         
-        DEBUG_PRINTLN(stringToPrint("myLightSensor.getLevel(): ",str));
+        DEBUG_PRINT("myLightSensor.getLevel(): ");
+        DEBUG_PRINTLN(str);
         // DEBUG_PRINTLN(stringToPrint("myLightSensor.getState(): ", myLightSensor.getState() ? "true" : "false"));
 
 

@@ -123,6 +123,7 @@ extern bool processTouchPads(void);
 extern char *getElapsedTimeStr();
 extern void updateDisplayData();
 extern void checkConnections();
+#include "Display.h" // Ensure displayModes is defined before use
 extern displayModes displayMode;
 extern bool touchedFlag;  // = false;
 
@@ -322,6 +323,8 @@ void storeREST(char *topic, char *payload, char *published_at) {
 #define WIFI_CHECK_INTERVAL_MS 5000
 #define TELEMETRY_INTERVAL_MS 60000
 #define DISPLAY_ON_TIME_MS 2500
+
+displayModes displayMode = NORMAL;
 
 void setup() {
     Serial.begin(115200);
@@ -526,7 +529,9 @@ void loop() {
 
     // Display update
     if (displayIsOn) {
-        updateDisplayData();
+        // updateDisplayData();
+        myDisplay.updateDisplayData(
+            ZCs, DHT22Sensor, myWebSerial, warnLED, timeClient, displayMode);
     }
 
     // RF24 zone management
@@ -548,7 +553,7 @@ void resetWatchdog(void) {
 
     if ((millis() - lastResetWatchdogMillis) >= resetWatchdogIntervalMs) {
         timerWrite(timer, 0);  // reset timer (feed watchdog)
-        myWebSerial.print(getTimeStr());
+        myWebSerial.print(timeClient.getTimeStr());
         myWebSerial.println("+> Reset Bridge Watchdog");
         // DEBUG_PRINT(getTimeStr());
 

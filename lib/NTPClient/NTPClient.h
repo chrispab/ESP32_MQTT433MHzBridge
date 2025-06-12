@@ -110,4 +110,6 @@ class NTPClient {
     * Replace the NTP-fetched time with seconds since Jan. 1, 1970
     */
     void setEpochTime(unsigned long secs);
+    char* getTimeStr();
+    char* getElapsedTimeStr();
 };
