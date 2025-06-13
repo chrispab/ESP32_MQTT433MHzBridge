@@ -15,6 +15,8 @@ void processMQTTRecievedMessageAction(void);
 boolean reconnectMQTT(void);
 
 void publishTelemetryIfDue(void);
+
+void checkMQTT();
 #endif // __MQTTLIB_H__
 
 

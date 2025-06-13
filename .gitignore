@@ -5,3 +5,4 @@
 /src/secret.h
 /lib/secret.h
 
+src/secret.cpp

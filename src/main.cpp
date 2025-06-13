@@ -146,6 +146,7 @@ char restHost[] = "chrisiot.com";
 
 // RestClient client = RestClient(restHost, 443);
 RestClient client = RestClient(restHost, 80);
+String bearerToken = REST_BEARER_TOKEN;
 
 bool initit = true;
 /**
@@ -196,29 +197,9 @@ void doRest() {
         // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjI1MjE2OWI3MTMxNjVlNTczNWU1MGUwMGY2NzZhYjdiOGYwYTUzMTY0YWEyZTdiYzdiMzAzMDMzNzE4ZmRlMmE5M2QwZDdlODEwMDI1NDMwIn0.eyJhdWQiOiIzIiwianRpIjoiMjUyMTY5YjcxMzE2NWU1NzM1ZTUwZTAwZjY3NmFiN2I4ZjBhNTMxNjRhYTJlN2JjN2IzMDMwMzM3MThmZGUyYTkzZDBkN2U4MTAwMjU0MzAiLCJpYXQiOjE1Njc0NDkyOTEsIm5iZiI6MTU2NzQ0OTI5MSwiZXhwIjoxNTk5MDcxNjkwLCJzdWIiOiIyIiwic2NvcGVzIjpbXX0.Q8i63MAVgbGjRTYilydHHb0ljHvKhkeSANJbJ-qD_8_uWhPC_vQUrAC67mL3DmHm3pZkOvNm5WTAx5zQpTfOq-nJkB4c6vUytjQmyQNG-eV8WF90q_ccO5jbljlHORvfUzDF7TJRgKwO4Dcl8lWSQYgta3g_MkgH42qJHg9HEbGOKvgAvGsMsmeouLKwYojN8Oh02gKCQ_T7hcUkcB3zWVH9_ltV3qiSqA66VMyT45NzMuz3yxOYbSwXWaJl4AgiMs96LBDnpqMZzJIIYJ2YMMkXdaYljJhHga6vsGgxwc9HrZM2ZdY4EJcRcokVc6S6TGIJLEeGuIgGet-qDXhTEN832ufwh8saETrH_D_isnDohMEOkHjwWHkfcF4kfoYvQyD5jTg7DP4zqMDIE7uQmdiWDES512nByqmpzWNenIIMKZ1e5nT2EqvLDT21mdHhF35JzL0FUWd341xXTqjJLV27lfX3HAcs0pn69kY5X7Wqb4GNnEKlU-BbV-d6tBMNQI6yDcnKFYE2eJADtauMzmcAr_nNRqf212jqjLjblrqH1Qaoh1ZGHHnITUPd6Ai5uZa_x-phv1sTK4IaWwdtLn4RTQEWfiR1wVYePkfVM9xl1eTuiRrTfwAmRu-flCTCC66_ZobhYqLLmOssImK-GrxOmqQFC15zgC6PxklihpE");
 
         // chrisiot auth token
-        client.setHeader(
-            "Authorization: Bearer "
-            "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjZhOWExZTg1MTEwM2JlNDgxYW"
-            "Q1Nzk0ZGMzNGM5NTkzYjk0NDk4YjQ3ZjA1YjBiOTU5ODg2YzM4YzRmMmRmODMyZmE1ODZj"
-            "ZjE1NDFmZjBmIn0."
-            "eyJhdWQiOiIxIiwianRpIjoiNmE5YTFlODUxMTAzYmU0ODFhZDU3OTRkYzM0Yzk1OTNiOT"
-            "Q0OThiNDdmMDViMGI5NTk4ODZjMzhjNGYyZGY4MzJmYTU4NmNmMTU0MWZmMGYiLCJpYXQi"
-            "OjE1Njc3ODQ3MDIsIm5iZiI6MTU2Nzc4NDcwMiwiZXhwIjoxNTk5NDA3MTAyLCJzdWIiOi"
-            "IzIiwic2NvcGVzIjpbXX0."
-            "lmMl9R3CHo9ODPwwYcLH3tDrqolIyJgVeQWBVJF41RYzHmZDkZzFG9oL_"
-            "trt1ewwDqYWsx_G7_Ka6_rwrQoKvefR4KY7HzMXACc-"
-            "iiKpjoYX4Ersd3tXqFuj0AdkM7xzLjzPWHJhFleHjrrMwNuITD2-"
-            "YXHGqjznCr5mCsfgTxfW0h3sEpKTv3DBukGScPmPFzPn-hL0-"
-            "tmDZHImuQAwT6aDVjdEMJfSgtrkGDmF1CaXPi27JL8TjbCvGA2cyuNp6wpuutsqi9UuKTt"
-            "_gQbrH9hsVxOwgS3GST2GMhWlbGx9vWkrilUWnkOVpSR0RzLzRLb-8se4BPOsi3Jer_"
-            "h1pXNSKlOYylpeRZm_9Qd_"
-            "ooI6YI7PIuU0ZN9hj5QDeRbq2JVfXMnBgI9X9x9cJEpWu7vuWtJCntVTvSVJqaBVoh0SCQ"
-            "n9yzpPfj5wJjuw1EZN-w8nphb5vgw-LTfjv4QeBdZ9Vo9VoUrUnNng6Ki3_"
-            "uNzbvZOiCDQ8sKWBBHPQ421Rv-Z2UFghNAsG7_GL9_"
-            "n6etFrKch34CGIAqPjcF1fJhTv3ERQh3ep5Ym_"
-            "LsWxCYFv7WkKOAP1mxoPWNPtBvQ9ms5SHYZNnUtOzPTL6HDWuAllwZFOyVj7YmCZm1imN4"
-            "d1dvUlhCAfkgd33ZNPREaGxjJyAyRMYE9D_Y7K0pnMNg");
 
+    String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN;
+    client.setHeader(authHeader.c_str());
         // build the POST string
         postStr1 =
             "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
@@ -268,26 +249,8 @@ void storeREST(char *topic, char *payload, char *published_at) {
     // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjI1MjE2OWI3MTMxNjVlNTczNWU1MGUwMGY2NzZhYjdiOGYwYTUzMTY0YWEyZTdiYzdiMzAzMDMzNzE4ZmRlMmE5M2QwZDdlODEwMDI1NDMwIn0.eyJhdWQiOiIzIiwianRpIjoiMjUyMTY5YjcxMzE2NWU1NzM1ZTUwZTAwZjY3NmFiN2I4ZjBhNTMxNjRhYTJlN2JjN2IzMDMwMzM3MThmZGUyYTkzZDBkN2U4MTAwMjU0MzAiLCJpYXQiOjE1Njc0NDkyOTEsIm5iZiI6MTU2NzQ0OTI5MSwiZXhwIjoxNTk5MDcxNjkwLCJzdWIiOiIyIiwic2NvcGVzIjpbXX0.Q8i63MAVgbGjRTYilydHHb0ljHvKhkeSANJbJ-qD_8_uWhPC_vQUrAC67mL3DmHm3pZkOvNm5WTAx5zQpTfOq-nJkB4c6vUytjQmyQNG-eV8WF90q_ccO5jbljlHORvfUzDF7TJRgKwO4Dcl8lWSQYgta3g_MkgH42qJHg9HEbGOKvgAvGsMsmeouLKwYojN8Oh02gKCQ_T7hcUkcB3zWVH9_ltV3qiSqA66VMyT45NzMuz3yxOYbSwXWaJl4AgiMs96LBDnpqMZzJIIYJ2YMMkXdaYljJhHga6vsGgxwc9HrZM2ZdY4EJcRcokVc6S6TGIJLEeGuIgGet-qDXhTEN832ufwh8saETrH_D_isnDohMEOkHjwWHkfcF4kfoYvQyD5jTg7DP4zqMDIE7uQmdiWDES512nByqmpzWNenIIMKZ1e5nT2EqvLDT21mdHhF35JzL0FUWd341xXTqjJLV27lfX3HAcs0pn69kY5X7Wqb4GNnEKlU-BbV-d6tBMNQI6yDcnKFYE2eJADtauMzmcAr_nNRqf212jqjLjblrqH1Qaoh1ZGHHnITUPd6Ai5uZa_x-phv1sTK4IaWwdtLn4RTQEWfiR1wVYePkfVM9xl1eTuiRrTfwAmRu-flCTCC66_ZobhYqLLmOssImK-GrxOmqQFC15zgC6PxklihpE");
 
     // chrisiot auth token
-    client.setHeader(
-        "Authorization: Bearer "
-        "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjZhOWExZTg1MTEwM2JlNDgxYWQ1"
-        "Nzk0ZGMzNGM5NTkzYjk0NDk4YjQ3ZjA1YjBiOTU5ODg2YzM4YzRmMmRmODMyZmE1ODZjZjE1"
-        "NDFmZjBmIn0."
-        "eyJhdWQiOiIxIiwianRpIjoiNmE5YTFlODUxMTAzYmU0ODFhZDU3OTRkYzM0Yzk1OTNiOTQ0"
-        "OThiNDdmMDViMGI5NTk4ODZjMzhjNGYyZGY4MzJmYTU4NmNmMTU0MWZmMGYiLCJpYXQiOjE1"
-        "Njc3ODQ3MDIsIm5iZiI6MTU2Nzc4NDcwMiwiZXhwIjoxNTk5NDA3MTAyLCJzdWIiOiIzIiwi"
-        "c2NvcGVzIjpbXX0."
-        "lmMl9R3CHo9ODPwwYcLH3tDrqolIyJgVeQWBVJF41RYzHmZDkZzFG9oL_trt1ewwDqYWsx_"
-        "G7_Ka6_rwrQoKvefR4KY7HzMXACc-"
-        "iiKpjoYX4Ersd3tXqFuj0AdkM7xzLjzPWHJhFleHjrrMwNuITD2-"
-        "YXHGqjznCr5mCsfgTxfW0h3sEpKTv3DBukGScPmPFzPn-hL0-"
-        "tmDZHImuQAwT6aDVjdEMJfSgtrkGDmF1CaXPi27JL8TjbCvGA2cyuNp6wpuutsqi9UuKTt_"
-        "gQbrH9hsVxOwgS3GST2GMhWlbGx9vWkrilUWnkOVpSR0RzLzRLb-8se4BPOsi3Jer_h1pXN"
-        "SKlOYylpeRZm_9Qd_ooI6YI7PIuU0ZN9hj5QDeRbq2JVfXMnBgI9X9x9cJEpWu7vuWtJCnt"
-        "VTvSVJqaBVoh0SCQn9yzpPfj5wJjuw1EZN-w8nphb5vgw-LTfjv4QeBdZ9Vo9VoUrUnNng6"
-        "Ki3_uNzbvZOiCDQ8sKWBBHPQ421Rv-Z2UFghNAsG7_GL9_n6etFrKch34CGIAqPjcF1fJhT"
-        "v3ERQh3ep5Ym_LsWxCYFv7WkKOAP1mxoPWNPtBvQ9ms5SHYZNnUtOzPTL6HDWuAllwZFOyV"
-        "j7YmCZm1imN4d1dvUlhCAfkgd33ZNPREaGxjJyAyRMYE9D_Y7K0pnMNg");
+    String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN;
+    client.setHeader(authHeader.c_str());
 
     // build the POST string
     //"/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
@@ -477,14 +440,18 @@ void processRF24ZoneWatchdog() {
     }
 }
 
-void checkMQTT() {
-    if (!MQTTclient.connected()) {
-        reconnectMQTT();
-    } else {
-        MQTTclient.loop();
-    }
-}
-
+/**
+ * @brief The main loop of the program that handles sensor readings, MQTT communication,
+ *        display updates, and other periodic tasks.
+ *
+ * This function runs continuously after setup() and performs the following tasks:
+ * - Processes temperature and light sensors at defined intervals.
+ * - Checks WiFi connectivity periodically.
+ * - Handles MQTT messages and publishes telemetry data.
+ * - Updates the display if it is turned on.
+ * - Manages RF24 zone controllers.
+ * - Handles WebSocket connections and broadcasts.
+ */
 void loop() {
     unsigned long currentMillis = millis();
 

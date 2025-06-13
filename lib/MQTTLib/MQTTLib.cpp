@@ -1,6 +1,9 @@
 #include "WebSocketLib.h"
 #include "config.h"
 #include "debug.h"
+
+
+#include "MQTTLib.h"
 extern char *stringToPrint(const char *literal, const char *value);
 
 bool MQTTNewData = false;
@@ -357,4 +360,11 @@ boolean reconnectMQTT() {
         }
     }
     return MQTTclient.connected();
+}
+void checkMQTT() {
+    if (!MQTTclient.connected()) {
+        reconnectMQTT();
+    } else {
+        MQTTclient.loop();
+    }
 }
