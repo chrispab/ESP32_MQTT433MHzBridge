@@ -5,8 +5,10 @@
 #include "../../src/secret.h"
 
 // WiFi settings
-const char ssid[] = MY_SSID;
-const char pass[] = MY_SSID_PASSWORD;
+// const char ssid[] = MY_SSID;
+// const char pass[] = MY_SSID_PASSWORD;
+const char* ssid = MY_SSID;
+const char* pass = MY_SSID_PASSWORD;
 int status = WL_IDLE_STATUS;
 
 #include "WebSerial.h"
