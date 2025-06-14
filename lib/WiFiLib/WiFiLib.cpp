@@ -43,35 +43,67 @@ void checkWifi() {
     }
 }
 
+// In your WiFiLib.cpp (or equivalent file)
 
-void connectWiFi()
-{
+#include "WiFiLib.h"
+#include <WiFi.h>
+// ... other necessary includes ...
+extern WebSerial myWebSerial; // Assuming myWebSerial is accessible
+// ...
 
-    //! ensure non blocking so can act as zone watchdog
+bool connectWiFi() { // Return type changed to bool
+    myWebSerial.println("Attempting to connect to WiFi...");
+    WiFi.begin(MY_SSID, MY_SSID_PASSWORD); // MY_SSID and MY_SSID_PASSWORD from secret.h
 
-    bool wifiConnectTimeout = false;
-    unsigned long startMillis;
-    unsigned long timeOutMillis = 3000;
-
-    WiFi.begin(ssid, pass);//move out or if
-
-    startMillis = millis();
-    myWebSerial.println("Attempting to connect to SSID: ");
-    myWebSerial.println(ssid);
-    while (!WiFi.isConnected() && !wifiConnectTimeout)
-    {
-        // enable jump out if connection attempt has timed out
-        //WiFi.reconnect();
-
-        wifiConnectTimeout =
-            ((millis() - startMillis) > timeOutMillis) ? true : false;
+    unsigned long startTime = millis();
+    // Allow, for example, 10 seconds to connect
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 10000)) {
+        delay(500);
+        myWebSerial.print(".");
+        // You might want to add your watchdog reset here if connection takes time
     }
 
-    wifiConnectTimeout ? myWebSerial.println("WiFi Connection attempt Timed Out!")
-                       : myWebSerial.println("Wifi Connection made!");
-
-    server.begin();
+    if (WiFi.status() == WL_CONNECTED) {
+        myWebSerial.println("\nWiFi connected successfully!");
+        printWifiStatus(); // Assuming this function prints IP, etc.
+        return true; // Return true on success
+    } else {
+        myWebSerial.println("\nFailed to connect to WiFi.");
+        // printWifiStatus(); // Optionally print status even on failure
+        return false; // Return false on failure
+    }
 }
+
+// ... rest of WiFiLib.cpp ...
+
+// void connectWiFi()
+// {
+
+//     //! ensure non blocking so can act as zone watchdog
+
+//     bool wifiConnectTimeout = false;
+//     unsigned long startMillis;
+//     unsigned long timeOutMillis = 3000;
+
+//     WiFi.begin(ssid, pass);//move out or if
+
+//     startMillis = millis();
+//     myWebSerial.println("Attempting to connect to SSID: ");
+//     myWebSerial.println(ssid);
+//     while (!WiFi.isConnected() && !wifiConnectTimeout)
+//     {
+//         // enable jump out if connection attempt has timed out
+//         //WiFi.reconnect();
+
+//         wifiConnectTimeout =
+//             ((millis() - startMillis) > timeOutMillis) ? true : false;
+//     }
+
+//     wifiConnectTimeout ? myWebSerial.println("WiFi Connection attempt Timed Out!")
+//                        : myWebSerial.println("Wifi Connection made!");
+
+//     server.begin();
+// }
 
 
 void connectWiFiOld()

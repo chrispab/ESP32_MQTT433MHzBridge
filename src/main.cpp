@@ -1,6 +1,5 @@
 #include "debug.h"
 #include "config.h"
-#include "version.h"
 
 // #define RELEASE
 #include <Arduino.h>
@@ -55,8 +54,12 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 // 282830 addr of 16ch remote
 // param 3 is pulse width, last param is num times control message  is txed
 #include "My433Transmitter.h"
-// NewRemoteTransmitter transmitter(282830, Pins::TX433PIN, 260, 4);
-My433Transmitter transmitter(282830, Pins::TX433PIN, 260, 4);
+// Consider moving these to config.h if they are configurable
+constexpr uint32_t RF433_REMOTE_ADDRESS = 282830;
+constexpr uint16_t RF433_PULSE_WIDTH = 260;
+constexpr uint8_t  RF433_REPEAT_TRANSMISSIONS = 4;
+My433Transmitter transmitter(RF433_REMOTE_ADDRESS, Pins::TX433PIN, RF433_PULSE_WIDTH, RF433_REPEAT_TRANSMISSIONS);
+
 
 #include "RF24Lib.h"  //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
 RF24 rf24Radio(Pins::RF24_CE_PIN, Pins::RF24_CS_PIN);
@@ -68,7 +71,7 @@ LightSensor myLightSensor(Pins::LDR_PIN);
 static unsigned long displayOnUntil = 0; // Will be initialized in setup
 static bool displayIsOn = true;
 
-displayModes displayMode = NORMAL; // Definition of displayMode
+static displayModes displayMode = NORMAL; // Definition of displayMode, static if only used in main.cpp
 // create the display object
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, Pins::OLED_CLOCK_PIN,
                   Pins::OLED_DATA_PIN);
@@ -77,14 +80,22 @@ ZoneController ZCs[3] = {ZoneController(0, 13, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 14, "SHD", "SSS")};
 
-WiFiServer server(80);
+// WiFiServer server(80); // Uncomment if HTTP server on port 80 is needed
 
 // create object
 // SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 // 2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(Pins::GREEN_LED_PIN, 1, 0, 50, HEART_BEAT_TIME, true);
-LedFader warnLED(Pins::RED_LED_PIN, 2, 0, 255, 451, true);
+// Consider defining these LED parameters as named constants if they have specific meanings
+constexpr uint8_t HEARTBEAT_LED_CHANNEL = 1;
+constexpr int HEARTBEAT_LED_MIN_BRIGHTNESS = 0;
+constexpr int HEARTBEAT_LED_MAX_BRIGHTNESS = 50;
+constexpr uint8_t WARN_LED_CHANNEL = 2;
+constexpr int WARN_LED_MIN_BRIGHTNESS = 0;
+constexpr int WARN_LED_MAX_BRIGHTNESS = 255;
+constexpr unsigned long WARN_LED_FADE_TIME_MS = 451;
+LedFader heartBeatLED(Pins::GREEN_LED_PIN, HEARTBEAT_LED_CHANNEL, HEARTBEAT_LED_MIN_BRIGHTNESS, HEARTBEAT_LED_MAX_BRIGHTNESS, HEART_BEAT_TIME, true);
+LedFader warnLED(Pins::RED_LED_PIN, WARN_LED_CHANNEL, WARN_LED_MIN_BRIGHTNESS, WARN_LED_MAX_BRIGHTNESS, WARN_LED_FADE_TIME_MS, true);
 
 #include <WebSerial.h>
 WebSerial myWebSerial;
@@ -123,9 +134,11 @@ PIRSensor myPIRSensor(Pins::PIR_PIN);
 // char restHost[]="192.168.0.40";
 char restHost[] = "chrisiot.com";
 
-// RestClient client = RestClient(restHost, 443);
+// RestClient client = RestClient(restHost, 443); // For HTTPS if needed
 RestClient client = RestClient(restHost, 80);
-String bearerToken = REST_BEARER_TOKEN;
+// If REST_BEARER_TOKEN is a const char*, this is more efficient:
+// constexpr const char* bearerToken = REST_BEARER_TOKEN; // REST_BEARER_TOKEN is not constexpr
+const char* bearerToken = REST_BEARER_TOKEN; 
 /**
  * @brief
  *
@@ -145,7 +158,7 @@ void IRAM_ATTR resetModule() {
 }
 
 //------------------------------------------------------------
-unsigned long previousAPIWriteMillis = 0;
+static unsigned long previousAPIWriteMillis = 0;
 /**
  * @brief Periodically sends a REST API POST request with the current time.
  *
@@ -158,7 +171,8 @@ void doRest() {
 
     String postValue = "";
     postValue.toCharArray(postParameter, sizeof(postParameter));
-    unsigned long intervalAPIWriteMillis = 20000;
+    // Consider moving to config.h
+    constexpr unsigned long DO_REST_INTERVAL_MS = 20000;
     unsigned long currentMillis = millis();
     String dateTimeStr = "";
     String postStrFull = "";
@@ -166,17 +180,15 @@ void doRest() {
     String postStr1 = "";
     String postStr2 = "";
     // do every 20 secs
-    if (currentMillis - previousAPIWriteMillis > intervalAPIWriteMillis) {
+    if (currentMillis - previousAPIWriteMillis > DO_REST_INTERVAL_MS) {
         client.setHeader("Accept: application/json");
 
-        // local auth token
-        // client.setHeader("Authorization: Bearer
-        // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjI1MjE2OWI3MTMxNjVlNTczNWU1MGUwMGY2NzZhYjdiOGYwYTUzMTY0YWEyZTdiYzdiMzAzMDMzNzE4ZmRlMmE5M2QwZDdlODEwMDI1NDMwIn0.eyJhdWQiOiIzIiwianRpIjoiMjUyMTY5YjcxMzE2NWU1NzM1ZTUwZTAwZjY3NmFiN2I4ZjBhNTMxNjRhYTJlN2JjN2IzMDMwMzM3MThmZGUyYTkzZDBkN2U4MTAwMjU0MzAiLCJpYXQiOjE1Njc0NDkyOTEsIm5iZiI6MTU2NzQ0OTI5MSwiZXhwIjoxNTk5MDcxNjkwLCJzdWIiOiIyIiwic2NvcGVzIjpbXX0.Q8i63MAVgbGjRTYilydHHb0ljHvKhkeSANJbJ-qD_8_uWhPC_vQUrAC67mL3DmHm3pZkOvNm5WTAx5zQpTfOq-nJkB4c6vUytjQmyQNG-eV8WF90q_ccO5jbljlHORvfUzDF7TJRgKwO4Dcl8lWSQYgta3g_MkgH42qJHg9HEbGOKvgAvGsMsmeouLKwYojN8Oh02gKCQ_T7hcUkcB3zWVH9_ltV3qiSqA66VMyT45NzMuz3yxOYbSwXWaJl4AgiMs96LBDnpqMZzJIIYJ2YMMkXdaYljJhHga6vsGgxwc9HrZM2ZdY4EJcRcokVc6S6TGIJLEeGuIgGet-qDXhTEN832ufwh8saETrH_D_isnDohMEOkHjwWHkfcF4kfoYvQyD5jTg7DP4zqMDIE7uQmdiWDES512nByqmpzWNenIIMKZ1e5nT2EqvLDT21mdHhF35JzL0FUWd341xXTqjJLV27lfX3HAcs0pn69kY5X7Wqb4GNnEKlU-BbV-d6tBMNQI6yDcnKFYE2eJADtauMzmcAr_nNRqf212jqjLjblrqH1Qaoh1ZGHHnITUPd6Ai5uZa_x-phv1sTK4IaWwdtLn4RTQEWfiR1wVYePkfVM9xl1eTuiRrTfwAmRu-flCTCC66_ZobhYqLLmOssImK-GrxOmqQFC15zgC6PxklihpE");
-
         // chrisiot auth token
-
-    String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN;
-    client.setHeader(authHeader.c_str());
+        // String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN; // Original
+        char authHeader[sizeof("Authorization: Bearer ") + strlen(bearerToken) + 1];
+        strcpy(authHeader, "Authorization: Bearer ");
+        strcat(authHeader, bearerToken);
+        client.setHeader(authHeader);
         // build the POST string
         postStr1 =
             "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
@@ -184,7 +196,7 @@ void doRest() {
         postStrFull = postStr1 + dateTimeStr;
         postStrFull.replace(" ", "%20");
         postStrFull.toCharArray(postMessage, sizeof(postMessage));
-        int statusCode = client.post(postMessage, postParameter);
+        int statusCode = client.post(postMessage, ""); // Assuming empty body if postParameter is not used
         DEBUG_PRINT("Status code from server: ");
         DEBUG_PRINTLN(statusCode);
         if (statusCode < 200 || statusCode >= 300) {
@@ -203,6 +215,21 @@ void doRest() {
  *
  * Handles buffer safety and prints debug output for status codes.
  */
+// Helper function for basic URL encoding (replace with a more robust one if needed)
+String urlEncode(const char* str) {
+    String encodedString = "";
+    char c;
+    char hex[4];
+    while ((c = *str++)) {
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            encodedString += c;
+        } else {
+            sprintf(hex, "%%%02X", c);
+            encodedString += hex;
+        }
+    }
+    return encodedString;
+}
 void storeREST(char *topic, char *payload, char *published_at) {
     char postParameter[79];
     char postMessage[255];
@@ -220,34 +247,32 @@ void storeREST(char *topic, char *payload, char *published_at) {
     String published_atStr = "";
 
     client.setHeader("Accept: application/json");
-
-    // local auth token
-    // client.setHeader("Authorization: Bearer
-    // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjI1MjE2OWI3MTMxNjVlNTczNWU1MGUwMGY2NzZhYjdiOGYwYTUzMTY0YWEyZTdiYzdiMzAzMDMzNzE4ZmRlMmE5M2QwZDdlODEwMDI1NDMwIn0.eyJhdWQiOiIzIiwianRpIjoiMjUyMTY5YjcxMzE2NWU1NzM1ZTUwZTAwZjY3NmFiN2I4ZjBhNTMxNjRhYTJlN2JjN2IzMDMwMzM3MThmZGUyYTkzZDBkN2U4MTAwMjU0MzAiLCJpYXQiOjE1Njc0NDkyOTEsIm5iZiI6MTU2NzQ0OTI5MSwiZXhwIjoxNTk5MDcxNjkwLCJzdWIiOiIyIiwic2NvcGVzIjpbXX0.Q8i63MAVgbGjRTYilydHHb0ljHvKhkeSANJbJ-qD_8_uWhPC_vQUrAC67mL3DmHm3pZkOvNm5WTAx5zQpTfOq-nJkB4c6vUytjQmyQNG-eV8WF90q_ccO5jbljlHORvfUzDF7TJRgKwO4Dcl8lWSQYgta3g_MkgH42qJHg9HEbGOKvgAvGsMsmeouLKwYojN8Oh02gKCQ_T7hcUkcB3zWVH9_ltV3qiSqA66VMyT45NzMuz3yxOYbSwXWaJl4AgiMs96LBDnpqMZzJIIYJ2YMMkXdaYljJhHga6vsGgxwc9HrZM2ZdY4EJcRcokVc6S6TGIJLEeGuIgGet-qDXhTEN832ufwh8saETrH_D_isnDohMEOkHjwWHkfcF4kfoYvQyD5jTg7DP4zqMDIE7uQmdiWDES512nByqmpzWNenIIMKZ1e5nT2EqvLDT21mdHhF35JzL0FUWd341xXTqjJLV27lfX3HAcs0pn69kY5X7Wqb4GNnEKlU-BbV-d6tBMNQI6yDcnKFYE2eJADtauMzmcAr_nNRqf212jqjLjblrqH1Qaoh1ZGHHnITUPd6Ai5uZa_x-phv1sTK4IaWwdtLn4RTQEWfiR1wVYePkfVM9xl1eTuiRrTfwAmRu-flCTCC66_ZobhYqLLmOssImK-GrxOmqQFC15zgC6PxklihpE");
-
     // chrisiot auth token
-    String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN;
-    client.setHeader(authHeader.c_str());
+    // String authHeader = String("Authorization: Bearer ") + REST_BEARER_TOKEN; // Original
+    char authHeader[sizeof("Authorization: Bearer ") + strlen(bearerToken) + 1];
+    strcpy(authHeader, "Authorization: Bearer ");
+    strcat(authHeader, bearerToken);
+    client.setHeader(authHeader);
 
     // build the POST string
     //"/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
     postStr1 =
         "/api/todo?";  //"/test/topic""&content=%7Bcontent:body%7D&published_at=";
+    
     postTopic = "topic=";
-    postTopic += topic;
+    postTopic += urlEncode(topic); // URL Encode the topic
     postPayload = "&content=";
-    postPayload += payload;
-    dateTimeStr = timeClient.getFormattedDateTime(0);
+    postPayload += urlEncode(payload); // URL Encode the payload
+    // dateTimeStr = timeClient.getFormattedDateTime(0); // Not used in final postStrFull
     published_atStr = "&published_at=";
     published_atStr += String(published_at);
-    // postStr2 =
-    // "/api/todo?topic=/test/topic&content=%7Bcontent:body%7D&published_at=";
+
     postStrFull =
         postStr1 + postTopic + postPayload + published_atStr;  // dateTimeStr;
     // replace any spaces (esp the one bet date and time) with %20
     postStrFull.replace(" ", "%20");
-    postStrFull.replace("{", "%7B");
-    postStrFull.replace("}", "%7D");
+    // postStrFull.replace("{", "%7B"); // Encoding should happen per-parameter
+    // postStrFull.replace("}", "%7D"); // Encoding should happen per-parameter
 
     int statusCode = client.post(postStrFull.c_str(), ""); // Assuming postParameter was always empty
     DEBUG_PRINT("Status code from server: ");
@@ -255,7 +280,7 @@ void storeREST(char *topic, char *payload, char *published_at) {
     if (statusCode < 200 || statusCode >= 300) {
         DEBUG_PRINTLN("[REST] Warning: Non-success status code returned.");
     }
-    previousAPIWriteMillis = currentMillis;
+    // previousAPIWriteMillis = currentMillis; // Decide if storeREST should affect doRest's schedule
 }
 
 void setup() {
@@ -268,8 +293,8 @@ void setup() {
     //watchdog timer setup
     DEBUG_PRINTLN("Setting up Watchdog Timer");
     timer = timerBegin(0, 8000, true);  // timer 0, 80mhz div 8000
-    timerAttachInterrupt(timer, &resetModule, true);
-    timerAlarmWrite(timer, wdtTimeoutMs * 10, false);  // set time in us
+    timerAttachInterrupt(timer, &resetModule, true); // ESP_INTR_FLAG_IRAM
+    timerAlarmWrite(timer, (uint64_t)wdtTimeoutMs * 10, false);  // Alarm value is in timer ticks. (wdtTimeoutMs * 1000 / 100)
     timerAlarmEnable(timer);                           // enable interrupt
 
     // setup OLED display
@@ -299,8 +324,11 @@ void setup() {
     // attempt to connect to Wifi network:
     myDisplay.writeLine(4, "Connecting to WiFi..");
     myDisplay.refresh();
-    connectWiFi();
-    // you're connected now, so print out the status:
+    if (connectWiFi()) { // connectWiFi should return true on success
+        // printWifiStatus(); // Already printed by connectWiFi on success
+    } else {
+        myWebSerial.println("Initial WiFi connection failed in setup.");
+    }
     printWifiStatus();
     // server.begin();
     Serial.println();
@@ -315,23 +343,18 @@ void setup() {
     DEBUG_PRINTLN(timeClient.getFormattedTime());
     delay(200);
 
-    // Send Email
-    // e.send(EMAIL_ADDRESS, EMAIL_ADDRESS, EMAIL_SUBJECT, "programm
-    // started/restarted"); myWebhook.trigger("433Bridge Boot/Reboot");
-    // myWebhook.trigger();
-
     myDisplay.wipe();
-    // connectWiFi();
     resetWatchdog();
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     setupOTA();
     resetWatchdog();
 
-    // myWebhook.trigger("433Bridge Boot/Reboot");
+    // Consider moving INITIAL_DISPLAY_ON_TIME_MS to config.h
+    constexpr unsigned long INITIAL_DISPLAY_ON_TIME_MS = 10000;
+    displayOnUntil = millis() + INITIAL_DISPLAY_ON_TIME_MS;
     myLightSensor.readLevelIfDue();
     // client.begin(MY_SSID, MY_SSID_PASSWORD);
-    displayOnUntil = millis() + 10000; // Initialize display on time
 }
 
 
@@ -390,11 +413,11 @@ void processTemperatureSensor() {
 void processRF24ZoneWatchdog() {
     processZoneRF24Message();
     if (ZCs[0].manageRestarts(transmitter)) {
-        // myWebhook.trigger("ESP32 Watchdog: Zone 1 power cycled");
+        // Optional: myWebhook.trigger("ESP32 Watchdog: Zone 0 power cycled");
     }
-    ZCs[1].resetZoneDevice();  // If you want to keep this always-on reset
+    // ZCs[1].resetZoneDevice();  // Review: Zone 1 is always reset. Is this intended vs. manageRestarts?
     if (ZCs[2].manageRestarts(transmitter)) {
-        // myWebhook.trigger("ESP32 Watchdog: Zone 3 power cycled");
+        // Optional: myWebhook.trigger("ESP32 Watchdog: Zone 2 power cycled");
     }
 }
 
@@ -463,7 +486,7 @@ void loop() {
     processRF24ZoneWatchdog();
 
     // Web page requests
-    checkForPageRequest();
+    // checkForPageRequest(); // Uncomment if HTTP server is active
 }
 
 /**

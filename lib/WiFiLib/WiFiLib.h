@@ -2,7 +2,7 @@
 
 
 
-void connectWiFi();
+bool connectWiFi();
 void printWifiStatus();
 void checkWifi();
 

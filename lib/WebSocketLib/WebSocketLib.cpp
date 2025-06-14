@@ -4,7 +4,7 @@
 
 #include "WebSerial.h"
 //#include <WebSocketsServer.h>
-#include "version.h"
+// #include "version.h"
 #include "secret.h"
 extern WebSocketsServer webSocket;
 
