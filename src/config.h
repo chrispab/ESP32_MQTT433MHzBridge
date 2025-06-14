@@ -24,7 +24,12 @@ constexpr auto MQTT_CLIENT_ID = "esp32Bridge";
 
 // Timing intervals (ms)
 constexpr unsigned long MQTT_RECONNECT_INTERVAL = 10000;
-constexpr unsigned long SENSOR_POLL_INTERVAL   = 500;
+constexpr unsigned long SENSOR_POLL_INTERVAL   = 500; // A general poll interval, review specific uses
+
+constexpr unsigned long MAIN_LOOP_SENSOR_PROCESS_INTERVAL_MS = 1000; // For main.cpp's temp, light, PIR processing block
+constexpr unsigned long MAIN_LOOP_WIFI_CHECK_INTERVAL_MS     = 5000; // For main.cpp's checkWifi() call
+constexpr unsigned long MAIN_LOOP_TELEMETRY_INTERVAL_MS    = 60000;  // For main.cpp's block calling processTime() and publishTelemetryIfDue()
+constexpr unsigned long PIR_TRIGGERED_DISPLAY_ON_TIME_MS   = 2500;   // How long display stays on after PIR trigger
 
 // Feature toggles
 constexpr bool ENABLE_DISPLAY = true;
@@ -73,5 +78,6 @@ constexpr auto ESP32_WATCHDOG_TIMEOUT_SECS = 60;
 constexpr auto ESP32_WATCHDOG_RESET_INTERVAL_SECS = 30;
 
 constexpr auto MQTT_LAST_OCTET = 100;
+constexpr unsigned long MQTT_TELEMETRY_PUBLISH_INTERVAL_MS = 30000; // Interval for MQTTLib to publish telemetry like RSSI
 
 #endif

@@ -7,8 +7,6 @@
 #include "IOBase.h"
 #include <PubSubClient.h>
 
-#define LIGHT_SENSOR_READ_INTERVAL 30000  // ms
-
 class LightSensor : public IOBase {
    private:
     // bool state;

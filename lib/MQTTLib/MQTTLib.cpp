@@ -2,7 +2,7 @@
 #include "config.h"
 #include "debug.h"
 
-
+#include <PubSubClient.h> // Moved up to ensure MQTT state constants are defined
 #include "MQTTLib.h"
 extern char *stringToPrint(const char *literal, const char *value);
 
@@ -39,6 +39,23 @@ extern ZoneController ZCs[];
 // extern char *getTimeStr();
 
 // MQTTclient call back handler if mqtt messsage rxed (cos has been subscribed  to)
+
+// Static helper function to convert MQTT client states to human-readable strings
+static const char* mqtt_state_to_string(int state) {
+    switch (state) {
+        case MQTT_CONNECTION_TIMEOUT: return "Connection timeout (-4)";
+        case MQTT_CONNECTION_LOST: return "Connection lost (-3)";
+        case MQTT_CONNECT_FAILED: return "Connect failed (-2)";
+        case MQTT_DISCONNECTED: return "Disconnected (-1)";
+        case MQTT_CONNECTED: return "Connected (0)";
+        case MQTT_CONNECT_BAD_PROTOCOL: return "Connect bad protocol (1)";
+        case MQTT_CONNECT_BAD_CLIENT_ID: return "Connect bad client ID (2)";
+        case MQTT_CONNECT_UNAVAILABLE: return "Connect unavailable (3)";
+        case MQTT_CONNECT_BAD_CREDENTIALS: return "Connect bad credentials (4)";
+        case MQTT_CONNECT_UNAUTHORIZED: return "Connect unauthorized (5)";
+        default: return "Unknown MQTT state";
+    }
+}
 
 /**
  * @brief Callback function to handle incoming MQTT messages.
@@ -215,7 +232,6 @@ char *getMQTTDisplayString(char *MQTTStatus) {
     return MQTTStatus;
 }
 
-#include <PubSubClient.h>
 extern PubSubClient MQTTclient;
 
 // set so ensures initial connect attempt, assume now gives 0
@@ -249,7 +265,7 @@ void connectMQTT() {
 
 
     if ((nowMillis - lastReconnectAttemptMillis) > checkPeriodMillis) {
-        myWebSerial.println("ready to try MQTT reconnectMQTT...");
+        myWebSerial.println("Ready to try MQTT connection sequence...");
         while (!MQTTclient.connected() &&
                !MQTTConnectTimeout)  // loop till connected or timed out
         {
@@ -266,11 +282,25 @@ void connectMQTT() {
                 MQTTclient.subscribe(subscribeTopic2);
                 MQTTclient.subscribe(subscribeTopic3);
             } else {
-                myWebSerial.println("MQTT connection failed, rc=");
-                Serial.println(MQTTclient.state());
-                myWebSerial.println("MQTT STATE : ", MQTTclient.state());
+                int clientState = MQTTclient.state();
+                myWebSerial.print("MQTT connection attempt failed. State: ");
+                myWebSerial.print(String(clientState).c_str()); // Convert int to String, then to const char*
+                myWebSerial.print(" (");
+                myWebSerial.print(mqtt_state_to_string(clientState));
+                myWebSerial.println(")");
 
-                myWebSerial.println(" try again ..");
+                Serial.print("MQTT connection attempt failed. State: "); // Also log to hardware Serial
+                Serial.print(clientState);
+                Serial.print(" (");
+                Serial.print(mqtt_state_to_string(clientState));
+                Serial.println(")");
+
+                // Add a delay before retrying within this connection sequence,
+                // but only if we haven't hit the overall timeout for the sequence.
+                if (!((millis() - nowMillis) > timeOutMillis)) {
+                    myWebSerial.println("Retrying MQTT connection in 1 second...");
+                    delay(1000); 
+                }
             }
             now = millis();
             lastReconnectAttemptMillis = now;
@@ -308,14 +338,11 @@ int getWiFiSignalQuality() {
 //   return 2 * (dBm - RSSI_MIN);
 // }
 
-// unsigned long telePeriodMs = 240000;
-unsigned long telePeriodMs = 30000;
-
 //! publish telemetry every 5 mins , e.g. rssi info
-unsigned long lastTelemetryPublish = 0 - telePeriodMs;
+unsigned long lastTelemetryPublish = 0 - MQTT_TELEMETRY_PUBLISH_INTERVAL_MS; // Initialize to ensure first publish happens
 void publishTelemetryIfDue() {
     unsigned long now = millis();
-    if (now - lastTelemetryPublish > telePeriodMs) {
+    if (now - lastTelemetryPublish >= MQTT_TELEMETRY_PUBLISH_INTERVAL_MS) {
         lastTelemetryPublish = now;
 
         // Attempt to reconnect

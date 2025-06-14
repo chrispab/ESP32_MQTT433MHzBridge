@@ -28,6 +28,7 @@ char displayLine[DISPLAY_LINES][31];  // 6 lines of n chars +terminator for disp
 #include "Display.h"
 #include <MQTTLib.h>
 #include <RF24Lib.h>
+#include "SupportLib.h" // For Fonts::SYS_FONT and Fonts::BIG_TEMP_FONT
 
 
 
@@ -173,7 +174,7 @@ void Display::updateDisplayData(ZoneController* ZCs, TempSensor &DHT22Sensor,Web
 
         if ((displayMode == BIG_TEMP) || (displayMode == NORMAL)) {
             clearBuffer();
-            setFont(BIG_TEMP_FONT);
+            setFont(Fonts::BIG_TEMP_FONT);
 
             // just get the temp bit of displaystring
             // end of string is 'C', need to get string from that pos
@@ -186,11 +187,11 @@ void Display::updateDisplayData(ZoneController* ZCs, TempSensor &DHT22Sensor,Web
             drawStr(0, 38, justTempString);
             // myDisplay.refresh();
 
-            setFont(SYS_FONT);
+            setFont(Fonts::SYS_FONT);
 
             // myDisplay.drawStr(0, 47, MQTTDisplayString);
             strcpy(strx, MQTTDisplayString);
-            strcat(MQTTDisplayString, "::.");
+            // strcat(MQTTDisplayString, "::."); // Consider if this concatenation is still desired
             strcat(MQTTDisplayString, RF24DisplayString);
             drawStr(0, 47, MQTTDisplayString);
             // timeClient.update();
@@ -204,7 +205,7 @@ void Display::updateDisplayData(ZoneController* ZCs, TempSensor &DHT22Sensor,Web
             drawStr(80, 63, timeClient.getFormattedTime().c_str());
             sendBuffer();
         } else if (displayMode == MULTI) {
-            setFont(SYS_FONT);
+            setFont(Fonts::SYS_FONT);
             writeLine(1, tempDisplayString);
             writeLine(2, humiDisplayString);
             writeLine(3, MQTTDisplayString);

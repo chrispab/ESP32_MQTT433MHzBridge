@@ -55,27 +55,23 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 // 282830 addr of 16ch remote
 // param 3 is pulse width, last param is num times control message  is txed
 #include "My433Transmitter.h"
-// NewRemoteTransmitter transmitter(282830, TX433PIN, 260, 4);
-My433Transmitter transmitter(282830, TX433PIN, 260, 4);
+// NewRemoteTransmitter transmitter(282830, Pins::TX433PIN, 260, 4);
+My433Transmitter transmitter(282830, Pins::TX433PIN, 260, 4);
 
 #include "RF24Lib.h"  //// Set up nRF24L01 rf24Radio on SPI bus plus pins 7 & 8
-RF24 rf24Radio(RF24_CE_PIN, RF24_CS_PIN);
+RF24 rf24Radio(Pins::RF24_CE_PIN, Pins::RF24_CS_PIN);
 
 #include "LightSensor.h"
-LightSensor myLightSensor(LDR_PIN);
+LightSensor myLightSensor(Pins::LDR_PIN);
 
-// Global vars
-unsigned long currentMillis = 0;
-// unsigned long previousConnCheckMillis = 0;
-unsigned long intervalConnCheckMillis = 30000;
+// Global vars for display state, could be encapsulated if project grows
+static unsigned long displayOnUntil = 0; // Will be initialized in setup
+static bool displayIsOn = true;
 
-unsigned long intervalTempDisplayMillis = 60000;
-unsigned long previousTempDisplayMillis =
-    millis() - intervalTempDisplayMillis;  // trigger on start
-
+displayModes displayMode = NORMAL; // Definition of displayMode
 // create the display object
-Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN,
-                  OLED_DATA_PIN);
+Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, Pins::OLED_CLOCK_PIN,
+                  Pins::OLED_DATA_PIN);
 // def zone controllers, 2nd parm is socketID (0-15)
 ZoneController ZCs[3] = {ZoneController(0, 13, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
@@ -87,8 +83,8 @@ WiFiServer server(80);
 // SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 // 2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, HEART_BEAT_TIME, true);
-LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
+LedFader heartBeatLED(Pins::GREEN_LED_PIN, 1, 0, 50, HEART_BEAT_TIME, true);
+LedFader warnLED(Pins::RED_LED_PIN, 2, 0, 255, 451, true);
 
 #include <WebSerial.h>
 WebSerial myWebSerial;
@@ -107,14 +103,12 @@ extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 #include "WebPageLib.h"
 #include "WiFiLib.h"
 
-
-#include "Display.h" // Ensure displayModes is defined before use
-extern displayModes displayMode;
+// extern bool touchedFlag; // This is fine if SupportLib.cpp defines it and main needs it.
 extern bool touchedFlag;  // = false;
 
 #include "TouchPad.h"
-TouchPad touchPad1 = TouchPad(TOUCH_SENSOR_1);
-TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
+TouchPad touchPad1 = TouchPad(Pins::TOUCH_SENSOR_1);
+TouchPad touchPad2 = TouchPad(Pins::TOUCH_SENSOR_2);
 
 // ! big issue - does not work when no internet connection - resolve
 // hang on wifi connect etc
@@ -122,7 +116,7 @@ TouchPad touchPad2 = TouchPad(TOUCH_SENSOR_2);
 
 
 #include "PIRSensor.h"
-PIRSensor myPIRSensor(PIR_PIN);
+PIRSensor myPIRSensor(Pins::PIR_PIN);
 
 #include <RestClient.h>
 // char restHost[]="homested.local";
@@ -132,8 +126,6 @@ char restHost[] = "chrisiot.com";
 // RestClient client = RestClient(restHost, 443);
 RestClient client = RestClient(restHost, 80);
 String bearerToken = REST_BEARER_TOKEN;
-
-bool initit = true;
 /**
  * @brief
  *
@@ -257,8 +249,7 @@ void storeREST(char *topic, char *payload, char *published_at) {
     postStrFull.replace("{", "%7B");
     postStrFull.replace("}", "%7D");
 
-    postStrFull.toCharArray(postMessage, sizeof(postMessage));
-    int statusCode = client.post(postMessage, postParameter);
+    int statusCode = client.post(postStrFull.c_str(), ""); // Assuming postParameter was always empty
     DEBUG_PRINT("Status code from server: ");
     DEBUG_PRINTLN(statusCode);
     if (statusCode < 200 || statusCode >= 300) {
@@ -267,19 +258,12 @@ void storeREST(char *topic, char *payload, char *published_at) {
     previousAPIWriteMillis = currentMillis;
 }
 
-#define SENSOR_INTERVAL_MS 1000
-#define WIFI_CHECK_INTERVAL_MS 5000
-#define TELEMETRY_INTERVAL_MS 60000
-#define DISPLAY_ON_TIME_MS 2500
-
-displayModes displayMode = NORMAL;
-
 void setup() {
     Serial.begin(115200);
     myWebSerial.println("==========running setup==========");
     heartBeatLED.begin();                         // initialize
     warnLED.begin();                              // initialize
-    pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT);  // set the LED pin mode
+    pinMode(Pins::ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT);  // set the LED pin mode
 
     //watchdog timer setup
     DEBUG_PRINTLN("Setting up Watchdog Timer");
@@ -289,11 +273,10 @@ void setup() {
     timerAlarmEnable(timer);                           // enable interrupt
 
     // setup OLED display
-    displayMode = NORMAL;
-    displayMode = BIG_TEMP;
-    // displayMode = MULTI;
+    displayMode = BIG_TEMP; // Set intended default display mode
+    // displayMode = MULTI; // Assuming BIG_TEMP uses Fonts::BIG_TEMP_FONT internally
     myDisplay.begin();
-    myDisplay.setFont(SYS_FONT);
+    myDisplay.setFont(Fonts::SYS_FONT); // Assuming SYS_FONT is now in Fonts namespace
     myDisplay.wipe();
     myDisplay.writeLine(1, TITLE_LINE1);
     myDisplay.writeLine(2, TITLE_LINE2);
@@ -307,8 +290,8 @@ void setup() {
     myDisplay.wipe();
     myDisplay.writeLine(1, SW_VERSION);
     myDisplay.writeLine(2, "Connecting to Sensor..");
-    myDisplay.refresh();
-    DHT22Sensor.setup(DHTPIN, DHT22Sensor.AM2302);
+    myDisplay.refresh(); // Refresh before sensor setup
+    DHT22Sensor.setup(Pins::DHTPIN, DHT22Sensor.AM2302);
     // rf24 stuff
     myDisplay.writeLine(3, "Connecting to RF24..");
     myDisplay.refresh();
@@ -345,23 +328,20 @@ void setup() {
     setupOTA();
     resetWatchdog();
 
-    // MQTTclient.
     // myWebhook.trigger("433Bridge Boot/Reboot");
     myLightSensor.readLevelIfDue();
     // client.begin(MY_SSID, MY_SSID_PASSWORD);
-    // initit = true;
+    displayOnUntil = millis() + 10000; // Initialize display on time
 }
 
 
-static unsigned long displayOnUntil = millis() + 10000;
-static bool displayIsOn = true;
 
 void processPir() {
     bool motion = myPIRSensor.processPIRSensor(MQTTclient);
     if (motion) {
-        displayOnUntil = millis() + DISPLAY_ON_TIME_MS;
+        displayOnUntil = millis() + PIR_TRIGGERED_DISPLAY_ON_TIME_MS;
         if (!displayIsOn) {
-            myDisplay.display();  // or myDisplay.displayOn()
+            myDisplay.display();
             displayIsOn = true;
             myWebSerial.println("Motion detected!");
         }
@@ -376,7 +356,7 @@ void processTime() {
     if (WiFi.status() == WL_CONNECTED) {
         static unsigned long lastNTPCheck = 0;
         static bool timeUpdatedFromInternet = false;
-        if (millis() - lastNTPCheck >= 60000) {  // 60 seconds
+        if (millis() - lastNTPCheck >= NTP_INTERVAL) {  // Use constant from config.h
             lastNTPCheck = millis();
             IPAddress ntpServerIP;
             if (WiFi.hostByName(NTP_ADDRESS, ntpServerIP)) {
@@ -435,31 +415,31 @@ void loop() {
 
     // Sensor and connectivity checks
     // Use static to preserve lastTemperatureSensorCheck value between loop() calls
-    static unsigned long lastTemperatureSensorCheck = 0;
-    if (currentMillis - lastTemperatureSensorCheck >= SENSOR_INTERVAL_MS) {
-        lastTemperatureSensorCheck = currentMillis;
+    static unsigned long lastSensorProcessTime = 0;
+    if (currentMillis - lastSensorProcessTime >= MAIN_LOOP_SENSOR_PROCESS_INTERVAL_MS) {
+        lastSensorProcessTime = currentMillis;
         processTemperatureSensor();
         // processLightSensor();
         myLightSensor.process(MQTTclient);
         processPir();
     }
 
-    // Use static to preserve lastWiFiCheck value between loop() calls
-    static unsigned long lastWiFiCheck = 0;
-    if (currentMillis - lastWiFiCheck >= WIFI_CHECK_INTERVAL_MS) {
-        lastWiFiCheck = currentMillis;
+    // Use static to preserve lastWiFiConnectivityCheck value between loop() calls
+    static unsigned long lastWiFiConnectivityCheck = 0;
+    if (currentMillis - lastWiFiConnectivityCheck >= MAIN_LOOP_WIFI_CHECK_INTERVAL_MS) {
+        lastWiFiConnectivityCheck = currentMillis;
         checkWifi();
     }
 
     // Core maintenance
     ArduinoOTA.handle();
-    resetWatchdog();
+    resetWatchdog(); // Manages its own interval via ESP32_WATCHDOG_RESET_INTERVAL_SECS
     heartBeatLED.update();
 
-    // Use static to preserve lastTelemetryCheck value between loop() calls
-    static unsigned long lastTelemetryCheck = 0;
-    if (currentMillis - lastTelemetryCheck >= TELEMETRY_INTERVAL_MS) {
-        lastTelemetryCheck = currentMillis;
+    // Use static to preserve lastMainLoopTelemetryCheck value between loop() calls
+    static unsigned long lastMainLoopTelemetryCheck = 0;
+    if (currentMillis - lastMainLoopTelemetryCheck >= MAIN_LOOP_TELEMETRY_INTERVAL_MS) {
+        lastMainLoopTelemetryCheck = currentMillis;
         processTime();
         publishTelemetryIfDue();
     }

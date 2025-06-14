@@ -2,6 +2,7 @@
 #define __SUPPORT_LIB
 
 #include <NTPClient.h>
+#include <U8g2lib.h> // For U8g2 font types like u8g2_font_6x12_tf
 extern NTPClient timeClient;
 
 // /**
@@ -50,9 +51,12 @@ extern NTPClient timeClient;
 //     MULTI
 // };
 
-// // #define SYS_FONT u8g2_font_8x13_tf
-// #define SYS_FONT u8g2_font_6x12_tf        // 7 px high
-// #define BIG_TEMP_FONT u8g2_font_fub30_tf  // 30px hieght
-// // 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
+namespace Fonts {
+    // constexpr auto SYS_FONT_OLD = u8g2_font_8x13_tf;
+    constexpr const uint8_t* SYS_FONT = u8g2_font_6x12_tf;        // 7 px high
+    constexpr const uint8_t* BIG_TEMP_FONT = u8g2_font_fub30_tf;  // 30px height
+    // Example of another font, if needed:
+    // constexpr const uint8_t* ANOTHER_FONT = u8g2_font_inb33_mf; // 33px height (example)
+}
 
 #endif
