@@ -10,13 +10,15 @@
 			"PLATFORMIO_CALLER": "vscode"
 		},
 		"files.associations": {
+			"*.dbclient-js": "javascript",
 			"array": "cpp",
 			"deque": "cpp",
 			"unordered_map": "cpp",
 			"unordered_set": "cpp",
 			"vector": "cpp",
 			"initializer_list": "cpp",
-			"functional": "cpp"
+			"functional": "cpp",
+			"*.bak": "cpp"
 		}
 	}
 }
