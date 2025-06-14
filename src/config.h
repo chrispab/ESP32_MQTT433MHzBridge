@@ -51,6 +51,7 @@ extern char publishLightLevelTopic[];
 extern char publishPIRStateTopic[];
 
 
+constexpr auto HEART_BEAT_TIME = 500;
 
 // #define RELEASE
 

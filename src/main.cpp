@@ -25,10 +25,6 @@
 
 // time stuff
 #include <NTPClient.h>
-// #include <WiFiUdp.h>
-// #define NTP_OFFSET 0            // 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
-// #define NTP_INTERVAL 60 * 1000  // In miliseconds
-// #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 // NTPClient timeClient(ntpUDP);
@@ -91,7 +87,6 @@ WiFiServer server(80);
 // SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
 // 2000, true);
 // set parameters. pin 13, go from 0 to 255 every n milliseconds
-#define HEART_BEAT_TIME 500
 LedFader heartBeatLED(GREEN_LED_PIN, 1, 0, 50, HEART_BEAT_TIME, true);
 LedFader warnLED(RED_LED_PIN, 2, 0, 255, 451, true);
 
@@ -112,17 +107,7 @@ extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 #include "WebPageLib.h"
 #include "WiFiLib.h"
 
-// extern boolean processTouchPads(void);
-// extern char *getElapsedTimeStr();
-// extern void updateDisplayData();
-// extern void checkConnections();
-// extern displayModes displayMode;
-// extern boolean touchedFlag;  // = false;
-// Remove any previous externs for processTouchPads and touchedFlag
-// extern bool processTouchPads(void);
-// extern char *getElapsedTimeStr();
-// extern void updateDisplayData();
-// extern void checkConnections();
+
 #include "Display.h" // Ensure displayModes is defined before use
 extern displayModes displayMode;
 extern bool touchedFlag;  // = false;
@@ -296,6 +281,8 @@ void setup() {
     warnLED.begin();                              // initialize
     pinMode(ESP32_ONBOARD_BLUE_LED_PIN, OUTPUT);  // set the LED pin mode
 
+    //watchdog timer setup
+    DEBUG_PRINTLN("Setting up Watchdog Timer");
     timer = timerBegin(0, 8000, true);  // timer 0, 80mhz div 8000
     timerAttachInterrupt(timer, &resetModule, true);
     timerAlarmWrite(timer, wdtTimeoutMs * 10, false);  // set time in us
@@ -333,7 +320,7 @@ void setup() {
     // you're connected now, so print out the status:
     printWifiStatus();
     // server.begin();
-    CR;
+    Serial.println();
     myDisplay.writeLine(5, "Connecting to MQTT..");
     myDisplay.refresh();
     connectMQTT();
@@ -365,15 +352,6 @@ void setup() {
     // initit = true;
 }
 
-/**
- * @brief
- *
- */
-// text buffer for main loop
-char tempString[] = "12345678901234567890";
-
-// Variable to track when to turn off the display after motion
-// unsigned long displayOnUntil = 0;
 
 static unsigned long displayOnUntil = millis() + 10000;
 static bool displayIsOn = true;
