@@ -57,7 +57,7 @@ PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 // Consider moving these to config.h if they are configurable
 constexpr uint32_t RF433_REMOTE_ADDRESS = 282830;
 constexpr uint16_t RF433_PULSE_WIDTH = 260;
-constexpr uint8_t  RF433_REPEAT_TRANSMISSIONS = 4;
+constexpr uint8_t  RF433_REPEAT_TRANSMISSIONS = 3;
 My433Transmitter transmitter(RF433_REMOTE_ADDRESS, Pins::TX433PIN, RF433_PULSE_WIDTH, RF433_REPEAT_TRANSMISSIONS);
 
 
@@ -104,17 +104,12 @@ WebSerial myWebSerial;
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-// #define EMAIL_SUBJECT "ESP32 Bridge - REBOOTED"
-
-// #include "WebSocketLib.h"
-
 extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                            size_t length);
 
 #include "WebPageLib.h"
 #include "WiFiLib.h"
 
-// extern bool touchedFlag; // This is fine if SupportLib.cpp defines it and main needs it.
 extern bool touchedFlag;  // = false;
 
 #include "TouchPad.h"
@@ -330,7 +325,7 @@ void setup() {
         myWebSerial.println("Initial WiFi connection failed in setup.");
     }
     printWifiStatus();
-    // server.begin();
+    // server.begin(); // port 80 HTTP server, uncomment if needed
     Serial.println();
     myDisplay.writeLine(5, "Connecting to MQTT..");
     myDisplay.refresh();
