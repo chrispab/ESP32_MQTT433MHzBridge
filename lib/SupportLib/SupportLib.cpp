@@ -13,8 +13,8 @@ extern ZoneController ZCs[];
 #include "WebSerial.h"
 extern WebSerial myWebSerial;
 
-#include "MQTTLib.h"
-extern char *getMQTTDisplayString(char *MQTTDisplayString);
+// #include "MQTTLib.h"
+// extern char *getMQTTDisplayString(char *MQTTDisplayString);
 
 #include <NTPClient.h>
 extern NTPClient timeClient;

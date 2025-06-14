@@ -26,9 +26,9 @@
 // time stuff
 #include <NTPClient.h>
 // #include <WiFiUdp.h>
-#define NTP_OFFSET 0            // 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
-#define NTP_INTERVAL 60 * 1000  // In miliseconds
-#define NTP_ADDRESS "europe.pool.ntp.org"
+// #define NTP_OFFSET 0            // 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
+// #define NTP_INTERVAL 60 * 1000  // In miliseconds
+// #define NTP_ADDRESS "europe.pool.ntp.org"
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 // NTPClient timeClient(ntpUDP);
@@ -119,10 +119,10 @@ extern void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 // extern displayModes displayMode;
 // extern boolean touchedFlag;  // = false;
 // Remove any previous externs for processTouchPads and touchedFlag
-extern bool processTouchPads(void);
-extern char *getElapsedTimeStr();
-extern void updateDisplayData();
-extern void checkConnections();
+// extern bool processTouchPads(void);
+// extern char *getElapsedTimeStr();
+// extern void updateDisplayData();
+// extern void checkConnections();
 #include "Display.h" // Ensure displayModes is defined before use
 extern displayModes displayMode;
 extern bool touchedFlag;  // = false;

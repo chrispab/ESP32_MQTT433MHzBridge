@@ -1,4 +1,5 @@
-// #include <RF24Lib.h>
+#include "config.h"
+#include <RF24Lib.h>
 #include "WebSocketLib.h"
 
 #include "WebSerial.h"
