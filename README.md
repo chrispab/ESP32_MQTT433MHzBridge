@@ -1,4 +1,64 @@
 # ESP32_MQTT433MHzBridge
+
+## Project Overview
+ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that acts as a bridge between MQTT (Message Queuing Telemetry Transport) and 433MHz RF devices. It enables remote control and monitoring of RF-based devices (such as power sockets and sensors) via MQTT, integrates temperature, light, and PIR sensors, and provides web-based monitoring and OTA (Over-The-Air) firmware updates.
+
+**Main Features:**
+- MQTT to 433MHz RF bridge for device control
+- Zone controller logic for managing remote devices
+- Sensor integration: temperature, light, PIR
+- OLED display for local status
+- WebSocket and web UI for monitoring
+- OTA firmware updates
+- REST API integration for logging/events
+
+## Architecture Diagram
+
+```
++-------------------+         +-------------------+         +-------------------+
+|                   |  MQTT   |                   |  433MHz |                   |
+|   MQTT Broker     |<------->|   ESP32 Bridge    |<------->|  RF Devices       |
+|                   |         |                   |         |  (Sockets, etc.)  |
++-------------------+         +-------------------+         +-------------------+
+                                    |   |   |   |
+                                    |   |   |   +-- Temp/Light/PIR Sensors
+                                    |   |   +------ OLED Display
+                                    |   +---------- WebSocket/Web UI
+                                    +-------------- OTA/REST API
+```
+
+## Quick Start Guide
+
+### Prerequisites
+- PlatformIO installed (VSCode recommended)
+- ESP32 board (e.g., esp32doit-devkit-v1)
+- Required libraries (see `platformio.ini`)
+- MQTT broker accessible on your network
+
+### Setup
+1. **Clone the repository:**
+   ```sh
+   git clone <your-repo-url>
+   cd ESP32_MQTT433MHzBridge
+   ```
+2. **Configure secrets:**
+   - Copy `src/secret.h.example` to `src/secret.h` and fill in your WiFi/MQTT credentials.
+3. **Connect your ESP32 board** via USB.
+4. **Build and upload the firmware:**
+   ```sh
+   pio run --target upload
+   ```
+5. **Monitor serial output:**
+   ```sh
+   pio device monitor
+   ```
+6. **Access Web UI:**
+   - Open the device's IP address in your browser (see serial output for IP).
+
+### OTA Update
+- Use the provided OTA web interface or the `tools/espota.py` script for wireless firmware updates (see below for command examples).
+
+---
 // note : for I2C problem use ;
 // https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/
 //
@@ -44,7 +104,6 @@ python ~/Projects/git/ESP32-IDF-ZoneController/components/arduino-esp32/tools/es
 
 python ~/Projects/git/ESP32-ZoneController/bin/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f ~/Projects/git/ESP32_MQTT433MHzBridge/.pioenvs/esp32dev/firmware.bin
 
-
 python ~/Projects/git/ESP32-IDF-ZoneController/components/arduino-esp32/tools/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f ~/Projects/git/ESP32_MQTT433MHzBridge/.pio/build/esp32dev/firmware.bin
 
 /home/chris/Projects/git/ESP32_MQTT433MHzBridge/tools
@@ -72,3 +131,4 @@ python tools/espota.py -i 192.168.0.230 -I 192.168.0.32 -p 3232 -P 3232 -a iotsh
 
 dell
 python tools/espota.py -i 192.168.0.230 -I 192.168.0.54 -p 3232 -P 3232 -a iotsharing -f .pio/build/esp32doit-devkit-v1/firmware.bin
+```
