@@ -21,24 +21,25 @@ constexpr auto WIFI_HOSTNAME = "esp32-mqtt-bridge";
 constexpr auto MQTT_BROKER = "192.168.1.100";
 constexpr int MQTT_PORT = 1883;
 constexpr auto MQTT_CLIENT_ID = "esp32Bridge";
+constexpr unsigned long MQTT_RECONNECT_INTERVAL = 10000;
+constexpr auto MQTT_LAST_OCTET = 100;
+constexpr unsigned long MQTT_TELEMETRY_PUBLISH_INTERVAL_MS = 30000;  // Interval for MQTTLib to publish telemetry like RSSI
+
 
 // Timing intervals (ms)
-constexpr unsigned long MQTT_RECONNECT_INTERVAL = 10000;
 constexpr unsigned long SENSOR_POLL_INTERVAL = 500;  // A general poll interval, review specific uses
-
 constexpr unsigned long MAIN_LOOP_SENSOR_PROCESS_INTERVAL_MS = 1000;  // For main.cpp's temp, light, PIR processing block
 constexpr unsigned long MAIN_LOOP_WIFI_CHECK_INTERVAL_MS = 5000;      // For main.cpp's checkWifi() call
 constexpr unsigned long MAIN_LOOP_TELEMETRY_INTERVAL_MS = 60000;      // For main.cpp's block calling processTime() and publishTelemetryIfDue()
 constexpr unsigned long PIR_TRIGGERED_DISPLAY_ON_TIME_MS = 2500;      // How long display stays on after PIR trigger
 
+//temperature sensor settings
 constexpr bool TEMP_CHANGE_DISPLAY_ON = true;
-constexpr unsigned long TEMP_DISPLAY_ON_TIME_MS = 1000;  // Set to 500ms, adjust as needed or move to config.h
+constexpr unsigned long TEMP_DISPLAY_ON_TIME_MS = 1000;  // Set to 1000ms, adjust as needed or move to config.h
 
 // Feature toggles
 constexpr bool ENABLE_DISPLAY = true;
 constexpr bool ENABLE_PIR = true;
-
-// Add more as needed...
 
 // time stuff
 constexpr unsigned long NTP_OFFSET = 0;            // 60 * 60      // In seconds, 0 for GMT, 60*60 for BST
@@ -60,8 +61,8 @@ constexpr auto HEART_BEAT_TIME = 500;
 
 // #define RELEASE
 
+// Light sensor settings
 constexpr auto LIGHT_SENSOR_READ_INTERVAL = 30000;  // ms
-
 constexpr auto LIGHT_SENSOR_LOWER_THRESHOLD = 1500;
 constexpr auto LIGHT_SENSOR_UPPER_THRESHOLD = 1900;
 
@@ -75,7 +76,5 @@ constexpr auto ZONE_COLD_BOOT_TIME_MS = (1000UL * 180UL);     // estimated time 
 constexpr auto ESP32_WATCHDOG_TIMEOUT_SECS = 60;
 constexpr auto ESP32_WATCHDOG_RESET_INTERVAL_SECS = 30;
 
-constexpr auto MQTT_LAST_OCTET = 100;
-constexpr unsigned long MQTT_TELEMETRY_PUBLISH_INTERVAL_MS = 30000;  // Interval for MQTTLib to publish telemetry like RSSI
 
 #endif
