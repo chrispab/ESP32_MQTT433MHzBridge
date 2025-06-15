@@ -46,9 +46,11 @@ TempSensor DHT22Sensor;
 
 // MQTT stuff
 #include <PubSubClient.h>
-IPAddress mqttBroker(192, 168, 0, MQTT_LAST_OCTET);
+// IPAddress mqttBroker(192, 168, 0, MQTT_LAST_OCTET);
+// WiFiClient WiFiEClient;
+// PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
 WiFiClient WiFiEClient;
-PubSubClient MQTTclient(mqttBroker, 1883, MQTTRxcallback, WiFiEClient);
+PubSubClient MQTTclient(MQTT_BROKER, MQTT_PORT, MQTTRxcallback, WiFiEClient);
 
 // 433Mhz settings
 // 282830 addr of 16ch remote
