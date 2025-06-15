@@ -403,6 +403,17 @@ void processTemperatureSensor() {
         DEBUG_PRINTLN(DHT22Sensor.getHumidityString());
         MQTTclient.publish(publishHumiTopic, DHT22Sensor.getHumidityString());
     }
+    // if config value is set to true and temperature has changed turn on display for 500ms
+    if (TEMP_CHANGE_DISPLAY_ON && DHT22Sensor.temperatureChanged) {
+        // constexpr unsigned long TEMP_DISPLAY_ON_TIME_MS = 500; // Set to 500ms, adjust as needed or move to config.h
+        myDisplay.display();
+        displayIsOn = true;
+        displayOnUntil = millis() + TEMP_DISPLAY_ON_TIME_MS;
+        myWebSerial.print("New Temperature: ");
+        myWebSerial.println(DHT22Sensor.getTemperatureString());
+        myWebSerial.print("New Humidity: ");
+        myWebSerial.println(DHT22Sensor.getHumidityString());
+    }
 }
 
 void processRF24ZoneWatchdog() {

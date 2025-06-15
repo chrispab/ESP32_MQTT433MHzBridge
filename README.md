@@ -1,9 +1,11 @@
 # ESP32_MQTT433MHzBridge
 
 ## Project Overview
+
 ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that acts as a bridge between MQTT (Message Queuing Telemetry Transport) and 433MHz RF devices. It enables remote control and monitoring of RF-based devices (such as power sockets and sensors) via MQTT, integrates temperature, light, and PIR sensors, and provides web-based monitoring and OTA (Over-The-Air) firmware updates.
 
 **Main Features:**
+
 - MQTT to 433MHz RF bridge for device control
 - Zone controller logic for managing remote devices
 - Sensor integration: temperature, light, PIR
@@ -14,7 +16,7 @@ ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that 
 
 ## Architecture Diagram
 
-```
+```text
 +-------------------+         +-------------------+         +-------------------+
 |                   |  MQTT   |                   |  433MHz |                   |
 |   MQTT Broker     |<------->|   ESP32 Bridge    |<------->|  RF Devices       |
@@ -30,12 +32,14 @@ ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that 
 ## Quick Start Guide
 
 ### Prerequisites
+
 - PlatformIO installed (VSCode recommended)
 - ESP32 board (e.g., esp32doit-devkit-v1)
 - Required libraries (see `platformio.ini`)
 - MQTT broker accessible on your network
 
 ### Setup
+
 1. **Clone the repository:**
    ```sh
    git clone <your-repo-url>
@@ -45,6 +49,7 @@ ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that 
    - Copy `src/secret.h.example` to `src/secret.h` and fill in your WiFi/MQTT credentials.
 3. **Connect your ESP32 board** via USB.
 4. **Build and upload the firmware:**
+
    ```sh
    pio run --target upload
    ```
@@ -56,13 +61,14 @@ ESP32_MQTT433MHzBridge is a firmware project for the ESP32 microcontroller that 
    - Open the device's IP address in your browser (see serial output for IP).
 
 ### OTA Update
+
 - Use the provided OTA web interface or the `tools/espota.py` script for wireless firmware updates (see below for command examples).
 
 ---
 // note : for I2C problem use ;
-// https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/
+// <https://desire.giesecke.tk/index.php/2018/04/20/how-to-use-stickbreakers-i2c-improved-code/>
 //
-// https://github.com/espressif/arduino-esp32/issues/1352
+// <https://github.com/espressif/arduino-esp32/issues/1352>
 //
 // also fix for u8g2lib using wire lib
 // https://community.particle.io/t/i2c-lcd-display-getting-corrupted-solved/9767/78
