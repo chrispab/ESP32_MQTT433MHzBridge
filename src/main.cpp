@@ -516,3 +516,6 @@ void resetWatchdog(void) {
         lastResetWatchdogMillis = millis();
     }
 }
+
+
+//function to write all values in config.h to the display

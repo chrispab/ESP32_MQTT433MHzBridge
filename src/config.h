@@ -32,7 +32,7 @@ constexpr unsigned long MAIN_LOOP_TELEMETRY_INTERVAL_MS = 60000;      // For mai
 constexpr unsigned long PIR_TRIGGERED_DISPLAY_ON_TIME_MS = 2500;      // How long display stays on after PIR trigger
 
 //temperature sensor settings
-constexpr bool TEMP_CHANGE_DISPLAY_ON = true;
+constexpr bool TEMP_CHANGE_DISPLAY_ON = false;
 constexpr unsigned long TEMP_DISPLAY_ON_TIME_MS = 1000;  // How long display stays on after temperature change
 
 // Feature toggles
