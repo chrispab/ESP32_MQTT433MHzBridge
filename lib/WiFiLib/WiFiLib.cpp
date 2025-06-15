@@ -55,16 +55,16 @@ void printWifiStatus()
 {
     // print the SSID of the network you're attached to:
     myWebSerial.print("SSID: ");
-    myWebSerial.println(WiFi.SSID());
+    myWebSerial.println(WiFi.SSID().c_str());
 
     // print your WiFi shield's IP address:
     IPAddress ip = WiFi.localIP();
     myWebSerial.print("IP Address: ");
-    myWebSerial.println(ip);
+    myWebSerial.println(ip.toString().c_str());
 
     // print the received signal strength:
     long rssi = WiFi.RSSI();
     myWebSerial.print("signal strength (RSSI):");
-    myWebSerial.print(rssi);
+    myWebSerial.print(String(rssi).c_str());
     myWebSerial.println(" dBm");
 }
