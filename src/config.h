@@ -29,7 +29,6 @@ constexpr unsigned long SENSOR_POLL_INTERVAL = 500;  // A general poll interval,
 constexpr unsigned long MAIN_LOOP_SENSOR_PROCESS_INTERVAL_MS = 1000;  // For main.cpp's temp, light, PIR processing block
 constexpr unsigned long MAIN_LOOP_WIFI_CHECK_INTERVAL_MS = 5000;      // For main.cpp's checkWifi() call
 constexpr unsigned long MAIN_LOOP_TELEMETRY_INTERVAL_MS = 60000;      // For main.cpp's block calling processTime() and publishTelemetryIfDue()
-constexpr unsigned long PIR_TRIGGERED_DISPLAY_ON_TIME_MS = 2500;      // How long display stays on after PIR trigger
 
 //temperature sensor settings
 constexpr bool TEMP_CHANGE_DISPLAY_ON = false;
@@ -44,7 +43,9 @@ constexpr unsigned long NTP_OFFSET = 0;            // 60 * 60      // In seconds
 constexpr unsigned long NTP_INTERVAL = 60 * 1000;  // In miliseconds
 constexpr auto NTP_ADDRESS = "europe.pool.ntp.org";
 
+// PIR sensor settings
 constexpr unsigned long PIR_READ_INTERVAL = 999;  // ms, minimum interval between reading sensor
+constexpr unsigned long PIR_TRIGGERED_DISPLAY_ON_TIME_MS = 2500;      // How long display stays on after PIR trigger
 
 constexpr unsigned long WIFI_CONNECTION_CHECK_INTERVAL = 30000;  // ms, interval to check wifi connection
 // #define DEBUG_WSERIAL
@@ -64,12 +65,12 @@ constexpr auto LIGHT_SENSOR_READ_INTERVAL = 30000;  // ms
 constexpr auto LIGHT_SENSOR_LOWER_THRESHOLD = 1500;
 constexpr auto LIGHT_SENSOR_UPPER_THRESHOLD = 1900;
 
+// RF24 zone controller settings
 constexpr auto ZONE_WAIT_BEFORE_FLAG_AWAY = 100;              // in seconds time window to wait before classed as zone gone away
 constexpr auto ZONE_HEARTBEAT_TIMEOUT_MS = (1000UL * 420UL);  // max millisces to wait if no ack from pi before power cycling pi
 constexpr auto ZONE_COLD_BOOT_TIME_MS = (1000UL * 180UL);     // estimated time for a zone controller to boot from power cycle reset
 
+// ESP32 watchdog settings
 constexpr auto ESP32_WATCHDOG_TIMEOUT_SECS = 60;
 constexpr auto ESP32_WATCHDOG_RESET_INTERVAL_SECS = 30;
 
-// Note: For MQTT_LAST_OCTET removal to be effective, main.cpp should be updated
-// to initialize PubSubClient with MQTT_BROKER (string) and MQTT_PORT directly.
