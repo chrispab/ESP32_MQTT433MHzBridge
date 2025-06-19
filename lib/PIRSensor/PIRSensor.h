@@ -6,10 +6,6 @@
 
 #include "IOBase.h"
 
-#ifndef PIR_READ_INTERVAL
-#define PIR_READ_INTERVAL 1000  // ms, minimum interval between reading sensor
-#endif
-
 class PIRSensor : public IOBase {
    private:
     // bool state;
