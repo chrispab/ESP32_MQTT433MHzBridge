@@ -4,7 +4,7 @@
 
 // Project version
 constexpr auto PROJECT_VERSION = "1.0.0";
-constexpr auto SW_VERSION = "V5.6:refactor1";
+constexpr auto SW_VERSION = "V5.7:enable web";
 constexpr auto TITLE_LINE1 = "     ESP32";
 constexpr auto TITLE_LINE2 = "MQTT 433MhZ Bridge";
 constexpr auto TITLE_LINE3 = "Zone RF24 Dog";
