@@ -82,7 +82,7 @@ ZoneController ZCs[3] = {ZoneController(0, 13, "GRG", "GGG"),
                          ZoneController(1, 4, "CNV", "CCC"),
                          ZoneController(2, 14, "SHD", "SSS")};
 
-// WiFiServer server(80); // Uncomment if HTTP server on port 80 is needed
+WiFiServer server(80); // Uncomment if HTTP server on port 80 is needed
 
 // create object
 // SendEmail e("smtp.gmail.com", 465, EMAIL_ADDRESS, APP_PASSWORD,
@@ -327,7 +327,7 @@ void setup() {
         myWebSerial.println("Initial WiFi connection failed in setup.");
     }
     printWifiStatus();
-    // server.begin(); // port 80 HTTP server, uncomment if needed
+    server.begin(); // port 80 HTTP server, uncomment if needed
     Serial.println();
     myDisplay.writeLine(5, "Connecting to MQTT..");
     myDisplay.refresh();
@@ -494,7 +494,7 @@ void loop() {
     processRF24ZoneWatchdog();
 
     // Web page requests
-    // checkForPageRequest(); // Uncomment if HTTP server is active
+    checkForPageRequest(); // Uncomment if HTTP server is active
 }
 
 /**
